@@ -1,7 +1,7 @@
 <h1 align="center">🧬 SciFlow Pro — 科研全流程智能工作站</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/版本-v1.0.0-blue?style=flat-square" alt="Version" />
+  <img src="https://img.shields.io/badge/版本-v1.0.1-blue?style=flat-square" alt="Version" />
   <img src="https://img.shields.io/badge/平台-macOS%20|%20Windows-brightgreen?style=flat-square" alt="Platform" />
   <img src="https://img.shields.io/badge/AI%20引擎-GPT--5%20|%20Gemini%20|%20Claude%20|%20DeepSeek-purple?style=flat-square" alt="AI" />
   <img src="https://img.shields.io/badge/架构-本地优先-orange?style=flat-square" alt="Architecture" />
@@ -27,8 +27,8 @@
 
 | 平台 | 下载链接 | 系统要求 |
 |:----:|---------|---------|
-| 🍎 **macOS** | [SciFlow-Pro-1.0.0-arm64.dmg](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/v1.0.0/SciFlow-Pro-1.0.0-arm64.dmg) | macOS 12+ (Apple Silicon) |
-| 🪟 **Windows** | [SciFlow-Pro-Setup-1.0.0.exe](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/v1.0.0/SciFlow-Pro-Setup-1.0.0.exe) | Windows 10/11 (64-bit) |
+| 🍎 **macOS** | [SciFlow-Pro-1.0.1-arm64.dmg](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/v1.0.1/SciFlow-Pro-1.0.1-arm64.dmg) | macOS 12+ (Apple Silicon) |
+| 🪟 **Windows** | [SciFlow-Pro-Setup-1.0.1.exe](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/v1.0.1/SciFlow-Pro-Setup-1.0.1.exe) | Windows 10/11 (64-bit) |
 
 <details>
 <summary>🪟 <strong>Windows 安装步骤</strong>（点击展开）</summary>
@@ -588,6 +588,13 @@ sudo xattr -cr "/Applications/SciFlow Pro.app"
 ---
 
 ## 📋 更新日志
+
+### v1.0.1 (2026-03-11)
+🔧 **优化更新**
+
+- 🎨 优化授权页面 UI，移除硬编码定价信息
+- 🔄 改进获取授权流程引导
+- 🐛 修复若干已知问题
 
 ### v1.0.0 (2026-03-11)
 🎉 **首次公开发布**
