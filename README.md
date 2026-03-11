@@ -24,27 +24,27 @@
 <div align="center">
 <table>
 <tr>
-<td align="center"><b>📋 研究看板</b><br><img src="docs/screenshots/dashboard.png" width="400" /></td>
-<td align="center"><b>🧠 中心大脑</b><br><img src="docs/screenshots/brain.png" width="400" /></td>
+<td align="center"><b>📋 研究看板</b><br><img src="docs/screenshots/dashboard.png" width="280" /></td>
+<td align="center"><b>🧠 中心大脑</b><br><img src="docs/screenshots/brain.png" width="280" /></td>
 </tr>
 <tr>
-<td align="center"><b>🧪 课题中心</b><br><img src="docs/screenshots/project_hub.png" width="400" /></td>
-<td align="center"><b>👥 团队矩阵</b><br><img src="docs/screenshots/team_matrix.png" width="400" /></td>
+<td align="center"><b>🧪 课题中心</b><br><img src="docs/screenshots/project_hub.png" width="280" /></td>
+<td align="center"><b>👥 团队矩阵</b><br><img src="docs/screenshots/team_matrix.png" width="280" /></td>
 </tr>
 <tr>
-<td align="center"><b>🎨 绘图中心</b><br><img src="docs/screenshots/figure_center.png" width="400" /></td>
-<td align="center"><b>🖼️ 图表拼装</b><br><img src="docs/screenshots/figure_assembly.png" width="400" /></td>
+<td align="center"><b>🎨 绘图中心</b><br><img src="docs/screenshots/figure_center.png" width="280" /></td>
+<td align="center"><b>🖼️ 图表拼装</b><br><img src="docs/screenshots/figure_assembly.png" width="280" /></td>
 </tr>
 <tr>
-<td align="center"><b>🧩 DOE 迭代</b><br><img src="docs/screenshots/doe.png" width="400" /></td>
-<td align="center"><b>🔀 实验路线</b><br><img src="docs/screenshots/flowchart.png" width="400" /></td>
+<td align="center"><b>🧩 DOE 迭代</b><br><img src="docs/screenshots/doe.png" width="280" /></td>
+<td align="center"><b>🔀 实验路线</b><br><img src="docs/screenshots/flowchart.png" width="280" /></td>
 </tr>
 <tr>
-<td align="center"><b>🏭 工业工艺实验室</b><br><img src="docs/screenshots/industrial_lab.png" width="400" /></td>
-<td align="center"><b>🤖 AI 智能助手</b><br><img src="docs/screenshots/ai_assistant.png" width="400" /></td>
+<td align="center"><b>🏭 工业工艺实验室</b><br><img src="docs/screenshots/industrial_lab.png" width="280" /></td>
+<td align="center"><b>🤖 AI 智能助手</b><br><img src="docs/screenshots/ai_assistant.png" width="280" /></td>
 </tr>
 <tr>
-<td align="center" colspan="2"><b>✍️ 写作工坊</b><br><img src="docs/screenshots/writing_studio.png" width="600" /></td>
+<td align="center" colspan="2"><b>✍️ 写作工坊</b><br><img src="docs/screenshots/writing_studio.png" width="400" /></td>
 </tr>
 </table>
 </div>
