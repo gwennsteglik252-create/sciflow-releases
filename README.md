@@ -29,17 +29,22 @@
 <tr>
 <td align="center"><b>📂 课题工作流</b><br><img src="docs/screenshots/workflow_v2.png" width="260" /></td>
 <td align="center"><b>🔍 文献查找</b><br><img src="docs/screenshots/literature_search_new.png" width="260" /></td>
-<td align="center"><b>📚 情报档案</b><br><img src="docs/screenshots/literature_archive_new.png" width="260" /></td>
+<td align="center"><b>📚 情报档案</b><br><img src="docs/screenshots/literature_archive_v2.png" width="260" /></td>
 </tr>
 <tr>
 <td align="center"><b>✍️ 写作工坊</b><br><img src="docs/screenshots/writing_studio_new_v2.png" width="260" /></td>
 <td align="center"><b>⚛️ 机理推演</b><br><img src="docs/screenshots/mechanism_new.png" width="260" /></td>
-<td align="center"><b>🔬 XRD 物相分析</b><br><img src="docs/screenshots/xrd_new.png" width="260" /></td>
+<td align="center"><b>🔬 表征分析</b><br><img src="docs/screenshots/xrd_new.png" width="260" /></td>
 </tr>
 <tr>
 <td align="center"><b>🎨 绘图中心</b><br><img src="docs/screenshots/figure_center_v2.png" width="260" /></td>
 <td align="center"><b>📖 文献绘图</b><br><img src="docs/screenshots/literature_figure.png" width="260" /></td>
 <td align="center"><b>🔄 综述绘图</b><br><img src="docs/screenshots/review_figure.png" width="260" /></td>
+</tr>
+<tr>
+<td align="center"><b>🏭 工业流程</b><br><img src="docs/screenshots/industrial_flow.png" width="260" /></td>
+<td align="center"><b>📈 工艺演化</b><br><img src="docs/screenshots/process_evolution.png" width="260" /></td>
+<td align="center"><b>🌐 行业动态</b><br><img src="docs/screenshots/industry_dynamics.png" width="260" /></td>
 </tr>
 <tr>
 <td align="center"><b>🖼️ 图表拼版</b><br><img src="docs/screenshots/figure_assembly_new.png" width="260" /></td>
