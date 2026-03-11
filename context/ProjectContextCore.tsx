@@ -1,0 +1,102 @@
+
+import { createContext, useContext } from 'react';
+import { ResearchProject, Literature, AiTask, UserProfile, AppTheme, AppSettings, ToastConfig, MatrixReport, FlowchartSession, DoeSession, InceptionSession, InventoryItem, SearchResult, MechanismSession, DataAnalysisSession, WritingSession, AiCliCommand, WeeklyTask, ConsumedReagent, AppView, StructuralSession, TimelineSession, VisionSession } from '../types';
+import { CloudSyncState } from '../hooks/useCloudSync';
+
+export interface ProjectContextType {
+    projects: ResearchProject[];
+    resources: Literature[];
+    inventory: InventoryItem[];
+    teamMembers: UserProfile[];
+    activeTasks: AiTask[];
+    userProfile: UserProfile;
+    activeTheme: AppTheme;
+    appSettings: AppSettings;
+    aiStatus: string | null;
+    isOnline: boolean;
+    searchQuery: string;
+    searchResults: SearchResult[];
+    citationBuffer: string | null;
+    toast: ToastConfig | null;
+    isKeySelected: boolean | null;
+    mechanismSession: MechanismSession;
+    flowchartSession: FlowchartSession;
+    doeSession: DoeSession;
+    inceptionSession: InceptionSession;
+    dataAnalysisSession: DataAnalysisSession;
+    updateDataAnalysisSession: (updates: Partial<DataAnalysisSession> | ((prev: DataAnalysisSession) => Partial<DataAnalysisSession>)) => void;
+    writingSession: WritingSession;
+    updateWritingSession: (updates: Partial<WritingSession>) => void;
+    structuralSession: StructuralSession;
+    updateStructuralSession: (updates: Partial<StructuralSession>) => void;
+    timelineSession: TimelineSession;
+    updateTimelineSession: (updates: Partial<TimelineSession>) => void;
+    visionSession: VisionSession;
+    updateVisionSession: (updates: Partial<VisionSession>) => void;
+    pendingEditInventoryId: string | null;
+    setPendingEditInventoryId: (id: string | null) => void;
+    returnPath: string | null;
+    setReturnPath: (path: string | null) => void;
+    isAiCliOpen: boolean;
+    setIsAiCliOpen: (val: boolean) => void;
+    aiCliHistory: AiCliCommand[];
+    setAiCliHistory: React.Dispatch<React.SetStateAction<AiCliCommand[]>>;
+    isVoiceMode: boolean;
+    setIsVoiceMode: (val: boolean) => void;
+    modals: {
+        addProject: boolean;
+        account: boolean;
+        settings: boolean;
+        confirm: any;
+    };
+    setSearchQuery: (q: string) => void;
+    setCitationBuffer: (text: string | null) => void;
+    setProjects: React.Dispatch<React.SetStateAction<ResearchProject[]>>;
+    setResources: React.Dispatch<React.SetStateAction<Literature[]>>;
+    setInventory: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
+    setTeamMembers: React.Dispatch<React.SetStateAction<UserProfile[]>>;
+    setActiveTasks: React.Dispatch<React.SetStateAction<AiTask[]>>;
+    setUserProfile: React.Dispatch<React.SetStateAction<UserProfile>>;
+    setActiveTheme: React.Dispatch<React.SetStateAction<AppTheme>>;
+    setAppSettings: (settings: Partial<AppSettings>) => void;
+    setAppSettingsWithCallback: (settings: Partial<AppSettings>) => void;
+    setAiStatus: (status: string | null) => void;
+    setIsKeySelected: (val: boolean | null) => void;
+    updateMechanismSession: (updates: Partial<MechanismSession>) => void;
+    runMechanismAnalysis: () => Promise<void>;
+    updateFlowchartSession: (updates: Partial<FlowchartSession>) => void;
+    runFlowchartModeling: () => Promise<void>;
+    updateDoeSession: (updates: Partial<DoeSession>) => void;
+    runDoeInference: () => Promise<void>;
+    updateInceptionSession: (updates: Partial<InceptionSession>) => void;
+    runInceptionBrainstorm: (domain: string) => Promise<void>;
+    runInceptionResearch: (topic: any) => Promise<void>;
+    runInceptionBlueprint: () => Promise<void>;
+    runInceptionReview: () => Promise<void>;
+    showToast: (config: ToastConfig) => void;
+    hideToast: () => void;
+    startGlobalTask: <T, >(task: AiTask, action: () => Promise<T>) => Promise<T>;
+    cancelTask: (taskId: string) => void;
+    handleStartTransformation: (literature: Literature) => Promise<string | null>;
+    handleRunWeeklyReportTask: (project: ResearchProject, type?: 'weekly' | 'monthly' | 'annual') => Promise<void>;
+    confirmDeleteProject: (id: string, onConfirm: () => void) => void;
+    setModalOpen: (key: string, value: any) => void;
+    addTaskToActivePlan: (projectId: string, taskTitle: string, metadata?: { deadline?: string, urgency?: string, quantity?: string | number, unit?: string, inventoryId?: string, inventoryName?: string, category?: string }) => string;
+    recommendProjectTeam: (projectId: string) => UserProfile[];
+    handleProcessMemberGrowth: (task: WeeklyTask) => void;
+    consumeInventoryItems: (reagents: ConsumedReagent[]) => void;
+    addProjectLog: (projectId: string, content: string, title?: string) => void;
+    updateProjectProgress: (projectId: string, progress: number) => void;
+    autoPlotData: (title: string, data: any[]) => void;
+    navigate: (view: AppView, projectId?: string, subView?: string) => void;
+    /** 云端同步状态与控制 */
+    cloudSync: CloudSyncState;
+}
+
+export const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
+
+export const useProjectContext = () => {
+    const context = useContext(ProjectContext);
+    if (!context) throw new Error('useProjectContext must be used within ProjectProvider');
+    return context;
+};

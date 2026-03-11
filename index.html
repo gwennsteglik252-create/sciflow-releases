@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SciFlow Pro | 智能科研管理平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <style>
+        :root {
+            --brand-primary: #6366f1;
+            --brand-bg: #f8fafc;
+            --app-bg: #0f172a;
+        }
+
+        html {
+            font-size: clamp(12px, 0.8vw, 16px);
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif, system-ui;
+            -webkit-font-smoothing: antialiased;
+            color: #1e293b;
+        }
+
+        #root {
+            height: 100vh;
+            width: 100vw;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.2);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.5);
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        @keyframes reveal {
+            from {
+                opacity: 0;
+                transform: scale(0.98) translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .animate-reveal {
+            animation: reveal 0.4s cubic-bezier(0, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes screenshotFlash {
+            0% {
+                opacity: 0.7;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        /* 增强发布预览样式 */
+        .cite-ref {
+            font-weight: 700;
+            color: #6366f1;
+            vertical-align: baseline;
+            position: relative;
+            top: -0.4em;
+            font-size: 75%;
+            padding: 0 1px;
+            pointer-events: none;
+        }
+
+        .cite-ref-inline {
+            font-weight: 600;
+            color: #1e293b;
+            padding: 0 2px;
+        }
+
+        @media print {
+            body>*:not(.is-printing-target) {
+                display: none !important;
+            }
+
+            body.global-printing-active {
+                background: white !important;
+                color: black !important;
+                overflow: visible !important;
+                height: auto !important;
+                width: 100% !important;
+            }
+
+            .is-printing-target {
+                display: block !important;
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                margin: 0 !important;
+                padding: 20mm !important;
+                background: white !important;
+                z-index: 9999999 !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            @page {
+                margin: 0;
+                size: A4 portrait;
+            }
+
+            h1,
+            h2,
+            h3,
+            h4 {
+                page-break-after: avoid;
+                color: #000 !important;
+            }
+
+            p,
+            li,
+            .article-p {
+                color: #111 !important;
+                line-height: 1.6;
+                orphans: 3;
+                widows: 3;
+            }
+
+            img {
+                max-width: 100% !important;
+                page-break-inside: avoid;
+            }
+
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                page-break-inside: auto !important;
+            }
+
+            tr {
+                page-break-inside: avoid !important;
+            }
+
+            /* 打印时的引文颜色修正为黑色 */
+            .cite-ref {
+                color: #000 !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+    <script src="https://3dmol.org/build/3Dmol-min.js"></script>
+    <script type="module" src="./index.tsx"></script>
+</body>
+
+</html>
