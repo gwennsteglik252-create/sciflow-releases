@@ -24,6 +24,29 @@
 | 🍎 **macOS** | [SciFlow-Pro-1.0.0-arm64.dmg](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/v1.0.0/SciFlow-Pro-1.0.0-arm64.dmg) | macOS 12+ (Apple Silicon) |
 | 🪟 **Windows** | [SciFlow-Pro-Setup-1.0.0.exe](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/v1.0.0/SciFlow-Pro-Setup-1.0.0.exe) | Windows 10/11 (64-bit) |
 
+### 🪟 Windows 安装步骤
+1. 下载 `.exe` 安装包
+2. 双击运行安装程序
+3. 如果弹出 **SmartScreen 蓝色警告**，点击 「更多信息」 → 「仍要运行」
+4. 按提示完成安装即可
+
+### 🍎 macOS 安装步骤
+1. 下载 `.dmg` 文件并双击打开
+2. 将 SciFlow Pro 拖入 **Applications** 文件夹
+3. ⚠️ **首次打开前**，需要在终端执行以下命令（解除安全限制）：
+
+```bash
+sudo xattr -cr "/Applications/SciFlow Pro.app"
+```
+
+**操作方法**：
+- 按 `Command + 空格键`，输入「终端」并回车打开
+- 将上面的命令粘贴到终端中，按回车
+- 输入你的电脑开机密码（输入时不会显示字符，这是正常的），再按回车
+- 完成！现在可以从启动台打开 SciFlow Pro 了 🎉
+
+> 💡 **为什么需要这一步？** 因为当前版本尚未进行 Apple 公证签名，macOS 会将未签名的应用标记为「不安全」。此命令仅需执行一次，后续更新无需重复。
+
 ---
 
 ## 🤖 AI 如何助力你的科研？
