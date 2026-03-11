@@ -1,4 +1,4 @@
-# 🧬 SciFlow Pro — 科研全流程智能工作站
+<h1 align="center">🧬 SciFlow Pro — 科研全流程智能工作站</h1>
 
 <p align="center">
   <img src="https://img.shields.io/badge/版本-v1.0.0-blue?style=flat-square" alt="Version" />
@@ -8,9 +8,7 @@
   <img src="https://img.shields.io/badge/许可证-MIT-green?style=flat-square" alt="License" />
 </p>
 
-> **一站式科研数据处理、论文写作与协作平台**
-> 
-> 从立项到发表，覆盖科研工作的每一个环节。
+<p align="center"><strong>一站式科研数据处理、论文写作与协作平台</strong><br>从立项到发表，覆盖科研工作的每一个环节。</p>
 
 ---
 
