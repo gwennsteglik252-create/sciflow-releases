@@ -29,23 +29,33 @@
 <td align="center"><b>🧪 课题中心</b><br><img src="docs/screenshots/project_hub.png" width="260" /></td>
 </tr>
 <tr>
+<td align="center"><b>📂 课题工作流</b><br><img src="docs/screenshots/workflow.png" width="260" /></td>
 <td align="center"><b>👥 团队矩阵</b><br><img src="docs/screenshots/team_matrix.png" width="260" /></td>
 <td align="center"><b>📚 情报档案</b><br><img src="docs/screenshots/literature.png" width="260" /></td>
-<td align="center"><b>⚛️ 机理推演</b><br><img src="docs/screenshots/mechanism.png" width="260" /></td>
 </tr>
 <tr>
+<td align="center"><b>⚛️ 机理推演</b><br><img src="docs/screenshots/mechanism.png" width="260" /></td>
 <td align="center"><b>🔬 XRD 物相分析</b><br><img src="docs/screenshots/xrd.png" width="260" /></td>
+<td align="center"><b>🧩 DOE 迭代</b><br><img src="docs/screenshots/doe.png" width="260" /></td>
+</tr>
+<tr>
+<td align="center"><b>🎯 DOE 优化推演</b><br><img src="docs/screenshots/doe_detail.png" width="260" /></td>
+<td align="center"><b>📈 数据分析室</b><br><img src="docs/screenshots/data_analysis.png" width="260" /></td>
+<td align="center"><b>🔀 实验路线</b><br><img src="docs/screenshots/flowchart.png" width="260" /></td>
+</tr>
+<tr>
 <td align="center"><b>🎨 绘图中心</b><br><img src="docs/screenshots/figure_center.png" width="260" /></td>
+<td align="center"><b>🔗 结构化制图</b><br><img src="docs/screenshots/structure_diagram.png" width="260" /></td>
 <td align="center"><b>🖼️ 图表拼版</b><br><img src="docs/screenshots/figure_assembly2.png" width="260" /></td>
 </tr>
 <tr>
-<td align="center"><b>🧩 DOE 迭代</b><br><img src="docs/screenshots/doe.png" width="260" /></td>
-<td align="center"><b>🔀 实验路线</b><br><img src="docs/screenshots/flowchart.png" width="260" /></td>
+<td align="center"><b>🌀 综述建模引擎</b><br><img src="docs/screenshots/review_chord.png" width="260" /></td>
 <td align="center"><b>🏭 工业工艺实验室</b><br><img src="docs/screenshots/industrial_lab.png" width="260" /></td>
+<td align="center"><b>🤖 AI 智能助手</b><br><img src="docs/screenshots/ai_assistant.png" width="260" /></td>
 </tr>
 <tr>
-<td align="center"><b>🤖 AI 智能助手</b><br><img src="docs/screenshots/ai_assistant.png" width="260" /></td>
 <td align="center"><b>✍️ 写作工坊</b><br><img src="docs/screenshots/writing_studio.png" width="260" /></td>
+<td align="center"><b>📝 写作文献引用</b><br><img src="docs/screenshots/writing_citation.png" width="260" /></td>
 <td align="center"><b>📊 图表拼装</b><br><img src="docs/screenshots/figure_assembly.png" width="260" /></td>
 </tr>
 </table>
