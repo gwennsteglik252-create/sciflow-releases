@@ -23,6 +23,7 @@ import CharacterizationHub from './Characterization/CharacterizationHub';
 import ResearchBrain from './ResearchBrain/ResearchBrain';
 import ResearchFarm from './ResearchFarm/ResearchFarm';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useTranslation } from '../locales/useTranslation';
 
 interface AppRouterProps {
   route: { view: AppView; projectId: string | null; subView: string | null };
@@ -122,6 +123,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
 }) => {
   const [deleteStage, setDeleteStage] = useState(0);
   const [isDragOver, setIsDragOver] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (deleteStage > 0) {
@@ -213,7 +215,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
               className="px-4 h-8 bg-amber-500 text-white rounded-xl text-[9px] font-black uppercase shadow-lg border border-amber-400 whitespace-nowrap flex items-center gap-2"
             >
               <i className="fa-solid fa-circle-exclamation text-[10px]"></i>
-              确认删除该课题库？
+              {t('projects.confirmDelete')}
             </motion.button>
           ) : (
             <motion.button
@@ -225,7 +227,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
               className="px-4 h-8 bg-rose-600 text-white rounded-xl text-[8px] font-black uppercase shadow-lg border border-rose-400 whitespace-nowrap flex items-center gap-2 animate-pulse"
             >
               <i className="fa-solid fa-radiation text-[10px]"></i>
-              操作不可逆，再次确认？
+              {t('projects.irreversible')}
             </motion.button>
           )}
         </AnimatePresence>
@@ -236,9 +238,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         <h3 className={`text-lg font-black leading-tight group-hover:text-indigo-600 line-clamp-2 uppercase mb-3 h-12 ${activeTheme.type === 'light' ? 'text-slate-800' : 'text-white'}`}>{project.title}</h3>
 
         <div className={`mb-2 p-3 rounded-2xl border shadow-inner ${activeTheme.type === 'light' ? 'bg-slate-50 border-slate-100' : 'bg-slate-900/50 border-white/5'}`}>
-          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">当前活跃节点</p>
+          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('projects.activeNode')}</p>
           <p className={`text-[10px] font-black uppercase truncate italic leading-none ${activeMilestone ? (activeTheme.type === 'light' ? 'text-indigo-600' : 'text-indigo-300') : 'text-slate-500'}`}>
-            {activeMilestone ? activeMilestone.title : '无活跃节点'}
+            {activeMilestone ? activeMilestone.title : t('projects.noActive')}
           </p>
         </div>
 
@@ -247,7 +249,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         {activeWeekPlan && (
           <div className={`mt-2 p-2 rounded-xl border ${activeTheme.type === 'light' ? 'bg-indigo-50/50 border-indigo-100' : 'bg-indigo-900/10 border-indigo-500/20'}`}>
             <div className="flex justify-between items-center mb-1">
-              <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">本周任务进度</span>
+              <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">{t('projects.weeklyProgress')}</span>
               <span className="text-[9px] font-black text-indigo-500 italic">{activeWeekPlan.completionRate}%</span>
             </div>
             <div className={`h-1 w-full rounded-full overflow-hidden ${activeTheme.type === 'light' ? 'bg-indigo-100' : 'bg-white/10'}`}>
@@ -258,10 +260,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       </div>
       <div className={`mt-4 shrink-0 pt-3 border-t ${activeTheme.type === 'light' ? 'border-slate-50' : 'border-white/5'}`}>
         <div className="flex justify-between items-end mb-1.5">
-          <span className={`text-[10px] font-black ${activeTheme.type === 'light' ? 'text-slate-800' : 'text-white'}`}>总研究进度: {project.progress}%</span>
+          <span className={`text-[10px] font-black ${activeTheme.type === 'light' ? 'text-slate-800' : 'text-white'}`}>{t('projects.totalProgress')}: {project.progress}%</span>
           <div className="flex gap-2">
-            <span className="text-[8px] font-bold text-slate-400 uppercase">文献: {project.citedLiteratureIds?.length || 0}</span>
-            <span className="text-[8px] font-bold text-slate-400 uppercase">报告: {project.weeklyReports?.length || 0}</span>
+            <span className="text-[8px] font-bold text-slate-400 uppercase">{t('projects.literature')}: {project.citedLiteratureIds?.length || 0}</span>
+            <span className="text-[8px] font-bold text-slate-400 uppercase">{t('projects.reports')}: {project.weeklyReports?.length || 0}</span>
           </div>
         </div>
         <div className={`h-2 w-full rounded-full overflow-hidden shadow-inner ${activeTheme.type === 'light' ? 'bg-slate-100' : 'bg-white/10'}`}>
@@ -277,6 +279,7 @@ const AppRouter: React.FC<AppRouterProps> = ({ route, navigate, openAddProject, 
     projects, resources, activeTasks, setProjects, setResources,
     handleStartTransformation, handleRunWeeklyReportTask, setAiStatus, activeTheme
   } = useProjectContext();
+  const { t } = useTranslation();
 
   const activeProject = projects.find(p => p.id === route.projectId);
 
@@ -323,9 +326,9 @@ const AppRouter: React.FC<AppRouterProps> = ({ route, navigate, openAddProject, 
       case 'projects': return (
         <div className="space-y-4 animate-reveal">
           <header className="flex justify-between items-center px-4">
-            <h2 className={`text-xl font-black uppercase tracking-tighter ${activeTheme.type === 'light' ? 'text-slate-800' : 'text-white'}`}>研究课题中心</h2>
+            <h2 className={`text-xl font-black uppercase tracking-tighter ${activeTheme.type === 'light' ? 'text-slate-800' : 'text-white'}`}>{t('projects.title')}</h2>
             <div className="flex gap-2">
-              <button onClick={openAddProject} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-black transition-all active:scale-95">新建课题库</button>
+              <button onClick={openAddProject} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-black transition-all active:scale-95">{t('projects.newProject')}</button>
             </div>
           </header>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-4">

@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { AppView } from '../../types';
+import { useTranslation } from '../../locales/useTranslation';
 
 export interface ActivityItem {
   user: string;
@@ -27,6 +28,7 @@ const resultConfig: Record<string, { dot: string }> = {
 };
 
 const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities, isLight, navigate }) => {
+  const { t } = useTranslation();
   const handleClick = (activity: ActivityItem) => {
     if (navigate && activity.projectId) {
       navigate('project_detail', activity.projectId, 'logs');
@@ -36,13 +38,13 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities, isLight, naviga
   return (
     <div className={`h-full p-8 rounded-[2.5rem] flex flex-col overflow-hidden border ${isLight ? 'bg-white border-slate-100 shadow-sm' : 'bg-slate-800/80 border-white/5 shadow-xl'}`}>
       <h4 className={`text-xs font-black mb-6 flex items-center gap-3 shrink-0 ${isLight ? 'text-slate-800' : 'text-white'}`}>
-        <i className="fa-solid fa-satellite-dish text-indigo-600 animate-pulse"></i> 科研脉动
+        <i className="fa-solid fa-satellite-dish text-indigo-600 animate-pulse"></i> {t('dashboard.recentActivity')}
       </h4>
       <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar min-h-0">
         {activities.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full opacity-40 py-8">
             <i className="fa-solid fa-satellite-dish text-2xl text-slate-400 mb-2"></i>
-            <p className="text-[9px] text-slate-400 italic font-medium">暂无科研动态</p>
+            <p className="text-[9px] text-slate-400 italic font-medium">{t('common.noData')}</p>
           </div>
         ) : (
           activities.map((activity, i) => {

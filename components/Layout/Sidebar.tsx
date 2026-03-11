@@ -1,6 +1,7 @@
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { AppView } from '../../types';
+import { useTranslation } from '../../locales/useTranslation';
 
 interface SidebarProps {
   activeView: AppView;
@@ -16,6 +17,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = React.memo(({ activeView, navigate, isLightMode, isCollapsed, doeBadge, mechanismBadge, hasProjects, firstProjectId, isVoiceMode, setIsVoiceMode }) => {
+  const { t } = useTranslation();
 
   // ═══ 拖拽弹出状态 ═══
   const [draggingItem, setDraggingItem] = useState<{ id: string; label: string } | null>(null);
@@ -28,26 +30,26 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ activeView, navigate, isLi
 
   const navGroups = [
     [
-      { id: 'dashboard', label: '研究看板', icon: 'fa-house-chimney', color: 'text-blue-400' },
-      { id: 'projects', label: '课题中心', icon: 'fa-vials', color: 'text-indigo-400' },
-      { id: 'team', label: '团队矩阵', icon: 'fa-id-card-clip', color: 'text-emerald-400' }
+      { id: 'dashboard', label: t('sidebar.dashboard'), icon: 'fa-house-chimney', color: 'text-blue-400' },
+      { id: 'projects', label: t('sidebar.projects'), icon: 'fa-vials', color: 'text-indigo-400' },
+      { id: 'team', label: t('sidebar.team'), icon: 'fa-id-card-clip', color: 'text-emerald-400' }
     ],
     [
-      { id: 'research_brain', label: '中心大脑', icon: 'fa-brain', color: 'text-purple-400' },
-      { id: 'literature', label: '情报档案', icon: 'fa-book-atlas', color: 'text-emerald-400' },
-      { id: 'mechanism', label: '机理推演', icon: 'fa-atom', badge: mechanismBadge, color: 'text-amber-400' },
-      { id: 'characterization_hub', label: '实验表征', icon: 'fa-microscope', color: 'text-rose-400' }
+      { id: 'research_brain', label: t('sidebar.researchBrain'), icon: 'fa-brain', color: 'text-purple-400' },
+      { id: 'literature', label: t('sidebar.literature'), icon: 'fa-book-atlas', color: 'text-emerald-400' },
+      { id: 'mechanism', label: t('sidebar.mechanism'), icon: 'fa-atom', badge: mechanismBadge, color: 'text-amber-400' },
+      { id: 'characterization_hub', label: t('sidebar.characterizationHub'), icon: 'fa-microscope', color: 'text-rose-400' }
     ],
     [
-      { id: 'inventory', label: '库存管理', icon: 'fa-box-archive', color: 'text-emerald-500' },
-      { id: 'doe', label: 'DOE 迭代', icon: 'fa-puzzle-piece', badge: doeBadge, color: 'text-amber-400' },
-      { id: 'flowchart', label: '实验路线', icon: 'fa-bezier-curve', color: 'text-cyan-400' },
-      { id: 'data', label: '数据分析', icon: 'fa-chart-line', color: 'text-violet-400' }
+      { id: 'inventory', label: t('sidebar.inventory'), icon: 'fa-box-archive', color: 'text-emerald-500' },
+      { id: 'doe', label: t('sidebar.doe'), icon: 'fa-puzzle-piece', badge: doeBadge, color: 'text-amber-400' },
+      { id: 'flowchart', label: t('sidebar.flowchart'), icon: 'fa-bezier-curve', color: 'text-cyan-400' },
+      { id: 'data', label: t('sidebar.data'), icon: 'fa-chart-line', color: 'text-violet-400' }
     ],
     [
-      { id: 'figure_center', label: '科研绘图', icon: 'fa-palette', color: 'text-orange-400' },
-      { id: 'video_lab', label: '视频工坊', icon: 'fa-film', color: 'text-rose-400' },
-      { id: 'writing', label: '写作工坊', icon: 'fa-pen-nib', color: 'text-rose-400' }
+      { id: 'figure_center', label: t('sidebar.figureCenter'), icon: 'fa-palette', color: 'text-orange-400' },
+      { id: 'video_lab', label: t('sidebar.videoLab'), icon: 'fa-film', color: 'text-rose-400' },
+      { id: 'writing', label: t('sidebar.writing'), icon: 'fa-pen-nib', color: 'text-rose-400' }
     ]
   ];
 
@@ -112,7 +114,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ activeView, navigate, isLi
         opacity:0;transition:opacity 0.3s ease;
       " id="popout-drag-hint">
         <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:18px;"></i>
-        松手弹出独立窗口
+        ${t('sidebar.dragPopoutHint')}
       </div>
     `;
     document.body.appendChild(overlay);
@@ -169,8 +171,8 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ activeView, navigate, isLi
   return (
     <nav ref={navRef} className="flex-1 px-2 lg:px-3 space-y-1 overflow-y-auto custom-scrollbar pt-2">
 
-      {renderNavButton('inception', '战略立项', 'fa-compass', 'text-emerald-400', activeView === 'inception')}
-      {renderNavButton('industry_trends', '行业动态', 'fa-tower-broadcast', 'text-rose-400', activeView === 'industry_trends')}
+      {renderNavButton('inception', t('sidebar.inception'), 'fa-compass', 'text-emerald-400', activeView === 'inception')}
+      {renderNavButton('industry_trends', t('sidebar.industryTrends'), 'fa-tower-broadcast', 'text-rose-400', activeView === 'industry_trends')}
 
       {navGroups.map((group, groupIdx) => (
         <React.Fragment key={groupIdx}>
@@ -195,7 +197,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ activeView, navigate, isLi
         <div className="relative">
           <i className={`fa-solid fa-microphone text-sm w-5 text-center ${isVoiceMode ? 'text-white' : 'text-slate-400'}`}></i>
         </div>
-        {!isCollapsed && <span className={`hidden lg:block truncate font-black ${isVoiceMode ? 'text-white' : isLightMode ? 'text-slate-900' : 'text-white'}`}>湿实验语音伴侣</span>}
+        {!isCollapsed && <span className={`hidden lg:block truncate font-black ${isVoiceMode ? 'text-white' : isLightMode ? 'text-slate-900' : 'text-white'}`}>{t('sidebar.voiceCompanion')}</span>}
       </button>
 
     </nav>

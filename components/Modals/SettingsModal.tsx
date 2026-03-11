@@ -1,7 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useProjectContext } from '../../context/ProjectContext';
 import { AIProvider } from '../../types';
 import { getLicenseState, activateLicense, LicenseState } from '../../services/licenseService';
+import { useTranslation } from '../../locales/useTranslation';
+import ProviderConfigCard, { ProviderConfigState, ConnectionStatus } from './ProviderConfigCard';
+import { PROVIDER_REGISTRY, ModelOption } from '../../config/aiProviders';
 
 interface SettingsModalProps {
   show: boolean;
@@ -9,138 +12,114 @@ interface SettingsModalProps {
   onOpenConfirm: (config: any) => void;
 }
 
-const BASE_URL_PRESETS = [
-  { label: 'OpenAI Official', value: 'https://api.openai.com/v1' },
-  { label: 'DeepSeek API', value: 'https://api.deepseek.com' },
-  { label: 'Moonshot (Kimi)', value: 'https://api.moonshot.cn/v1' },
-  { label: 'Aliyun DashScope (Qwen)', value: 'https://dashscope.aliyuncs.com/compatible-mode/v1' },
-  { label: 'SiliconFlow (硅基流动)', value: 'https://api.siliconflow.cn/v1' },
-  { label: 'OpenRouter (Aggregator)', value: 'https://openrouter.ai/api/v1' },
-];
-
-const MODELS_BY_BASE_URL: Record<string, { label: string; value: string }[]> = {
-  'https://api.openai.com/v1': [
-    { label: 'GPT-5 (Omni)', value: 'gpt-5' },
-    { label: 'GPT-4o (Omni)', value: 'gpt-4o' },
-    { label: 'o2 (Reasoning)', value: 'o2' },
-    { label: 'o3-mini (Reasoning)', value: 'o3-mini' },
-  ],
-  'https://api.deepseek.com': [
-    { label: 'DeepSeek V3', value: 'deepseek-chat' },
-    { label: 'DeepSeek R1 (Reasoner)', value: 'deepseek-reasoner' },
-  ],
-  'https://api.moonshot.cn/v1': [
-    { label: 'Moonshot V1 8k', value: 'moonshot-v1-8k' },
-    { label: 'Moonshot V1 32k', value: 'moonshot-v1-32k' },
-    { label: 'Moonshot V1 128k', value: 'moonshot-v1-128k' },
-  ],
-  'https://dashscope.aliyuncs.com/compatible-mode/v1': [
-    { label: 'Qwen Max (Tongyi)', value: 'qwen-max' },
-    { label: 'Qwen Plus', value: 'qwen-plus' },
-    { label: 'Qwen Turbo', value: 'qwen-turbo' },
-    { label: 'Qwen Long', value: 'qwen-long' },
-  ],
-  'https://api.siliconflow.cn/v1': [
-    { label: 'DeepSeek V3', value: 'deepseek-ai/DeepSeek-V3' },
-    { label: 'DeepSeek R1', value: 'deepseek-ai/DeepSeek-R1' },
-    { label: 'Qwen 2.5 72B', value: 'Qwen/Qwen2.5-72B-Instruct' },
-    { label: 'Qwen 2.5 7B', value: 'Qwen/Qwen2.5-7B-Instruct' },
-  ],
-  'https://openrouter.ai/api/v1': [
-    { label: 'Anthropic: Claude 3.5 Sonnet', value: 'anthropic/claude-3.5-sonnet' },
-    { label: 'Anthropic: Claude 3 Haiku', value: 'anthropic/claude-3-haiku' },
-    { label: 'OpenAI: GPT-4o', value: 'openai/gpt-4o' },
-    { label: 'Meta: Llama 3.1 70b', value: 'meta-llama/llama-3.1-70b-instruct' },
-    { label: 'Google: Gemini Pro 1.5', value: 'google/gemini-pro-1.5' },
-  ]
-};
-
-const GENERIC_MODELS = [
-  { label: 'GPT-4o (Omni)', value: 'gpt-4o' },
-  { label: 'GPT-3.5 Turbo', value: 'gpt-3.5-turbo' },
-  { label: 'DeepSeek V3', value: 'deepseek-chat' },
-  { label: 'Qwen Max', value: 'qwen-max' },
-  { label: 'Claude 3.5 Sonnet', value: 'claude-3-5-sonnet-20240620' },
-  { label: 'Claude 3.5 Haiku', value: 'claude-3-5-haiku-20241022' },
-  { label: 'Claude 3 Opus', value: 'claude-3-opus-20240229' },
-  { label: 'Llama 3 70B', value: 'llama3-70b' },
-];
-
-const ANTHROPIC_MODELS = [
-  { label: 'Claude 4 Opus', value: 'claude-4-opus-20260120' },
-  { label: 'Claude 4 Sonnet', value: 'claude-4-sonnet-20251115' },
-  { label: 'Claude 3.7 Sonnet', value: 'claude-3-7-sonnet-20250219' },
-  { label: 'Claude 3.5 Sonnet', value: 'claude-3-5-sonnet-20240620' },
-];
-
-const GEMINI_MODELS = [
-  { label: 'Gemini 2.5 Flash (推荐)', value: 'gemini-2.5-flash-preview-04-17' },
-  { label: 'Gemini 2.5 Pro', value: 'gemini-2.5-pro-preview-03-25' },
-  { label: 'Gemini 2.0 Flash', value: 'gemini-2.0-flash' },
-  { label: 'Gemini 2.0 Flash Lite', value: 'gemini-2.0-flash-lite' },
-  { label: 'Gemini 2.0 Pro Exp', value: 'gemini-2.0-pro-exp-02-05' },
-  { label: 'Gemini 1.5 Pro', value: 'gemini-1.5-pro' },
-  { label: 'Gemini 1.5 Flash', value: 'gemini-1.5-flash' },
-];
+// 模型列表和 Provider 配置已迁移至 config/aiProviders.ts
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConfirm }) => {
   const { appSettings, setAppSettings } = useProjectContext();
+  const { t } = useTranslation();
   const [localPath, setLocalPath] = useState(appSettings.localLibraryPath);
 
   const [activeProvider, setActiveProvider] = useState<AIProvider>(appSettings.activeModelProvider || 'auto');
   const [routingPreference, setRoutingPreference] = useState<'cost' | 'quality'>(appSettings.autoRoutingPreference || 'cost');
 
-  const [openaiKey, setOpenaiKey] = useState(appSettings.openaiConfig?.apiKey || '');
-  const [openaiBaseUrl, setOpenaiBaseUrl] = useState(appSettings.openaiConfig?.baseUrl || 'https://api.openai.com/v1');
-  const [openaiModel, setOpenaiModel] = useState(appSettings.openaiConfig?.modelName || 'gpt-4o');
+  // ── 结构化的 Provider 配置状态 ──
+  const [providerConfigs, setProviderConfigs] = useState<Record<string, ProviderConfigState>>(() => ({
+    gemini: {
+      apiKey: appSettings.geminiConfig?.apiKey || '',
+      baseUrl: appSettings.geminiConfig?.baseUrl || '',
+      modelName: appSettings.geminiConfig?.modelName || 'gemini-2.0-flash',
+      connectionStatus: 'idle' as ConnectionStatus,
+    },
+    openai: {
+      apiKey: appSettings.openaiConfig?.apiKey || '',
+      baseUrl: appSettings.openaiConfig?.baseUrl || 'https://api.openai.com/v1',
+      modelName: appSettings.openaiConfig?.modelName || 'gpt-4o',
+      connectionStatus: 'idle' as ConnectionStatus,
+    },
+    doubao: {
+      apiKey: appSettings.doubaoConfig?.apiKey || '',
+      baseUrl: appSettings.doubaoConfig?.baseUrl || 'https://ark.cn-beijing.volces.com/api/v3',
+      modelName: appSettings.doubaoConfig?.modelName || '',
+      connectionStatus: 'idle' as ConnectionStatus,
+    },
+    anthropic: {
+      apiKey: appSettings.anthropicConfig?.apiKey || '',
+      baseUrl: appSettings.anthropicConfig?.baseUrl || 'https://api.anthropic.com/v1',
+      modelName: appSettings.anthropicConfig?.modelName || 'claude-3-5-sonnet-20240620',
+      connectionStatus: 'idle' as ConnectionStatus,
+    },
+  }));
 
-  const [anthropicKey, setAnthropicKey] = useState(appSettings.anthropicConfig?.apiKey || '');
-  const [anthropicModel, setAnthropicModel] = useState(appSettings.anthropicConfig?.modelName || 'claude-3-5-sonnet-20240620');
+  const updateProviderConfig = useCallback((providerId: string, patch: Partial<ProviderConfigState>) => {
+    setProviderConfigs(prev => ({
+      ...prev,
+      [providerId]: { ...prev[providerId], ...patch },
+    }));
+  }, []);
 
-  const [doubaoKey, setDoubaoKey] = useState(appSettings.doubaoConfig?.apiKey || '');
-  const [doubaoBaseUrl, setDoubaoBaseUrl] = useState(appSettings.doubaoConfig?.baseUrl || 'https://ark.cn-beijing.volces.com/api/v3');
-  const [doubaoModel, setDoubaoModel] = useState(appSettings.doubaoConfig?.modelName || '');
-
-  const [geminiKey, setGeminiKey] = useState(appSettings.geminiConfig?.apiKey || '');
-  const [geminiBaseUrl, setGeminiBaseUrl] = useState(appSettings.geminiConfig?.baseUrl || '');
-  const [geminiModel, setGeminiModel] = useState(appSettings.geminiConfig?.modelName || 'gemini-2.0-flash');
-
-  const [dynamicModels, setDynamicModels] = useState<Record<string, { label: string; value: string }[]>>({});
+  const [dynamicModels, setDynamicModels] = useState<Record<string, ModelOption[]>>({});
   const [isRefreshing, setIsRefreshing] = useState<Record<string, boolean>>({});
   const [settingsTab, setSettingsTab] = useState<'ai' | 'appearance' | 'research' | 'data' | 'system'>('ai');
 
-  // -- New settings state --
-  const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(appSettings.themeMode || 'light');
-  const [uiScale, setUiScale] = useState(appSettings.uiScale || 100);
-  const [editorFontSize, setEditorFontSize] = useState(appSettings.editorFontSize || 14);
-  const [defaultExportFormat, setDefaultExportFormat] = useState<'SVG' | 'PNG' | 'PDF'>(appSettings.defaultExportFormat || 'PNG');
-  const [defaultExportDPI, setDefaultExportDPI] = useState<300 | 600 | 1200>(appSettings.defaultExportDPI || 300);
-  const [defaultChartFont, setDefaultChartFont] = useState(appSettings.defaultChartFont || 'Arial');
-  const [defaultColorPalette, setDefaultColorPalette] = useState(appSettings.defaultColorPalette || 'Nature');
-  const [proxyEnabled, setProxyEnabled] = useState(appSettings.proxyEnabled || false);
-  const [proxyUrl, setProxyUrl] = useState(appSettings.proxyUrl || '');
-  const [aiRequestTimeout, setAiRequestTimeout] = useState(appSettings.aiRequestTimeout || 60);
-  const [confirmBeforeAISend, setConfirmBeforeAISend] = useState(appSettings.confirmBeforeAISend ?? false);
+  // -- New settings state (each setter also immediately persists to appSettings) --
+  const [themeMode, _setThemeMode] = useState<'light' | 'dark' | 'system'>(appSettings.themeMode || 'light');
+  const setThemeMode = (v: 'light' | 'dark' | 'system') => { _setThemeMode(v); setAppSettings({ themeMode: v }); };
+  const [uiScale, _setUiScale] = useState(appSettings.uiScale || 100);
+  const setUiScale = (v: number) => { _setUiScale(v as any); setAppSettings({ uiScale: v as any }); };
+  const [editorFontSize, _setEditorFontSize] = useState(appSettings.editorFontSize || 14);
+  const setEditorFontSize = (v: number) => { _setEditorFontSize(v); setAppSettings({ editorFontSize: v }); };
+  const [defaultExportFormat, _setDefaultExportFormat] = useState<'SVG' | 'PNG' | 'PDF'>(appSettings.defaultExportFormat || 'PNG');
+  const setDefaultExportFormat = (v: 'SVG' | 'PNG' | 'PDF') => { _setDefaultExportFormat(v); setAppSettings({ defaultExportFormat: v }); };
+  const [defaultExportDPI, _setDefaultExportDPI] = useState<300 | 600 | 1200>(appSettings.defaultExportDPI || 300);
+  const setDefaultExportDPI = (v: 300 | 600 | 1200) => { _setDefaultExportDPI(v); setAppSettings({ defaultExportDPI: v }); };
+  const [defaultChartFont, _setDefaultChartFont] = useState(appSettings.defaultChartFont || 'Arial');
+  const setDefaultChartFont = (v: string) => { _setDefaultChartFont(v); setAppSettings({ defaultChartFont: v }); };
+  const [defaultColorPalette, _setDefaultColorPalette] = useState(appSettings.defaultColorPalette || 'Nature');
+  const setDefaultColorPalette = (v: string) => { _setDefaultColorPalette(v); setAppSettings({ defaultColorPalette: v }); };
+  const [proxyEnabled, _setProxyEnabled] = useState(appSettings.proxyEnabled || false);
+  const setProxyEnabled = (v: boolean) => { _setProxyEnabled(v); setAppSettings({ proxyEnabled: v }); };
+  const [proxyUrl, _setProxyUrl] = useState(appSettings.proxyUrl || '');
+  const setProxyUrl = (v: string) => { _setProxyUrl(v); setAppSettings({ proxyUrl: v }); };
+  const [aiRequestTimeout, _setAiRequestTimeout] = useState(appSettings.aiRequestTimeout || 60);
+  const setAiRequestTimeout = (v: number) => { _setAiRequestTimeout(v); setAppSettings({ aiRequestTimeout: v }); };
+  const [confirmBeforeAISend, _setConfirmBeforeAISend] = useState(appSettings.confirmBeforeAISend ?? false);
+  const setConfirmBeforeAISend = (v: boolean) => { _setConfirmBeforeAISend(v); setAppSettings({ confirmBeforeAISend: v }); };
 
   // -- Round 2 settings state --
-  const [uiLanguage, setUiLanguage] = useState<'zh' | 'en'>(appSettings.uiLanguage || 'zh');
-  const [dateFormat, setDateFormat] = useState(appSettings.dateFormat || 'YYYY-MM-DD');
-  const [aiOutputLanguage, setAiOutputLanguage] = useState<'zh' | 'en' | 'auto'>(appSettings.aiOutputLanguage || 'auto');
-  const [aiPolishIntensity, setAiPolishIntensity] = useState<'light' | 'moderate' | 'deep'>(appSettings.aiPolishIntensity || 'moderate');
-  const [defaultWritingLanguage, setDefaultWritingLanguage] = useState<'zh' | 'en'>(appSettings.defaultWritingLanguage || 'zh');
-  const [paragraphIndent, setParagraphIndent] = useState<'indent' | 'no-indent'>(appSettings.paragraphIndent || 'indent');
-  const [defaultXrdRadiation, setDefaultXrdRadiation] = useState(appSettings.defaultXrdRadiation || 'Cu Kα');
-  const [defaultXpsReference, setDefaultXpsReference] = useState(appSettings.defaultXpsReference || 'C 1s 284.8 eV');
-  const [defaultSemVoltage, setDefaultSemVoltage] = useState(appSettings.defaultSemVoltage || 15);
-  const [defaultTemVoltage, setDefaultTemVoltage] = useState(appSettings.defaultTemVoltage || 200);
+  const [uiLanguage, _setUiLanguage] = useState<'zh' | 'en'>(appSettings.uiLanguage || 'zh');
+  const setUiLanguage = (v: 'zh' | 'en') => { _setUiLanguage(v); setAppSettings({ uiLanguage: v }); };
+  const [dateFormat, _setDateFormat] = useState(appSettings.dateFormat || 'YYYY-MM-DD');
+  const setDateFormat = (v: string) => { _setDateFormat(v as any); setAppSettings({ dateFormat: v as any }); };
+  const [aiOutputLanguage, _setAiOutputLanguage] = useState<'zh' | 'en' | 'auto'>(appSettings.aiOutputLanguage || 'auto');
+  const setAiOutputLanguage = (v: 'zh' | 'en' | 'auto') => { _setAiOutputLanguage(v); setAppSettings({ aiOutputLanguage: v }); };
+  const [aiPolishIntensity, _setAiPolishIntensity] = useState<'light' | 'moderate' | 'deep'>(appSettings.aiPolishIntensity || 'moderate');
+  const setAiPolishIntensity = (v: 'light' | 'moderate' | 'deep') => { _setAiPolishIntensity(v); setAppSettings({ aiPolishIntensity: v }); };
+  const [defaultWritingLanguage, _setDefaultWritingLanguage] = useState<'zh' | 'en'>(appSettings.defaultWritingLanguage || 'zh');
+  const setDefaultWritingLanguage = (v: 'zh' | 'en') => { _setDefaultWritingLanguage(v); setAppSettings({ defaultWritingLanguage: v }); };
+  const [paragraphIndent, _setParagraphIndent] = useState<'indent' | 'no-indent'>(appSettings.paragraphIndent || 'indent');
+  const setParagraphIndent = (v: 'indent' | 'no-indent') => { _setParagraphIndent(v); setAppSettings({ paragraphIndent: v }); };
+  const [defaultXrdRadiation, _setDefaultXrdRadiation] = useState(appSettings.defaultXrdRadiation || 'Cu Kα');
+  const setDefaultXrdRadiation = (v: string) => { _setDefaultXrdRadiation(v as any); setAppSettings({ defaultXrdRadiation: v as any }); };
+  const [defaultXpsReference, _setDefaultXpsReference] = useState(appSettings.defaultXpsReference || 'C 1s 284.8 eV');
+  const setDefaultXpsReference = (v: string) => { _setDefaultXpsReference(v); setAppSettings({ defaultXpsReference: v }); };
+  const [defaultSemVoltage, _setDefaultSemVoltage] = useState(appSettings.defaultSemVoltage || 15);
+  const setDefaultSemVoltage = (v: number) => { _setDefaultSemVoltage(v); setAppSettings({ defaultSemVoltage: v }); };
+  const [defaultTemVoltage, _setDefaultTemVoltage] = useState(appSettings.defaultTemVoltage || 200);
+  const setDefaultTemVoltage = (v: number) => { _setDefaultTemVoltage(v); setAppSettings({ defaultTemVoltage: v }); };
 
   // -- Round 3 settings state --
-  const [chatHistoryRetentionDays, setChatHistoryRetentionDays] = useState(appSettings.chatHistoryRetentionDays || 30);
-  const [autoClearChat, setAutoClearChat] = useState(appSettings.autoClearChat ?? false);
-  const [restoreWindowPosition, setRestoreWindowPosition] = useState(appSettings.restoreWindowPosition ?? true);
-  const [rememberLastPage, setRememberLastPage] = useState(appSettings.rememberLastPage ?? true);
-  const [gpuAcceleration, setGpuAcceleration] = useState(appSettings.gpuAcceleration ?? true);
-  const [cacheMaxSizeMB, setCacheMaxSizeMB] = useState(appSettings.cacheMaxSizeMB || 512);
+  const [chatHistoryRetentionDays, _setChatHistoryRetentionDays] = useState(appSettings.chatHistoryRetentionDays || 30);
+  const setChatHistoryRetentionDays = (v: number) => { _setChatHistoryRetentionDays(v); setAppSettings({ chatHistoryRetentionDays: v }); };
+  const [autoClearChat, _setAutoClearChat] = useState(appSettings.autoClearChat ?? false);
+  const setAutoClearChat = (v: boolean) => { _setAutoClearChat(v); setAppSettings({ autoClearChat: v }); };
+  const [restoreWindowPosition, _setRestoreWindowPosition] = useState(appSettings.restoreWindowPosition ?? true);
+  const setRestoreWindowPosition = (v: boolean) => { _setRestoreWindowPosition(v); setAppSettings({ restoreWindowPosition: v }); };
+  const [rememberLastPage, _setRememberLastPage] = useState(appSettings.rememberLastPage ?? true);
+  const setRememberLastPage = (v: boolean) => { _setRememberLastPage(v); setAppSettings({ rememberLastPage: v }); };
+  const [gpuAcceleration, _setGpuAcceleration] = useState(appSettings.gpuAcceleration ?? true);
+  const setGpuAcceleration = (v: boolean) => { _setGpuAcceleration(v); setAppSettings({ gpuAcceleration: v }); };
+  const [cacheMaxSizeMB, _setCacheMaxSizeMB] = useState(appSettings.cacheMaxSizeMB || 512);
+  const setCacheMaxSizeMB = (v: number) => { _setCacheMaxSizeMB(v); setAppSettings({ cacheMaxSizeMB: v }); };
 
   // -- 自动更新状态 --
   const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'>('idle');
@@ -271,25 +250,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
     }
   }, []);
 
-  const currentOpenAIModels = useMemo(() => {
-    const presetModels = MODELS_BY_BASE_URL[openaiBaseUrl] || GENERIC_MODELS;
-    const dynamic = dynamicModels[openaiBaseUrl] || [];
-    // Merge and deduplicate
-    const combined = [...presetModels, ...dynamic];
-    const seen = new Set();
-    return combined.filter(m => {
-      const duplicate = seen.has(m.value);
-      seen.add(m.value);
-      return !duplicate;
-    });
-  }, [openaiBaseUrl, dynamicModels]);
 
 
   if (!show) return null;
-
-  const isOpenAiCustom = !currentOpenAIModels.some(m => m.value === openaiModel);
-  const isAnthropicCustom = !ANTHROPIC_MODELS.some(m => m.value === anthropicModel);
-  const isOpenAiUrlCustom = !BASE_URL_PRESETS.some(u => u.value === openaiBaseUrl);
 
   const handleClearCache = () => {
     onOpenConfirm({
@@ -304,14 +267,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
   };
 
   const handleSave = () => {
+    const gc = providerConfigs.gemini;
+    const oc = providerConfigs.openai;
+    const dc = providerConfigs.doubao;
+    const ac = providerConfigs.anthropic;
     setAppSettings({
       localLibraryPath: localPath,
       activeModelProvider: activeProvider,
       autoRoutingPreference: routingPreference,
-      openaiConfig: { apiKey: openaiKey, baseUrl: openaiBaseUrl, modelName: openaiModel },
-      anthropicConfig: { apiKey: anthropicKey, modelName: anthropicModel },
-      doubaoConfig: { apiKey: doubaoKey, baseUrl: doubaoBaseUrl, modelName: doubaoModel },
-      geminiConfig: { apiKey: geminiKey, baseUrl: geminiBaseUrl, modelName: geminiModel },
+      openaiConfig: { apiKey: oc.apiKey, baseUrl: oc.baseUrl, modelName: oc.modelName },
+      anthropicConfig: { apiKey: ac.apiKey, modelName: ac.modelName },
+      doubaoConfig: { apiKey: dc.apiKey, baseUrl: dc.baseUrl, modelName: dc.modelName },
+      geminiConfig: { apiKey: gc.apiKey, baseUrl: gc.baseUrl, modelName: gc.modelName },
       themeMode,
       uiScale: uiScale as any,
       editorFontSize,
@@ -375,30 +342,40 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
     input.click();
   };
 
-  const handleRefreshModels = async (baseUrl: string, apiKey: string, providerKey: string) => {
-    if (!baseUrl || !apiKey) {
+  const handleRefreshModelsForProvider = async (providerId: string) => {
+    const cfg = providerConfigs[providerId];
+    if (!cfg?.baseUrl || !cfg?.apiKey) {
       alert("请先输入有效的 API 地址和 API Key。");
       return;
     }
 
-    setIsRefreshing(prev => ({ ...prev, [providerKey]: true }));
+    setIsRefreshing(prev => ({ ...prev, [providerId]: true }));
     try {
-      const response = await fetch(`${baseUrl.replace(/\/$/, '')}/models`, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const url = `${cfg.baseUrl.replace(/\/$/, '')}/models`;
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${cfg.apiKey}`,
+        'Content-Type': 'application/json'
+      };
 
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      let responseData: any;
 
-      const data = await response.json();
-      const models = data.data
+      // 优先使用 Electron IPC 桥绕过 CORS
+      if (window.electron?.httpRequest) {
+        const resp = await window.electron.httpRequest({ url, method: 'GET', headers });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        responseData = JSON.parse(resp.body);
+      } else {
+        const response = await fetch(url, { headers });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        responseData = await response.json();
+      }
+
+      const models = responseData.data
         .filter((m: any) => m.id)
         .map((m: any) => ({ label: m.id, value: m.id }));
 
       if (models.length > 0) {
-        setDynamicModels(prev => ({ ...prev, [baseUrl]: models }));
+        setDynamicModels(prev => ({ ...prev, [cfg.baseUrl]: models }));
         alert(`成功获取 ${models.length} 个模型！`);
       } else {
         alert("未发现可用模型。");
@@ -407,11 +384,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
       console.error("Refresh models failed:", err);
       alert("模型列表更新失败，请检查网络或 API Key。");
     } finally {
-      setIsRefreshing(prev => ({ ...prev, [providerKey]: false }));
+      setIsRefreshing(prev => ({ ...prev, [providerId]: false }));
     }
   };
 
-  const isGeminiCustom = !GEMINI_MODELS.some(m => m.value === geminiModel);
+  const handleApiKeyCacheUpdate = (baseUrl: string, key: string) => {
+    setApiKeyCache(prev => {
+      const next = { ...prev, [baseUrl]: key };
+      localStorage.setItem('sciflow_api_key_cache', JSON.stringify(next));
+      return next;
+    });
+  };
 
   const handleSelectApiKey = async () => {
 
@@ -430,16 +413,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
         </button>
 
         <header className="mb-6 shrink-0">
-          <h3 className="text-2xl font-black text-slate-800 uppercase italic border-l-8 border-indigo-600 pl-6 tracking-tighter">系统偏好设置</h3>
+          <h3 className="text-2xl font-black text-slate-800 uppercase italic border-l-8 border-indigo-600 pl-6 tracking-tighter">{t('settings.title')}</h3>
         </header>
 
         <div className="flex bg-slate-100 p-1 rounded-2xl mb-6 shrink-0 overflow-x-auto no-scrollbar">
           {([
-            { id: 'ai' as const, label: 'AI 引擎', icon: 'fa-microchip' },
-            { id: 'appearance' as const, label: '外观语言', icon: 'fa-palette' },
-            { id: 'research' as const, label: '科研写作', icon: 'fa-flask-vial' },
-            { id: 'data' as const, label: '数据图表', icon: 'fa-chart-pie' },
-            { id: 'system' as const, label: '系统管理', icon: 'fa-gear' },
+            { id: 'ai' as const, label: t('settings.tabs.ai'), icon: 'fa-microchip' },
+            { id: 'appearance' as const, label: t('settings.tabs.appearance'), icon: 'fa-palette' },
+            { id: 'research' as const, label: t('settings.tabs.research'), icon: 'fa-flask-vial' },
+            { id: 'data' as const, label: t('settings.tabs.data'), icon: 'fa-chart-pie' },
+            { id: 'system' as const, label: t('settings.tabs.system'), icon: 'fa-gear' },
           ]).map(tab => (
             <button
               key={tab.id}
@@ -458,17 +441,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
         <div className="flex-1 overflow-y-auto custom-scrollbar pr-4 space-y-8 pb-6">
 
           {settingsTab === 'ai' && (<>
-            {/* Hybrid AI Engine Panel */}
+            {/* ── 多模型混合引擎 (Hybrid AI Engine) ── */}
             <section className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                <i className="fa-solid fa-microchip text-violet-500"></i> 多模型混合引擎 (HYBRID AI ENGINE)
+                <i className="fa-solid fa-microchip text-violet-500"></i> {t('settings.ai.hybridEngine')} (HYBRID AI ENGINE)
               </h4>
-              <div className="bg-violet-50/50 p-6 rounded-[2rem] border border-violet-100 space-y-5">
+              <div className="bg-violet-50/50 p-5 rounded-[2rem] border border-violet-100 space-y-4">
+                {/* ── 引擎选择栏 ── */}
                 <div>
                   <div className="flex justify-between items-center mb-3">
-                    <p className="text-[11px] font-black text-slate-800 uppercase">当前首选推理引擎</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase">{t('settings.ai.preferredEngine')}</p>
                     {activeProvider === 'auto' && (
-                      <span className="text-[8px] font-black bg-indigo-600 text-white px-2 py-0.5 rounded-full animate-pulse">SMART ROUTING ACTIVE</span>
+                      <span className="text-[8px] font-black bg-indigo-600 text-white px-2 py-0.5 rounded-full animate-pulse">{t('settings.ai.routingActive')}</span>
                     )}
                   </div>
                   <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm overflow-x-auto no-scrollbar">
@@ -478,244 +462,63 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                         onClick={() => setActiveProvider(provider)}
                         className={`flex-1 py-2 px-3 rounded-lg text-[10px] font-black uppercase transition-all whitespace-nowrap ${activeProvider === provider ? 'bg-violet-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                       >
-                        {provider === 'auto' ? '智能自动' : provider === 'gemini' ? 'Gemini' : provider === 'openai' ? 'OpenAI' : provider === 'doubao' ? 'Doubao' : 'Anthropic'}
+                        {provider === 'auto' ? t('settings.ai.smartRouting') : provider === 'gemini' ? 'Gemini' : provider === 'openai' ? 'OpenAI' : provider === 'doubao' ? 'Doubao' : 'Anthropic'}
                       </button>
                     ))}
                   </div>
                 </div>
 
+                {/* ── 智能路由策略面板 ── */}
                 {activeProvider === 'auto' && (
                   <div className="animate-reveal space-y-4 bg-indigo-900 text-white p-6 rounded-2xl border border-indigo-400 shadow-xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-10"><i className="fa-solid fa-compass text-6xl"></i></div>
-                    <h5 className="text-[10px] font-black uppercase tracking-widest text-indigo-300 mb-2">智能调度逻辑说明 (ORCHESTRATION)</h5>
-                    <p className="text-[11px] font-medium leading-relaxed italic opacity-90">系统将根据已保存的有效 Key，自动分析任务内容。视觉任务优先分配给 Gemini，简单润色分配给 DeepSeek/豆包以降低成本，复杂推演则分配给顶级旗舰模型。</p>
+                    <h5 className="text-[10px] font-black uppercase tracking-widest text-indigo-300 mb-2">{t('settings.ai.orchestration')} (ORCHESTRATION)</h5>
+                    <p className="text-[11px] font-medium leading-relaxed italic opacity-90">{t('settings.ai.orchestrationDesc')}</p>
                     <div className="pt-4 border-t border-white/10 mt-2">
-                      <p className="text-[9px] font-black uppercase mb-3">调度优先级偏好</p>
+                      <p className="text-[9px] font-black uppercase mb-3">{t('settings.ai.routingPreference')}</p>
                       <div className="flex bg-white/10 p-1 rounded-xl">
-                        <button onClick={() => setRoutingPreference('cost')} className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${routingPreference === 'cost' ? 'bg-white text-indigo-900 shadow-md' : 'text-indigo-200 opacity-60'}`}>成本优先 (Economy)</button>
-                        <button onClick={() => setRoutingPreference('quality')} className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${routingPreference === 'quality' ? 'bg-white text-indigo-900 shadow-md' : 'text-indigo-200 opacity-60'}`}>质量优先 (Intelligence)</button>
+                        <button onClick={() => setRoutingPreference('cost')} className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${routingPreference === 'cost' ? 'bg-white text-indigo-900 shadow-md' : 'text-indigo-200 opacity-60'}`}>{t('settings.ai.costFirst')}</button>
+                        <button onClick={() => setRoutingPreference('quality')} className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${routingPreference === 'quality' ? 'bg-white text-indigo-900 shadow-md' : 'text-indigo-200 opacity-60'}`}>{t('settings.ai.qualityFirst')}</button>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {(activeProvider === 'gemini' || activeProvider === 'auto') && (
-                  <div className={`animate-reveal space-y-4 bg-white p-5 rounded-2xl border ${activeProvider === 'auto' ? 'border-dashed border-slate-200' : 'border-violet-100'}`}>
-                    <div className="flex justify-between items-center">
-                      <label className="text-[9px] font-black text-slate-400 uppercase px-1">Google Gemini API Config</label>
-                      <div className="flex items-center gap-1.5">
-                        <span className={`w-1.5 h-1.5 rounded-full ${window.aistudio ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
-                        <span className={`text-[7px] font-black uppercase ${window.aistudio ? 'text-emerald-600' : 'text-amber-600'}`}>{window.aistudio ? 'Synchronized from System' : 'Local Configuration'}</span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <div className="flex-1">
-                        <input
-                          type="password"
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono outline-none focus:border-violet-400"
-                          value={geminiKey}
-                          onChange={e => setGeminiKey(e.target.value)}
-                          placeholder="AIzaSy..."
-                        />
-                      </div>
-                      {window.aistudio && (
-                        <button
-                          onClick={handleSelectApiKey}
-                          className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase hover:bg-black transition-all whitespace-nowrap shadow-md"
-                        >
-                          系统授权
-                        </button>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-[9px] font-black text-slate-400 uppercase mb-1.5 mt-2">Model Name</label>
-                      <div className="relative">
-                        <select
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-violet-400 appearance-none cursor-pointer"
-                          value={isGeminiCustom ? 'custom' : geminiModel}
-                          onChange={(e) => {
-                            if (e.target.value === 'custom') setGeminiModel('');
-                            else setGeminiModel(e.target.value);
-                          }}
-                        >
-                          {GEMINI_MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-                          <option value="custom">自定义模型 (Custom)</option>
-                        </select>
-                        <i className="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
-                      </div>
-                      {isGeminiCustom && (
-                        <input
-                          className="mt-2 w-full bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2 text-xs font-mono outline-none focus:border-violet-400 text-indigo-700"
-                          value={geminiModel}
-                          onChange={e => setGeminiModel(e.target.value)}
-                          placeholder="输入模型名称 (如 gemini-2.0-flash-exp)..."
-                        />
-                      )}
-                    </div>
-                    <p className="text-[8px] text-slate-400 mt-1 italic px-1">
-                      <i className="fa-solid fa-circle-info mr-1 text-indigo-500"></i>
-                      手动填入即可覆盖系统默认的 API Key 及模型设置。此设定会保存在本地单独的缓存中。
-                    </p>
-                    {/* Gemini 代理 Base URL（可选） */}
-                    <div>
-                      <label className="block text-[9px] font-black text-slate-400 uppercase mb-1.5 mt-2">Gemini 代理 Base URL <span className="text-slate-300 normal-case">(可选，留空则直连)</span></label>
-                      <input
-                        type="text"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono outline-none focus:border-violet-400 text-indigo-700"
-                        value={geminiBaseUrl}
-                        onChange={e => setGeminiBaseUrl(e.target.value)}
-                        placeholder="https://your-proxy.com/gemini"
+                {/* ── Provider 配置卡片 (Accordion) ── */}
+                <div className="space-y-2">
+                  {PROVIDER_REGISTRY
+                    .filter(p => activeProvider === 'auto' || activeProvider === p.id)
+                    .map(providerDef => (
+                      <ProviderConfigCard
+                        key={providerDef.id}
+                        provider={providerDef}
+                        config={providerConfigs[providerDef.id]}
+                        onConfigChange={(patch) => updateProviderConfig(providerDef.id, patch)}
+                        isActive={activeProvider === providerDef.id}
+                        isAutoMode={activeProvider === 'auto'}
+                        defaultExpanded={activeProvider !== 'auto'}
+                        dynamicModels={dynamicModels[providerConfigs[providerDef.id]?.baseUrl] || []}
+                        isRefreshing={isRefreshing[providerDef.id]}
+                        onRefreshModels={providerDef.supportsRefreshModels ? () => handleRefreshModelsForProvider(providerDef.id) : undefined}
+                        apiKeyCache={apiKeyCache}
+                        onApiKeyCacheUpdate={handleApiKeyCacheUpdate}
+                        isAiStudioAvailable={!!window.aistudio}
+                        onAiStudioSync={providerDef.isAiStudioSyncable ? handleSelectApiKey : undefined}
                       />
-                    </div>
-                  </div>
-                )}
-
-                {(activeProvider === 'openai' || activeProvider === 'auto') && (
-                  <div className={`animate-reveal space-y-4 bg-white p-5 rounded-2xl border ${activeProvider === 'auto' ? 'border-dashed border-slate-200' : 'border-violet-100'}`}>
-                    <div>
-                      <label className="block text-[9px] font-black text-slate-400 uppercase mb-1.5">OpenAI/DeepSeek Base URL</label>
-                      <div className="relative">
-                        <select
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-700 outline-none focus:border-violet-400 appearance-none cursor-pointer"
-                          value={isOpenAiUrlCustom ? 'custom' : openaiBaseUrl}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val === 'custom') {
-                              setOpenaiBaseUrl('');
-                            } else {
-                              setOpenaiBaseUrl(val);
-                              const defaults = MODELS_BY_BASE_URL[val];
-                              if (defaults && defaults.length > 0) {
-                                setOpenaiModel(defaults[0].value);
-                              }
-                              if (apiKeyCache[val]) setOpenaiKey(apiKeyCache[val]);
-                            }
-                          }}
-                        >
-                          {BASE_URL_PRESETS.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
-                          <option value="custom">自定义 URL (Custom)</option>
-                        </select>
-                        <i className="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
-                      </div>
-                      {isOpenAiUrlCustom && (
-                        <input
-                          className="mt-2 w-full bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2 text-xs font-mono outline-none focus:border-violet-400 text-indigo-700"
-                          value={openaiBaseUrl}
-                          onChange={e => setOpenaiBaseUrl(e.target.value)}
-                          placeholder="输入 API 地址..."
-                        />
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-[9px] font-black text-slate-400 uppercase mb-1.5">OpenAI/DeepSeek API Key</label>
-                      <input
-                        type="password"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono outline-none focus:border-violet-400"
-                        value={openaiKey}
-                        onChange={e => {
-                          const val = e.target.value;
-                          setOpenaiKey(val);
-                          if (openaiBaseUrl) {
-                            setApiKeyCache(prev => {
-                              const next = { ...prev, [openaiBaseUrl]: val };
-                              localStorage.setItem('sciflow_api_key_cache', JSON.stringify(next));
-                              return next;
-                            });
-                          }
-                        }}
-                        placeholder="sk-..."
-                      />
-                    </div>
-                    <div>
-                      <div className="flex justify-between items-center mb-1.5">
-                        <label className="block text-[9px] font-black text-slate-400 uppercase">Model Name</label>
-                        <button
-                          onClick={() => handleRefreshModels(openaiBaseUrl, openaiKey, 'openai')}
-                          disabled={isRefreshing['openai']}
-                          className="text-[8px] font-black text-violet-600 uppercase hover:text-black transition-all flex items-center gap-1"
-                        >
-                          <i className={`fa-solid fa-arrows-rotate ${isRefreshing['openai'] ? 'animate-spin' : ''}`}></i>
-                          {isRefreshing['openai'] ? 'Updating...' : 'Refresh List'}
-                        </button>
-                      </div>
-                      <div className="relative">
-                        <select
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-violet-400 appearance-none cursor-pointer"
-                          value={isOpenAiCustom ? 'custom' : openaiModel}
-                          onChange={(e) => {
-                            if (e.target.value === 'custom') setOpenaiModel('');
-                            else setOpenaiModel(e.target.value);
-                          }}
-                        >
-                          {currentOpenAIModels.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-                          <option value="custom">自定义模型 (Custom)</option>
-                        </select>
-                        <i className="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
-                      </div>
-                      {isOpenAiCustom && (
-                        <input
-                          className="mt-2 w-full bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2 text-xs font-mono outline-none focus:border-violet-400 text-indigo-700"
-                          value={openaiModel}
-                          onChange={e => setOpenaiModel(e.target.value)}
-                          placeholder="输入模型名称..."
-                        />
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {(activeProvider === 'doubao' || activeProvider === 'auto') && (
-                  <div className={`animate-reveal space-y-4 bg-white p-5 rounded-2xl border ${activeProvider === 'auto' ? 'border-dashed border-slate-200' : 'border-violet-100'}`}>
-                    <div>
-                      <label className="block text-[9px] font-black text-slate-400 uppercase mb-1.5">Doubao API Key</label>
-                      <input type="password" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono outline-none focus:border-violet-400" value={doubaoKey} onChange={e => setDoubaoKey(e.target.value)} placeholder="Ark API Key..." />
-                    </div>
-                    <div>
-                      <label className="block text-[9px] font-black text-slate-400 uppercase mb-1.5">Doubao Endpoint ID</label>
-                      <input className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono outline-none focus:border-violet-400 font-bold text-indigo-700" value={doubaoModel} onChange={e => setDoubaoModel(e.target.value)} placeholder="ep-2024..." />
-                    </div>
-                  </div>
-                )}
-
-                {(activeProvider === 'anthropic' || activeProvider === 'auto') && (
-                  <div className={`animate-reveal space-y-4 bg-white p-5 rounded-2xl border ${activeProvider === 'auto' ? 'border-dashed border-slate-200' : 'border-violet-100'}`}>
-                    <div>
-                      <label className="block text-[9px] font-black text-slate-400 uppercase mb-1.5">Anthropic API Key</label>
-                      <input type="password" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono outline-none focus:border-violet-400" value={anthropicKey} onChange={e => setAnthropicKey(e.target.value)} placeholder="sk-ant-..." />
-                    </div>
-                    <div>
-                      <label className="block text-[9px] font-black text-slate-400 uppercase mb-1.5">Model Name</label>
-                      <div className="relative">
-                        <select
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-violet-400 appearance-none cursor-pointer"
-                          value={isAnthropicCustom ? 'custom' : anthropicModel}
-                          onChange={(e) => {
-                            if (e.target.value === 'custom') setAnthropicModel('');
-                            else setAnthropicModel(e.target.value);
-                          }}
-                        >
-                          {ANTHROPIC_MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-                          <option value="custom">自定义模型 (Custom)</option>
-                        </select>
-                        <i className="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
-                      </div>
-                      {isAnthropicCustom && (
-                        <input className="mt-2 w-full bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2 text-xs font-mono outline-none focus:border-violet-400 text-indigo-700" value={anthropicModel} onChange={e => setAnthropicModel(e.target.value)} placeholder="输入模型名称..." />
-                      )}
-                    </div>
-                  </div>
-                )}
+                    ))
+                  }
+                </div>
               </div>
             </section>
 
             {/* AI 配置面板 */}
             <section className="space-y-4">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">AI 自动化策略 (AUTOMATION)</h4>
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">{t('settings.ai.automationStrategy')} (AUTOMATION)</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-slate-50 p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between hover:border-emerald-200 transition-all">
                   <div className="min-w-0 pr-4">
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">自动诊断异常</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase">Auto-Diagnose Lab Anomalies</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.ai.autoDiagnose')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.ai.autoDiagnoseDesc')}</p>
                   </div>
                   <button
                     onClick={() => setAppSettings({ aiAutoDiagnose: !appSettings.aiAutoDiagnose })}
@@ -726,8 +529,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                 </div>
                 <div className="bg-slate-50 p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between hover:border-emerald-200 transition-all">
                   <div className="min-w-0 pr-4">
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">实时学术润色</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase">Real-time Polish Assistant</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.ai.realtimePolish')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.ai.realtimePolishDesc')}</p>
                   </div>
                   <button
                     onClick={() => setAppSettings({ aiRealtimePolish: !appSettings.aiRealtimePolish })}
@@ -744,12 +547,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
             {/* Scientific Standards */}
             <section className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                <i className="fa-solid fa-medal text-amber-500"></i> 科研标准与排版 (SCIENTIFIC STANDARDS)
+                <i className="fa-solid fa-medal text-amber-500"></i> {t('settings.research.scientificStandards')} (SCIENTIFIC STANDARDS)
               </h4>
               <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">默认文献引用格式</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.research.defaultCitation')}</p>
                     <p className="text-[8px] text-slate-400 font-bold uppercase">Global Citation Style</p>
                   </div>
                   <div className="relative group min-w-[160px]">
@@ -772,7 +575,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">全局 LaTeX 渲染风格</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.research.latexStyle')}</p>
                     <p className="text-[8px] text-slate-400 font-bold uppercase">Formula Font Family</p>
                   </div>
                   <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
@@ -798,7 +601,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
             {/* License Status */}
             <section className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                <i className="fa-solid fa-shield-halved text-emerald-500"></i> 软件授权 (LICENSE)
+                <i className="fa-solid fa-shield-halved text-emerald-500"></i> {t('settings.system.license')} (LICENSE)
               </h4>
               <div className={`p-6 rounded-[2rem] border space-y-4 ${licenseState?.status === 'activated'
                 ? 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-100'
@@ -823,14 +626,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                     </div>
                     <div>
                       <p className="text-lg font-black text-slate-800 tracking-tight">
-                        {licenseState?.status === 'activated' ? '已激活' : licenseState?.status === 'trial' ? '试用中' : '已过期'}
+                        {licenseState?.status === 'activated' ? t('settings.system.activated') : licenseState?.status === 'trial' ? t('settings.system.trial') : t('settings.system.expired')}
                       </p>
                       <p className="text-[9px] font-bold text-slate-500 uppercase">
                         {licenseState?.status === 'activated'
-                          ? `永久授权 · 激活于 ${licenseState.activatedAt ? new Date(licenseState.activatedAt).toLocaleDateString('zh-CN') : '—'}`
+                          ? `${t('settings.system.permanentLicense')} · ${t('settings.system.activatedAt')} ${licenseState.activatedAt ? new Date(licenseState.activatedAt).toLocaleDateString() : '—'}`
                           : licenseState?.status === 'trial'
-                            ? `剩余 ${licenseState.trialDaysRemaining} 天 · 14天免费试用`
-                            : '请输入激活码以继续使用'
+                            ? t('settings.system.trialDaysRemaining', { days: licenseState.trialDaysRemaining || 0 })
+                            : t('settings.system.enterActivationCode')
                         }
                       </p>
                     </div>
@@ -842,7 +645,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
 
                 {licenseState?.status !== 'activated' && (
                   <div className="bg-white/60 rounded-xl p-4 space-y-3">
-                    <label className="text-[9px] font-black text-slate-400 uppercase block">输入激活码</label>
+                    <label className="text-[9px] font-black text-slate-400 uppercase block">{t('settings.system.enterActivationCode')}</label>
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -857,7 +660,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                         disabled={licenseLoading || !licenseCode.trim()}
                         className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-indigo-700 disabled:opacity-40 transition-all active:scale-95 shadow-md whitespace-nowrap"
                       >
-                        {licenseLoading ? <i className="fa-solid fa-spinner fa-spin" /> : '激活'}
+                        {licenseLoading ? <i className="fa-solid fa-spinner fa-spin" /> : t('settings.system.activate')}
                       </button>
                     </div>
                     {licenseError && (
@@ -867,7 +670,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                     )}
                     {licenseSuccess && (
                       <p className="text-[9px] text-emerald-600 font-bold flex items-center gap-1">
-                        <i className="fa-solid fa-circle-check"></i> 激活成功！
+                        <i className="fa-solid fa-circle-check"></i> {t('settings.system.activationSuccess')}
                       </p>
                     )}
                     <div className="flex items-center gap-2 pt-1">
@@ -876,7 +679,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                         className="text-[9px] font-bold text-indigo-600 hover:underline cursor-pointer bg-transparent border-none p-0"
                       >
                         <i className="fa-solid fa-envelope mr-1"></i>
-                        获取激活码 →
+                        {t('settings.system.getActivationCode')}
                       </button>
                     </div>
                   </div>
@@ -886,17 +689,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
 
             {/* Interaction & Behavior */}
             <section className="space-y-4">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">交互与通知 (INTERACTION)</h4>
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">{t('settings.system.interaction')} (INTERACTION)</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-slate-50 p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between hover:border-emerald-200 transition-all">
                   <div>
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">启用桌面通知</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase">Task Completion Alerts</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.system.enableNotifications')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.system.notificationsDesc')}</p>
                   </div>
                   {/* Fixed syntax error in template literal on the following line */}
                   <button
                     onClick={() => setAppSettings({ enableNotifications: !appSettings.enableNotifications })}
-                    className={`w-12 h-7 rounded-full p-1 transition-all duration-300 ${appSettings.enableNotifications ? 'bg-emerald-50' : 'bg-slate-200'}`}
+                    className={`w-12 h-7 rounded-full p-1 transition-all duration-300 ${appSettings.enableNotifications ? 'bg-emerald-500' : 'bg-slate-200'}`}
                   >
                     <div className={`w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${appSettings.enableNotifications ? 'translate-x-5' : 'translate-x-0'}`} />
                   </button>
@@ -904,18 +707,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
 
                 <div className="bg-slate-50 p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between hover:border-emerald-200 transition-all">
                   <div>
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">自动保存策略</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase">Auto-Save Interval</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.system.autoSave')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.system.autoSave')}</p>
                   </div>
                   <select
                     className="bg-white border border-slate-200 text-[10px] font-bold text-slate-700 py-1 px-2 rounded-lg outline-none cursor-pointer"
                     value={appSettings.autoSaveInterval || 5}
                     onChange={(e) => setAppSettings({ autoSaveInterval: parseInt(e.target.value) })}
                   >
-                    <option value={1}>实时 (1m)</option>
-                    <option value={5}>标准 (5m)</option>
-                    <option value={15}>低频 (15m)</option>
-                    <option value={0}>关闭 (Off)</option>
+                    <option value={1}>{t('settings.system.autoSaveRealtime')}</option>
+                    <option value={5}>{t('settings.system.autoSaveStandard')}</option>
+                    <option value={15}>{t('settings.system.autoSaveLow')}</option>
+                    <option value={0}>{t('settings.system.autoSaveOff')}</option>
                   </select>
                 </div>
               </div>
@@ -926,13 +729,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
             {/* Appearance & Theme */}
             <section className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                <i className="fa-solid fa-palette text-pink-500"></i> 外观与主题 (APPEARANCE)
+                <i className="fa-solid fa-palette text-pink-500"></i> {t('settings.appearance.title')} (APPEARANCE)
               </h4>
               <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">界面主题模式</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase">Color Theme Mode</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.appearance.themeMode')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.appearance.themeMode')}</p>
                   </div>
                   <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
                     {(['light', 'dark', 'system'] as const).map(mode => (
@@ -941,7 +744,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                         onClick={() => setThemeMode(mode)}
                         className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${themeMode === mode ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                       >
-                        {mode === 'light' ? '☀️ 浅色' : mode === 'dark' ? '🌙 深色' : '💻 跟随系统'}
+                        {mode === 'light' ? t('settings.appearance.light') : mode === 'dark' ? t('settings.appearance.dark') : t('settings.appearance.system')}
                       </button>
                     ))}
                   </div>
@@ -951,8 +754,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">界面缩放</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase">UI Scale: {uiScale}%</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.appearance.uiScale')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.appearance.uiScale')}: {uiScale}%</p>
                   </div>
                   <div className="flex items-center gap-3 min-w-[200px]">
                     <span className="text-[9px] font-bold text-slate-400">80%</span>
@@ -970,8 +773,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">编辑器字体大小</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase">Editor Font Size: {editorFontSize}px</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.appearance.editorFontSize')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.appearance.editorFontSize')}: {editorFontSize}px</p>
                   </div>
                   <div className="flex items-center gap-3 min-w-[200px]">
                     <span className="text-[9px] font-bold text-slate-400">12</span>
@@ -992,12 +795,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
             {/* Data & Visualization */}
             <section className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                <i className="fa-solid fa-chart-pie text-cyan-500"></i> 数据与可视化 (DATA & VISUALIZATION)
+                <i className="fa-solid fa-chart-pie text-cyan-500"></i> {t('settings.data.title')} (DATA & VISUALIZATION)
               </h4>
               <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">默认导出格式</label>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">{t('settings.data.defaultExportFormat')}</label>
                     <div className="relative">
                       <select
                         className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 outline-none appearance-none cursor-pointer hover:border-indigo-300 transition-colors shadow-sm"
@@ -1012,16 +815,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">默认导出 DPI</label>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">{t('settings.data.defaultExportDPI')}</label>
                     <div className="relative">
                       <select
                         className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 outline-none appearance-none cursor-pointer hover:border-indigo-300 transition-colors shadow-sm"
                         value={defaultExportDPI}
                         onChange={e => setDefaultExportDPI(Number(e.target.value) as any)}
                       >
-                        <option value={300}>300 DPI (标准)</option>
-                        <option value={600}>600 DPI (高清)</option>
-                        <option value={1200}>1200 DPI (出版级)</option>
+                        <option value={300}>300 DPI ({t('settings.data.dpiStandard')})</option>
+                        <option value={600}>600 DPI ({t('settings.data.dpiHD')})</option>
+                        <option value={1200}>1200 DPI ({t('settings.data.dpiPublication')})</option>
                       </select>
                       <i className="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none"></i>
                     </div>
@@ -1032,7 +835,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">图表默认字体</label>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">{t('settings.data.chartFont')}</label>
                     <div className="relative">
                       <select
                         className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 outline-none appearance-none cursor-pointer hover:border-indigo-300 transition-colors shadow-sm"
@@ -1049,7 +852,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">默认配色方案</label>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">{t('settings.data.colorPalette')}</label>
                     <div className="relative">
                       <select
                         className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 outline-none appearance-none cursor-pointer hover:border-indigo-300 transition-colors shadow-sm"
@@ -1075,13 +878,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
             {/* Network & Proxy */}
             <section className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                <i className="fa-solid fa-tower-broadcast text-teal-500"></i> 网络与代理 (NETWORK & PROXY)
+                <i className="fa-solid fa-tower-broadcast text-teal-500"></i> {t('settings.system.networkProxy')} (NETWORK & PROXY)
               </h4>
               <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">启用 HTTP 代理</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase">Route AI Requests via Proxy</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.system.enableProxy')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.system.proxyDesc')}</p>
                   </div>
                   <button
                     onClick={() => setProxyEnabled(!proxyEnabled)}
@@ -1092,7 +895,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                 </div>
                 {proxyEnabled && (
                   <div className="animate-reveal">
-                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">代理地址</label>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">{t('settings.system.proxyAddress')}</label>
                     <input
                       type="text"
                       className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-mono outline-none focus:border-indigo-400 transition-colors shadow-sm"
@@ -1107,8 +910,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">AI 请求超时</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase">Request Timeout: {aiRequestTimeout}s</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.system.aiTimeout')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.system.aiTimeout')}: {aiRequestTimeout}s</p>
                   </div>
                   <select
                     className="bg-white border border-slate-200 text-[10px] font-bold text-slate-700 py-2 px-3 rounded-xl outline-none cursor-pointer shadow-sm hover:border-indigo-300 transition-colors"
@@ -1127,14 +930,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
             {/* Privacy & Security */}
             <section className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                <i className="fa-solid fa-shield-halved text-emerald-500"></i> 隐私与安全 (PRIVACY & SECURITY)
+                <i className="fa-solid fa-shield-halved text-emerald-500"></i> {t('settings.system.privacySecurity')} (PRIVACY & SECURITY)
               </h4>
               <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
                 <div className="flex items-center justify-between">
                   <div className="pr-4">
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">AI 数据发送确认</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase leading-relaxed">Confirm Before Sending Data to AI</p>
-                    <p className="text-[8px] text-slate-400 italic mt-1">开启后，每次向 AI 发送实验数据前将弹窗二次确认</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.system.confirmBeforeAI')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.system.confirmBeforeAI')}</p>
+                    <p className="text-[8px] text-slate-400 italic mt-1">{t('settings.system.confirmBeforeAIDesc')}</p>
                   </div>
                   <button
                     onClick={() => setConfirmBeforeAISend(!confirmBeforeAISend)}
@@ -1149,7 +952,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
             {/* Backup & Restore */}
             <section className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                <i className="fa-solid fa-cloud-arrow-down text-blue-500"></i> 备份与恢复 (BACKUP & RESTORE)
+                <i className="fa-solid fa-cloud-arrow-down text-blue-500"></i> {t('settings.system.backupRestore')} (BACKUP & RESTORE)
               </h4>
               <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1159,7 +962,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                   >
                     <i className="fa-solid fa-file-export text-indigo-500 group-hover:scale-110 transition-transform"></i>
                     <div className="text-left">
-                      <p className="text-[11px] font-black text-slate-800 uppercase">导出设置</p>
+                      <p className="text-[11px] font-black text-slate-800 uppercase">{t('settings.system.exportSettings')}</p>
                       <p className="text-[8px] text-slate-400 font-bold uppercase">Export as JSON</p>
                     </div>
                   </button>
@@ -1169,14 +972,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                   >
                     <i className="fa-solid fa-file-import text-amber-500 group-hover:scale-110 transition-transform"></i>
                     <div className="text-left">
-                      <p className="text-[11px] font-black text-slate-800 uppercase">导入设置</p>
+                      <p className="text-[11px] font-black text-slate-800 uppercase">{t('settings.system.importSettings')}</p>
                       <p className="text-[8px] text-slate-400 font-bold uppercase">Restore from JSON</p>
                     </div>
                   </button>
                 </div>
                 <p className="text-[7px] text-slate-400 mt-3 font-bold uppercase tracking-widest italic px-1">
                   <i className="fa-solid fa-circle-info mr-1 text-blue-400"></i>
-                  导出文件包含所有配置项（含 API Key），请妥善保管
+                  {t('settings.system.exportHint')}
                 </p>
               </div>
             </section>
@@ -1185,19 +988,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
             {/* Keyboard Shortcuts */}
             <section className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                <i className="fa-solid fa-keyboard text-orange-500"></i> 快捷键一览 (KEYBOARD SHORTCUTS)
+                <i className="fa-solid fa-keyboard text-orange-500"></i> {t('settings.system.shortcuts')} (KEYBOARD SHORTCUTS)
               </h4>
               <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                   {[
-                    { label: '全局搜索', keys: '⌘ / Ctrl + K' },
-                    { label: 'AI 命令行', keys: '⌘ / Ctrl + J' },
-                    { label: '保存文档', keys: '⌘ / Ctrl + S' },
-                    { label: '撤销', keys: '⌘ / Ctrl + Z' },
-                    { label: '重做', keys: '⌘ / Ctrl + Shift + Z' },
-                    { label: '全屏截图', keys: '⌘ / Ctrl + Shift + S' },
-                    { label: '对话内搜索', keys: '⌘ / Ctrl + F' },
-                    { label: '关闭弹窗', keys: 'Escape' },
+                    { label: t('settings.system.shortcutSearch'), keys: '⌘ / Ctrl + K' },
+                    { label: t('settings.system.shortcutAiCli'), keys: '⌘ / Ctrl + J' },
+                    { label: t('settings.system.shortcutSave'), keys: '⌘ / Ctrl + S' },
+                    { label: t('settings.system.shortcutUndo'), keys: '⌘ / Ctrl + Z' },
+                    { label: t('settings.system.shortcutRedo'), keys: '⌘ / Ctrl + Shift + Z' },
+                    { label: t('settings.system.shortcutScreenshot'), keys: '⌘ / Ctrl + Shift + S' },
+                    { label: t('settings.system.shortcutSearchInChat'), keys: '⌘ / Ctrl + F' },
+                    { label: t('settings.system.shortcutCloseModal'), keys: 'Escape' },
                   ].map(s => (
                     <div key={s.label} className="flex items-center justify-between py-2 px-3 bg-white rounded-xl border border-slate-100">
                       <span className="text-[10px] font-bold text-slate-600">{s.label}</span>
@@ -1207,7 +1010,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                 </div>
                 <p className="text-[7px] text-slate-400 mt-3 font-bold uppercase tracking-widest italic px-1">
                   <i className="fa-solid fa-circle-info mr-1 text-orange-400"></i>
-                  快捷键暂不支持自定义，后续版本计划开放
+                  {t('settings.system.shortcutsHint')}
                 </p>
               </div>
             </section>
@@ -1217,19 +1020,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
             {/* Language & Locale */}
             <section className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                <i className="fa-solid fa-globe text-sky-500"></i> 语言与区域 (LANGUAGE & LOCALE)
+                <i className="fa-solid fa-globe text-sky-500"></i> {t('settings.appearance.languageLocale')} (LANGUAGE & LOCALE)
               </h4>
               <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">界面语言</label>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">{t('settings.appearance.uiLanguage')}</label>
                     <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
                       <button onClick={() => setUiLanguage('zh')} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${uiLanguage === 'zh' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>中文</button>
                       <button onClick={() => setUiLanguage('en')} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${uiLanguage === 'en' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>English</button>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">日期格式</label>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">{t('settings.appearance.dateFormat')}</label>
                     <div className="relative">
                       <select
                         className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 outline-none appearance-none cursor-pointer hover:border-indigo-300 transition-colors shadow-sm"
@@ -1249,8 +1052,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">AI 输出语言</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase">AI Response Language</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.appearance.aiOutputLanguage')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.appearance.aiOutputLanguage')}</p>
                   </div>
                   <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
                     {(['auto', 'zh', 'en'] as const).map(lang => (
@@ -1259,7 +1062,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                         onClick={() => setAiOutputLanguage(lang)}
                         className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${aiOutputLanguage === lang ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                       >
-                        {lang === 'auto' ? '🔄 自动' : lang === 'zh' ? '中文' : 'EN'}
+                        {lang === 'auto' ? t('settings.appearance.autoLanguage') : lang === 'zh' ? '中文' : 'EN'}
                       </button>
                     ))}
                   </div>
@@ -1272,13 +1075,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
             {/* Writing Preferences */}
             <section className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                <i className="fa-solid fa-pen-nib text-violet-500"></i> 写作偏好 (WRITING PREFERENCES)
+                <i className="fa-solid fa-pen-nib text-violet-500"></i> {t('settings.research.writingPreferences')} (WRITING PREFERENCES)
               </h4>
               <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">AI 润色强度</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase">Polish Intensity Level</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.research.polishIntensity')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.research.polishIntensity')}</p>
                   </div>
                   <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
                     {(['light', 'moderate', 'deep'] as const).map(level => (
@@ -1287,7 +1090,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                         onClick={() => setAiPolishIntensity(level)}
                         className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${aiPolishIntensity === level ? 'bg-violet-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                       >
-                        {level === 'light' ? '轻度 (语法)' : level === 'moderate' ? '中度 (风格)' : '深度 (改写)'}
+                        {level === 'light' ? t('settings.research.polishLight') : level === 'moderate' ? t('settings.research.polishModerate') : t('settings.research.polishDeep')}
                       </button>
                     ))}
                   </div>
@@ -1297,17 +1100,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">默认写作语言</label>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">{t('settings.research.defaultWritingLang')}</label>
                     <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
                       <button onClick={() => setDefaultWritingLanguage('zh')} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${defaultWritingLanguage === 'zh' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>中文</button>
                       <button onClick={() => setDefaultWritingLanguage('en')} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${defaultWritingLanguage === 'en' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>English</button>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">段落缩进</label>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">{t('settings.research.paragraphIndent')}</label>
                     <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-                      <button onClick={() => setParagraphIndent('indent')} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${paragraphIndent === 'indent' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>首行缩进</button>
-                      <button onClick={() => setParagraphIndent('no-indent')} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${paragraphIndent === 'no-indent' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>无缩进</button>
+                      <button onClick={() => setParagraphIndent('indent')} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${paragraphIndent === 'indent' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>{t('settings.research.indentFirst')}</button>
+                      <button onClick={() => setParagraphIndent('no-indent')} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${paragraphIndent === 'no-indent' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>{t('settings.research.noIndent')}</button>
                     </div>
                   </div>
                 </div>
@@ -1317,12 +1120,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
             {/* Experiment Defaults */}
             <section className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                <i className="fa-solid fa-flask-vial text-rose-500"></i> 实验参数默认值 (EXPERIMENT DEFAULTS)
+                <i className="fa-solid fa-flask-vial text-rose-500"></i> {t('settings.research.experimentDefaults')} (EXPERIMENT DEFAULTS)
               </h4>
               <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">XRD 默认辐射源</label>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">{t('settings.research.xrdRadiation')}</label>
                     <div className="relative">
                       <select
                         className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 outline-none appearance-none cursor-pointer hover:border-indigo-300 transition-colors shadow-sm"
@@ -1338,7 +1141,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">XPS 能量参考</label>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">{t('settings.research.xpsReference')}</label>
                     <input
                       type="text"
                       className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-indigo-400 transition-colors shadow-sm"
@@ -1353,7 +1156,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">SEM 默认加速电压 (kV)</label>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">{t('settings.research.semVoltage')} (kV)</label>
                     <div className="relative">
                       <select
                         className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 outline-none appearance-none cursor-pointer hover:border-indigo-300 transition-colors shadow-sm"
@@ -1372,7 +1175,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">TEM 默认加速电压 (kV)</label>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1.5">{t('settings.research.temVoltage')} (kV)</label>
                     <div className="relative">
                       <select
                         className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 outline-none appearance-none cursor-pointer hover:border-indigo-300 transition-colors shadow-sm"
@@ -1391,7 +1194,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                 </div>
                 <p className="text-[7px] text-slate-400 mt-1 font-bold uppercase tracking-widest italic px-1">
                   <i className="fa-solid fa-circle-info mr-1 text-rose-400"></i>
-                  这些默认值将在新建实验表征时自动填充，可在具体模块中覆盖
+                  {t('settings.research.experimentDefaultsHint')}
                 </p>
               </div>
             </section>
@@ -1400,9 +1203,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
           {settingsTab === 'system' && (<>
             {/* Storage Management */}
             <section className="space-y-4">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">文献存储管理 (STORAGE)</h4>
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">{t('settings.system.storage')} (STORAGE)</h4>
               <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
-                <label className="block text-[9px] font-black text-slate-500 uppercase mb-3 px-1">默认本地文献库路径</label>
+                <label className="block text-[9px] font-black text-slate-500 uppercase mb-3 px-1">{t('settings.system.localLibraryPath')}</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -1411,40 +1214,40 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                     onChange={(e) => setLocalPath(e.target.value)}
                   />
                   <button className="px-4 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase shadow-md active:scale-95 transition-all">
-                    浏览...
+                    {t('common.browse')}
                   </button>
                 </div>
-                <p className="text-[7px] text-slate-400 mt-2 font-bold uppercase tracking-widest italic px-1">AI 检索本地档案时将以此目录为根路径</p>
+                <p className="text-[7px] text-slate-400 mt-2 font-bold uppercase tracking-widest italic px-1">{t('settings.system.storageHint')}</p>
               </div>
             </section>
 
             {/* AI Conversation Management */}
             <section className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                <i className="fa-solid fa-comments text-purple-500"></i> AI 对话管理 (CHAT MANAGEMENT)
+                <i className="fa-solid fa-comments text-purple-500"></i> {t('settings.system.chatManagement')} (CHAT MANAGEMENT)
               </h4>
               <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">对话历史保留</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase">History Retention Period</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.system.chatRetention')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.system.chatRetention')}</p>
                   </div>
                   <select
                     className="bg-white border border-slate-200 text-[10px] font-bold text-slate-700 py-2 px-3 rounded-xl outline-none cursor-pointer shadow-sm hover:border-indigo-300 transition-colors"
                     value={chatHistoryRetentionDays}
                     onChange={e => setChatHistoryRetentionDays(Number(e.target.value))}
                   >
-                    <option value={7}>7 天</option>
-                    <option value={30}>30 天 (默认)</option>
-                    <option value={90}>90 天</option>
-                    <option value={365}>永久保留</option>
+                    <option value={7}>{t('settings.system.chatRetention7')}</option>
+                    <option value={30}>{t('settings.system.chatRetention30')}</option>
+                    <option value={90}>{t('settings.system.chatRetention90')}</option>
+                    <option value={365}>{t('settings.system.chatRetentionForever')}</option>
                   </select>
                 </div>
                 <div className="w-full h-px bg-slate-200"></div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">自动清理过期对话</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase">Auto-Clear Expired Chats</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.system.autoClearChat')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.system.autoClearChat')}</p>
                   </div>
                   <button
                     onClick={() => setAutoClearChat(!autoClearChat)}
@@ -1459,13 +1262,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
             {/* Window Behavior */}
             <section className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                <i className="fa-solid fa-window-restore text-sky-500"></i> 窗口行为 (WINDOW BEHAVIOR)
+                <i className="fa-solid fa-window-restore text-sky-500"></i> {t('settings.system.windowBehavior')} (WINDOW BEHAVIOR)
               </h4>
               <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">恢复上次窗口位置</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase">Restore Window Position on Launch</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.system.restorePosition')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.system.restorePosition')}</p>
                   </div>
                   <button
                     onClick={() => setRestoreWindowPosition(!restoreWindowPosition)}
@@ -1477,8 +1280,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                 <div className="w-full h-px bg-slate-200"></div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">记住最后打开的页面</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase">Remember Last Visited Page</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.system.rememberLastPage')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.system.rememberLastPage')}</p>
                   </div>
                   <button
                     onClick={() => setRememberLastPage(!rememberLastPage)}
@@ -1493,13 +1296,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
             {/* Performance */}
             <section className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                <i className="fa-solid fa-bolt text-amber-500"></i> 性能调优 (PERFORMANCE)
+                <i className="fa-solid fa-bolt text-amber-500"></i> {t('settings.system.performance')} (PERFORMANCE)
               </h4>
               <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">GPU 硬件加速</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase">Hardware Acceleration</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.system.gpuAcceleration')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.system.gpuAcceleration')}</p>
                   </div>
                   <button
                     onClick={() => setGpuAcceleration(!gpuAcceleration)}
@@ -1511,8 +1314,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                 <div className="w-full h-px bg-slate-200"></div>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">缓存大小上限</p>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase">Max Cache: {cacheMaxSizeMB} MB</p>
+                    <p className="text-[11px] font-black text-slate-800 uppercase mb-1">{t('settings.system.cacheMaxSize')}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase">{t('settings.system.cacheMaxSize')}: {cacheMaxSizeMB} MB</p>
                   </div>
                   <select
                     className="bg-white border border-slate-200 text-[10px] font-bold text-slate-700 py-2 px-3 rounded-xl outline-none cursor-pointer shadow-sm hover:border-indigo-300 transition-colors"
@@ -1531,7 +1334,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
             {/* About & Update */}
             <section className="space-y-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                <i className="fa-solid fa-circle-info text-indigo-500"></i> 关于与更新 (ABOUT & UPDATE)
+                <i className="fa-solid fa-circle-info text-indigo-500"></i> {t('settings.system.aboutUpdate')} (ABOUT & UPDATE)
               </h4>
               <div className="bg-gradient-to-br from-indigo-50 to-violet-50 p-6 rounded-[2rem] border border-indigo-100">
                 <div className="flex items-center justify-between mb-4">
@@ -1547,25 +1350,25 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                 {/* 更新状态展示 */}
                 <div className="bg-white/60 rounded-xl p-3 mb-4">
                   {updateStatus === 'idle' && (
-                    <p className="text-[10px] text-slate-500 font-bold">点击下方按钮检查是否有新版本可用</p>
+                    <p className="text-[10px] text-slate-500 font-bold">{t('settings.system.updateNotAvailableHint')}</p>
                   )}
                   {updateStatus === 'checking' && (
                     <div className="flex items-center gap-2">
                       <i className="fa-solid fa-spinner fa-spin text-indigo-500 text-xs"></i>
-                      <p className="text-[10px] text-indigo-600 font-bold">正在检查更新...</p>
+                      <p className="text-[10px] text-indigo-600 font-bold">{t('settings.system.checking')}</p>
                     </div>
                   )}
                   {updateStatus === 'not-available' && (
                     <div className="flex items-center gap-2">
                       <i className="fa-solid fa-circle-check text-emerald-500 text-xs"></i>
-                      <p className="text-[10px] text-emerald-600 font-bold">当前已是最新版本 ✨</p>
+                      <p className="text-[10px] text-emerald-600 font-bold">{t('settings.system.latestVersion')}</p>
                     </div>
                   )}
                   {updateStatus === 'available' && (
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <i className="fa-solid fa-gift text-amber-500 text-xs"></i>
-                        <p className="text-[10px] text-amber-700 font-black">发现新版本 v{updateVersion}！</p>
+                        <p className="text-[10px] text-amber-700 font-black">{t('settings.system.newVersionFound', { version: updateVersion })}</p>
                       </div>
                       <p className="text-[9px] text-slate-400">点击下方按钮开始下载更新</p>
                     </div>
@@ -1575,7 +1378,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                       <div className="flex items-center justify-between mb-1.5">
                         <div className="flex items-center gap-2">
                           <i className="fa-solid fa-cloud-arrow-down text-blue-500 text-xs animate-bounce"></i>
-                          <p className="text-[10px] text-blue-600 font-bold">正在下载更新...</p>
+                          <p className="text-[10px] text-blue-600 font-bold">{t('settings.system.downloading')}</p>
                         </div>
                         <span className="text-[10px] font-black text-blue-700">{updateProgress}%</span>
                       </div>
@@ -1587,7 +1390,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                   {updateStatus === 'downloaded' && (
                     <div className="flex items-center gap-2">
                       <i className="fa-solid fa-rocket text-violet-500 text-xs"></i>
-                      <p className="text-[10px] text-violet-700 font-black">v{updateVersion} 已下载完成，点击下方按钮重启安装！</p>
+                      <p className="text-[10px] text-violet-700 font-black">{t('settings.system.downloaded')}</p>
                     </div>
                   )}
                   {updateStatus === 'error' && (
@@ -1604,18 +1407,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                     onClick={handleDownloadUpdate}
                     className="w-full py-3 bg-amber-500 rounded-xl text-[10px] font-black text-white uppercase hover:bg-amber-600 transition-all active:scale-95 shadow-sm"
                   >
-                    <i className="fa-solid fa-cloud-arrow-down mr-1.5"></i> 下载更新 v{updateVersion}
+                    <i className="fa-solid fa-cloud-arrow-down mr-1.5"></i> {t('settings.system.downloadUpdate')} v{updateVersion}
                   </button>
                 ) : updateStatus === 'downloaded' ? (
                   <button
                     onClick={handleInstallUpdate}
                     className="w-full py-3 bg-violet-600 rounded-xl text-[10px] font-black text-white uppercase hover:bg-violet-700 transition-all active:scale-95 shadow-sm"
                   >
-                    <i className="fa-solid fa-rocket mr-1.5"></i> 立即重启并安装
+                    <i className="fa-solid fa-rocket mr-1.5"></i> {t('settings.system.installRestart')}
                   </button>
                 ) : updateStatus === 'downloading' ? (
                   <button disabled className="w-full py-3 bg-slate-200 rounded-xl text-[10px] font-black text-slate-400 uppercase cursor-not-allowed">
-                    <i className="fa-solid fa-spinner fa-spin mr-1.5"></i> 下载中 {updateProgress}%...
+                    <i className="fa-solid fa-spinner fa-spin mr-1.5"></i> {t('settings.system.downloading')} {updateProgress}%
                   </button>
                 ) : (
                   <button
@@ -1624,7 +1427,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                     className={`w-full py-3 bg-white border border-indigo-200 rounded-xl text-[10px] font-black text-indigo-700 uppercase hover:bg-indigo-600 hover:text-white transition-all active:scale-95 shadow-sm ${updateStatus === 'checking' ? 'opacity-60 cursor-not-allowed' : ''}`}
                   >
                     <i className={`fa-solid fa-arrows-rotate mr-1.5 ${updateStatus === 'checking' ? 'fa-spin' : ''}`}></i>
-                    {updateStatus === 'checking' ? '检查中...' : '检查更新'}
+                    {updateStatus === 'checking' ? t('settings.system.checking') : t('settings.system.checkUpdate')}
                   </button>
                 )}
               </div>
@@ -1638,15 +1441,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
                     <i className="fa-solid fa-trash-can text-xl"></i>
                   </div>
                   <div>
-                    <h5 className="text-xs font-black text-rose-900 uppercase">危险区域 (DANGER ZONE)</h5>
-                    <p className="text-[10px] text-rose-700 font-medium leading-relaxed italic">移除所有本地存档数据，该操作不可撤销。</p>
+                    <h5 className="text-xs font-black text-rose-900 uppercase">{t('settings.system.dangerZone')} (DANGER ZONE)</h5>
+                    <p className="text-[10px] text-rose-700 font-medium leading-relaxed italic">{t('settings.system.dangerZoneDesc')}</p>
                   </div>
                 </div>
                 <button
                   onClick={handleClearCache}
                   className="px-8 py-3 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-rose-200 hover:bg-black transition-all active:scale-95 whitespace-nowrap"
                 >
-                  清除本地所有缓存
+                  {t('settings.system.clearAllCache')}
                 </button>
               </div>
             </section>
@@ -1654,7 +1457,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose, onOpenConf
         </div>
 
         <footer className="mt-8 shrink-0">
-          <button onClick={handleSave} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all active:scale-95">完成设置并保存</button>
+          <button onClick={handleSave} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all active:scale-95">{t('settings.saveButton')}</button>
         </footer>
       </div>
     </div>

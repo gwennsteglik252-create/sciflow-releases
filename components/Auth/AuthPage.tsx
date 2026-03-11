@@ -8,6 +8,7 @@
  */
 import React, { useState, useCallback } from 'react';
 import { AuthState } from '../../hooks/useAuth';
+import { useTranslation } from '../../locales/useTranslation';
 
 type AuthMode = 'login' | 'register' | 'reset';
 
@@ -23,6 +24,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ auth }) => {
     const [errorMsg, setErrorMsg] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const { t } = useTranslation();
 
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
@@ -39,7 +41,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ auth }) => {
                 if (error) {
                     setErrorMsg(error);
                 } else if (needsVerification) {
-                    setSuccessMsg('注册成功！请查收验证邮件，验证后即可登录。');
+                    setSuccessMsg(t('auth.registerSuccess'));
                     setMode('login');
                 }
             } else if (mode === 'reset') {
@@ -47,12 +49,12 @@ const AuthPage: React.FC<AuthPageProps> = ({ auth }) => {
                 if (error) {
                     setErrorMsg(error);
                 } else {
-                    setSuccessMsg('密码重置邮件已发送，请查收邮箱。');
+                    setSuccessMsg(t('auth.resetEmailSent'));
                     setMode('login');
                 }
             }
         } catch {
-            setErrorMsg('操作失败，请稍后重试');
+            setErrorMsg(t('auth.operationFailed'));
         } finally {
             setIsLoading(false);
         }
@@ -67,10 +69,10 @@ const AuthPage: React.FC<AuthPageProps> = ({ auth }) => {
     }, [auth]);
 
     const features = [
-        { icon: 'fa-flask', title: '实验管理', desc: '全流程实验记录与分析' },
-        { icon: 'fa-chart-line', title: '数据分析', desc: 'AI 驱动的智能数据处理' },
-        { icon: 'fa-pen-fancy', title: '学术写作', desc: '论文撰写与排版一体化' },
-        { icon: 'fa-users', title: '团队协作', desc: '多人实时协作与知识共享' },
+        { icon: 'fa-flask', title: t('auth.featureExperiment'), desc: t('auth.featureExperimentDesc') },
+        { icon: 'fa-chart-line', title: t('auth.featureData'), desc: t('auth.featureDataDesc') },
+        { icon: 'fa-pen-fancy', title: t('auth.featureWriting'), desc: t('auth.featureWritingDesc') },
+        { icon: 'fa-users', title: t('auth.featureTeam'), desc: t('auth.featureTeamDesc') },
     ];
 
     return (
@@ -147,8 +149,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ auth }) => {
                         </span>
                     </h1>
                     <p className="text-slate-400 text-sm leading-relaxed mb-10">
-                        新一代科研全流程管理平台<br />
-                        <span className="text-slate-500">AI 驱动 · 数据安全 · 协作无间</span>
+                        {t('auth.brandSubtitle')}<br />
+                        <span className="text-slate-500">{t('auth.brandSlogan')}</span>
                     </p>
 
                     {/* 特色功能 */}
@@ -201,12 +203,12 @@ const AuthPage: React.FC<AuthPageProps> = ({ auth }) => {
                     {/* 标题 */}
                     <div className="mb-7">
                         <h2 className="text-2xl font-black text-white mb-1.5">
-                            {mode === 'login' ? '欢迎回来' : mode === 'register' ? '创建账号' : '重置密码'}
+                            {mode === 'login' ? t('auth.welcomeBack') : mode === 'register' ? t('auth.createAccount') : t('auth.resetPassword')}
                         </h2>
                         <p className="text-sm text-slate-500">
-                            {mode === 'login' ? '登录以继续使用 SciFlow Pro' :
-                                mode === 'register' ? '注册账号开始你的科研之旅' :
-                                    '输入邮箱地址，我们将发送重置链接'}
+                            {mode === 'login' ? t('auth.loginSubtitle') :
+                                mode === 'register' ? t('auth.registerSubtitle') :
+                                    t('auth.resetSubtitle')}
                         </p>
                     </div>
 
@@ -214,7 +216,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ auth }) => {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {/* 邮箱 */}
                         <div>
-                            <label className="text-xs font-semibold text-slate-400 block mb-2 uppercase tracking-wider">邮箱地址</label>
+                            <label className="text-xs font-semibold text-slate-400 block mb-2 uppercase tracking-wider">{t('auth.email')}</label>
                             <div className="relative">
                                 <i className="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-500" />
                                 <input
@@ -231,14 +233,14 @@ const AuthPage: React.FC<AuthPageProps> = ({ auth }) => {
                         {/* 密码（重置模式不显示） */}
                         {mode !== 'reset' && (
                             <div>
-                                <label className="text-xs font-semibold text-slate-400 block mb-2 uppercase tracking-wider">密码</label>
+                                <label className="text-xs font-semibold text-slate-400 block mb-2 uppercase tracking-wider">{t('auth.password')}</label>
                                 <div className="relative">
                                     <i className="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-500" />
                                     <input
                                         type={showPassword ? 'text' : 'password'}
                                         value={password}
                                         onChange={e => setPassword(e.target.value)}
-                                        placeholder={mode === 'register' ? '至少 6 位字符' : '输入密码'}
+                                        placeholder={mode === 'register' ? t('auth.passwordHint') : t('auth.enterPassword')}
                                         required
                                         minLength={6}
                                         className="w-full bg-slate-800/60 border border-slate-700/50 text-white placeholder-slate-600 rounded-xl pl-11 pr-11 py-3 text-sm focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/10 transition-all"
@@ -258,7 +260,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ auth }) => {
                                         onClick={() => { setMode('reset'); setErrorMsg(''); setSuccessMsg(''); }}
                                         className="text-xs text-indigo-400 hover:text-indigo-300 mt-2 transition-colors"
                                     >
-                                        忘记密码？
+                                        {t('auth.forgotPassword')}
                                     </button>
                                 )}
                             </div>
@@ -287,9 +289,9 @@ const AuthPage: React.FC<AuthPageProps> = ({ auth }) => {
                             {isLoading ? (
                                 <span className="flex items-center justify-center gap-2">
                                     <i className="fa-solid fa-spinner animate-spin text-xs" />
-                                    处理中…
+                                    {t('auth.processing')}
                                 </span>
-                            ) : mode === 'login' ? '登 录' : mode === 'register' ? '创建账号' : '发送重置邮件'}
+                            ) : mode === 'login' ? t('auth.login') : mode === 'register' ? t('auth.register') : t('auth.sendResetEmail')}
                         </button>
                     </form>
 
@@ -298,7 +300,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ auth }) => {
                         <>
                             <div className="flex items-center gap-4 my-6">
                                 <div className="flex-1 h-px bg-slate-700/50" />
-                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">或</span>
+                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{t('auth.or')}</span>
                                 <div className="flex-1 h-px bg-slate-700/50" />
                             </div>
 
@@ -325,7 +327,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ auth }) => {
                                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-7.062-6.122zm-2.18 2.907c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982z" />
                                     </svg>
-                                    微信 <span className="text-[8px] text-slate-600">(即将上线)</span>
+                                    {t('auth.wechat')} <span className="text-[8px] text-slate-600">{t('auth.wechatComingSoon')}</span>
                                 </button>
                             </div>
                         </>
@@ -335,24 +337,24 @@ const AuthPage: React.FC<AuthPageProps> = ({ auth }) => {
                     <div className="mt-8 text-center">
                         {mode === 'login' && (
                             <p className="text-sm text-slate-500">
-                                还没有账号？{' '}
+                                {t('auth.noAccount')}{' '}
                                 <button onClick={() => { setMode('register'); setErrorMsg(''); setSuccessMsg(''); }} className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
-                                    立即注册
+                                    {t('auth.signUpNow')}
                                 </button>
                             </p>
                         )}
                         {mode === 'register' && (
                             <p className="text-sm text-slate-500">
-                                已有账号？{' '}
+                                {t('auth.hasAccount')}{' '}
                                 <button onClick={() => { setMode('login'); setErrorMsg(''); setSuccessMsg(''); }} className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
-                                    返回登录
+                                    {t('auth.backToLogin')}
                                 </button>
                             </p>
                         )}
                         {mode === 'reset' && (
                             <p className="text-sm text-slate-500">
                                 <button onClick={() => { setMode('login'); setErrorMsg(''); setSuccessMsg(''); }} className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
-                                    ← 返回登录
+                                    {t('auth.backArrow')}
                                 </button>
                             </p>
                         )}

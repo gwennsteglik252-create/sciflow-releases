@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { ResearchProject, Literature, AppView } from '../types';
 import { useProjectContext } from '../context/ProjectContext';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar, Tooltip, PolarRadiusAxis } from 'recharts';
+import { useTranslation } from '../locales/useTranslation';
 
 // Sub-components
 import StatsCards from './Dashboard/StatsCards';
@@ -21,6 +22,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ projects = [], resources = [], navigate }) => {
   const { activeTheme, inventory, teamMembers } = useProjectContext();
+  const { t } = useTranslation();
   const isLight = activeTheme.type === 'light';
 
   // State for Radar Chart selection
@@ -74,10 +76,10 @@ const Dashboard: React.FC<DashboardProps> = ({ projects = [], resources = [], na
 
   const resourceCount = (resources || []).length;
   const stats = [
-    { label: '活跃研究课题', value: activeProjects.length.toString(), trend: activeProjects.length > 0 ? `共 ${activeProjects.length} 项` : '暂无', color: 'indigo' },
-    { label: '收录文献', value: resourceCount.toString(), trend: resourceCount > 0 ? `+${resourceCount}` : '暂无', color: 'emerald' },
-    { label: '团队成员', value: totalMembers.toString(), trend: totalMembers > 0 ? `${totalMembers} 人` : '暂无', color: 'amber' },
-    { label: '低库存预警', value: lowStockCount.toString(), trend: lowStockCount > 0 ? 'Urgent' : 'Safe', color: lowStockCount > 0 ? 'rose' : 'emerald' },
+    { label: t('dashboard.activeProjects'), value: activeProjects.length.toString(), trend: activeProjects.length > 0 ? `${activeProjects.length}` : '—', color: 'indigo' },
+    { label: t('dashboard.totalLiterature'), value: resourceCount.toString(), trend: resourceCount > 0 ? `+${resourceCount}` : '—', color: 'emerald' },
+    { label: t('dashboard.teamMembers'), value: totalMembers.toString(), trend: totalMembers > 0 ? `${totalMembers}` : '—', color: 'amber' },
+    { label: t('dashboard.tasksCompleted'), value: lowStockCount.toString(), trend: lowStockCount > 0 ? 'Urgent' : 'Safe', color: lowStockCount > 0 ? 'rose' : 'emerald' },
   ];
 
   const chartData = useMemo(() => (projects || []).map(p => ({
@@ -270,10 +272,10 @@ const Dashboard: React.FC<DashboardProps> = ({ projects = [], resources = [], na
           <div className={`flex-[1.5] p-6 rounded-[2.5rem] flex flex-col min-h-0 border ${isLight ? 'bg-white border-slate-100 shadow-sm' : 'bg-slate-800/80 border-white/5 shadow-xl'}`}>
             <h4 className={`text-xs font-black mb-4 flex items-center justify-between shrink-0 ${isLight ? 'text-slate-800' : 'text-white'}`}>
               <div className="flex items-center gap-2">
-                <i className="fa-solid fa-flask-vial text-indigo-600"></i> 项目进度矩阵分析
+                <i className="fa-solid fa-flask-vial text-indigo-600"></i> {t('dashboard.researchProgress')}
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">实时进度流水线</span>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('dashboard.weeklyOverview')}</span>
                 <div className="relative group z-20">
                   <select
                     className="bg-transparent border-b border-dashed border-slate-300 text-[9px] font-black uppercase outline-none cursor-pointer transition-all pr-6 py-0.5 max-w-[150px] truncate"
