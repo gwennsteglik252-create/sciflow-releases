@@ -24,8 +24,6 @@
 | 🍎 **macOS** | [SciFlow-Pro-1.0.0-arm64.dmg](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/v1.0.0/SciFlow-Pro-1.0.0-arm64.dmg) | macOS 12+ (Apple Silicon) |
 | 🪟 **Windows** | [SciFlow-Pro-Setup-1.0.0.exe](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/v1.0.0/SciFlow-Pro-Setup-1.0.0.exe) | Windows 10/11 (64-bit) |
 
-> 💡 **免费试用 14 天**，试用期结束后需购买激活码（¥100 一次性买断，永久授权）。
-
 ---
 
 ## 🗂 功能模块详解
@@ -133,17 +131,6 @@
 - **图表**：SVG (矢量) / PNG (300~1200 DPI) / PDF
 - **文档**：Markdown / PDF
 - **数据**：JSON / CSV
-
----
-
-## 💰 定价
-
-| 计划 | 价格 | 说明 |
-|:----:|:----:|------|
-| 🆓 **免费试用** | ¥0 | 14天完整功能体验 |
-| 👑 **永久授权** | ¥100 | 一次性买断，终身使用，含后续更新 |
-
-> 购买激活码后，在软件内「设置 → 系统管理 → 软件授权」中输入即可永久激活。
 
 ---
 
