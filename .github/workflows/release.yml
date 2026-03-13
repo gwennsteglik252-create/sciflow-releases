@@ -1,7 +1,8 @@
-name: Create Release
+name: Build Windows
 
 on:
   push:
+    branches: [build]
     tags:
       - 'v*'
 
@@ -9,18 +10,42 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  build-windows:
+    runs-on: windows-latest
+    if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
-      - name: Checkout
+      - name: Checkout source from build branch
         uses: actions/checkout@v4
+        with:
+          ref: build
 
-      - name: Create GitHub Release
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build Electron main process
+        run: npm run electron:build
+
+      - name: Build Windows installer
+        run: npx electron-builder --win --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to existing Release
         uses: softprops/action-gh-release@v2
         with:
-          draft: false
-          prerelease: false
-          generate_release_notes: true
+          files: |
+            dist_electron/*.exe
+            dist_electron/*.blockmap
+            dist_electron/latest.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
