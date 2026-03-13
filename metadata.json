@@ -1,9 +1,0 @@
-{
-  "name": "Copy of SciFlow Pro",
-  "description": "Scientific Research Management and AI Assistant Platform with Deep Kinetic Analysis.",
-  "requestFramePermissions": [
-    "camera",
-    "microphone",
-    "geolocation"
-  ]
-}
