@@ -1,6 +1,7 @@
 
 import React, { RefObject } from 'react';
 import ScientificMarkdown from '../../Common/ScientificMarkdown';
+import { useTranslation } from '../../../locales/useTranslation';
 
 interface ContentAreaProps {
     textareaRef: RefObject<HTMLTextAreaElement>;
@@ -21,6 +22,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     onEditorChange, onEditorSelect, onCompositionStart, onCompositionEnd, onKeyDown, onDoubleClick,
     textAlign = 'left'
 }) => {
+    const { t } = useTranslation();
 
     // 精简排版参数：减少内边距，使内容充满容器，同时保持专业学术美感
     const editorStyles: React.CSSProperties = {
@@ -60,7 +62,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                             ref={textareaRef}
                             className="w-full h-full overflow-y-auto custom-scrollbar focus:ring-0 selection:bg-indigo-500/20 scroll-smooth"
                             style={editorStyles}
-                            placeholder={activeSectionId === 'references' ? "文献列表将在此处由引用引擎自动生成..." : "在此输入您的研究成果..."}
+                            placeholder={activeSectionId === 'references' ? t('writing.contentArea.referencesPlaceholder') : t('writing.contentArea.editorPlaceholder')}
                             value={editorContent}
                             onChange={onEditorChange}
                             onSelect={onEditorSelect}

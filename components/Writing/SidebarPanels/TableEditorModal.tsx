@@ -5,6 +5,7 @@ import { ProjectTable, Literature, ResearchProject } from '../../../types';
 import { GoogleGenAI, Type } from "@google/genai";
 import LaTeXText from '../../Common/LaTeXText';
 import { SPEED_CONFIG, extractJson, getGeminiApiKey } from '../../../services/gemini/core';
+import { useTranslation } from '../../../locales/useTranslation';
 
 interface TableEditorModalProps {
   show: boolean;
@@ -42,6 +43,7 @@ type FocusedElement = {
 export const TableEditorModal: React.FC<TableEditorModalProps> = ({
   show, onClose, onSave, onInsertText, onAddNode, onCiteLiterature, initialTable, project, allResources, orderedCitations, activeTemplateId
 }) => {
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [headers, setHeaders] = useState<string[]>(['Header 1', 'Header 2', 'Header 3']);
   const [rows, setRows] = useState<string[][]>([['', '', ''], ['', '', '']]);
@@ -252,7 +254,7 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
         setTitle(result.title || ''); setHeaders(result.headers); setRows(result.rows); setNote(result.note || '');
         setBatchRows(String(result.rows.length)); setBatchCols(String(result.headers.length));
       }
-    } catch (err) { alert("识别失败"); } finally { setIsOcrLoading(false); }
+    } catch (err) { alert(t('writing.tableEditor.ocrFailed')); } finally { setIsOcrLoading(false); }
   };
 
   const applyMatrixSize = () => {
@@ -291,11 +293,11 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-[90vw] h-full max-h-[95vh] rounded-3xl p-0 animate-reveal shadow-2xl relative border border-slate-200 flex flex-row overflow-hidden">
         <div className="w-20 bg-teal-600 flex items-center justify-center shrink-0">
-          <span className="text-white font-black uppercase text-4xl tracking-[1.2rem]" style={{ writingMode: 'vertical-rl' }}>三线表编辑器</span>
+          <span className="text-white font-black uppercase text-4xl tracking-[1.2rem]" style={{ writingMode: 'vertical-rl' }}>{t('writing.tableEditor.verticalTitle')}</span>
         </div>
         <div className="flex-1 flex flex-col min-w-0">
           <header className="p-4 lg:p-6 border-b border-slate-100 flex flex-col xl:flex-row justify-between items-center gap-4 bg-slate-50/50 shrink-0">
-            <h3 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">表格设计工作台</h3>
+            <h3 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">{t('writing.tableEditor.headerTitle')}</h3>
             <div className="flex flex-wrap items-center justify-end gap-3 flex-1">
               <div className="flex items-center gap-5 bg-white px-5 py-2.5 rounded-xl border border-slate-200 shadow-sm">
                 <select className="bg-transparent text-[11px] font-bold outline-none cursor-pointer w-44" value={fontFamily} onChange={(e) => setFontFamily(e.target.value)}>
@@ -314,14 +316,14 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
                 <input type="number" className="w-10 bg-transparent text-sm font-black text-center outline-none text-teal-600" value={batchRows} onChange={e => setBatchRows(e.target.value)} />
                 <span className="text-slate-300 font-black text-xs">×</span>
                 <input type="number" className="w-10 bg-transparent text-sm font-black text-center outline-none text-emerald-600" value={batchCols} onChange={e => setBatchCols(e.target.value)} />
-                <button onClick={applyMatrixSize} className="px-8 py-1.5 bg-teal-600 text-white rounded-lg text-[10px] font-black uppercase hover:bg-black transition-all">应用</button>
+                <button onClick={applyMatrixSize} className="px-8 py-1.5 bg-teal-600 text-white rounded-lg text-[10px] font-black uppercase hover:bg-black transition-all">{t('writing.tableEditor.apply')}</button>
               </div>
               <button onClick={() => fileInputRef.current?.click()} className="px-10 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl text-[10px] font-black uppercase hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-2">
-                {isOcrLoading ? <i className="fa-solid fa-spinner animate-spin"></i> : <i className="fa-solid fa-wand-magic-sparkles"></i>}智能识图
+                {isOcrLoading ? <i className="fa-solid fa-spinner animate-spin"></i> : <i className="fa-solid fa-wand-magic-sparkles"></i>}{t('writing.tableEditor.smartOCR')}
               </button>
               <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
               <button onClick={() => setShowLitPanel(!showLitPanel)} onMouseDown={(e) => e.preventDefault()} className={`px-10 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm flex items-center gap-2 ${showLitPanel ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 border border-indigo-200'}`}>
-                <i className="fa-solid fa-book"></i> {showLitPanel ? '收起文献' : '插入文献'}
+                <i className="fa-solid fa-book"></i> {showLitPanel ? t('writing.tableEditor.collapseLit') : t('writing.tableEditor.insertLit')}
               </button>
               <button onClick={onClose} className="w-10 h-10 rounded-full bg-slate-200 text-slate-500 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all"><i className="fa-solid fa-times"></i></button>
             </div>
@@ -350,16 +352,16 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
             <div className="flex-1 overflow-y-auto p-6 lg:p-10 custom-scrollbar bg-slate-50 z-20">
               <div className="max-w-5xl mx-auto space-y-4 pb-20">
                 <div className={`p-4 lg:p-5 rounded-3xl bg-white border transition-all shadow-sm cursor-text ${focusedElement?.type === 'title' ? 'border-indigo-500 ring-4 ring-indigo-50' : 'border-slate-100'}`} onClick={() => setFocusedElement({ type: 'title' })}>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block px-1">1. 表格标题 (TABLE CAPTION)</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block px-1">{t('writing.tableEditor.tableCaption')}</label>
                   {focusedElement?.type === 'title' ? (
                     <input autoFocus className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none italic" style={{ fontFamily, fontSize: `${titleFontSize}pt` }} value={title} onChange={(e) => setTitle(e.target.value)} onBlur={() => setTimeout(() => setFocusedElement(null), 200)} />
                   ) : (
-                    <div className="w-full px-4 py-3 min-h-[40px] text-sm font-bold text-slate-700 italic" style={{ fontFamily, fontSize: `${titleFontSize}pt` }}><LaTeXText text={title || '点击编辑标题...'} orderedCitations={orderedCitations} activeTemplateId={activeTemplateId} />
+                    <div className="w-full px-4 py-3 min-h-[40px] text-sm font-bold text-slate-700 italic" style={{ fontFamily, fontSize: `${titleFontSize}pt` }}><LaTeXText text={title || t('writing.tableEditor.clickEditTitle')} orderedCitations={orderedCitations} activeTemplateId={activeTemplateId} />
                     </div>
                   )}
                 </div>
                 <div className="p-4 lg:p-5 rounded-3xl bg-white border border-slate-100 flex flex-col shadow-md">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3">2. 数据矩阵 (DATA GRID)</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3">{t('writing.tableEditor.dataGrid')}</label>
                   <div className="overflow-auto border-2 border-slate-900 rounded-2xl bg-white shadow-lg">
                     <table className="w-full border-collapse" style={{ fontFamily, fontSize: `${fontSize}pt` }}>
                       <thead className="sticky top-0 bg-slate-50 z-10">
@@ -395,11 +397,11 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
                   </div>
                 </div>
                 <div className={`p-4 lg:p-5 rounded-3xl bg-white border transition-all shadow-sm cursor-text ${focusedElement?.type === 'note' ? 'border-indigo-500 ring-4 ring-indigo-50' : 'border-slate-100'}`} onClick={() => setFocusedElement({ type: 'note' })}>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block px-1">3. 表格注脚 (NOTE)</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block px-1">{t('writing.tableEditor.tableNote')}</label>
                   {focusedElement?.type === 'note' ? (
                     <input autoFocus className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-medium italic outline-none" style={{ fontFamily, fontSize: `${fontSize}pt` }} value={note} onChange={(e) => setNote(e.target.value)} onBlur={() => setTimeout(() => setFocusedElement(null), 200)} />
                   ) : (
-                    <div className="w-full px-4 py-3 min-h-[40px] text-xs font-medium italic text-slate-500" style={{ fontFamily, fontSize: `${fontSize}pt` }}><LaTeXText text={note || '点击添加表格注脚...'} orderedCitations={orderedCitations} activeTemplateId={activeTemplateId} />
+                    <div className="w-full px-4 py-3 min-h-[40px] text-xs font-medium italic text-slate-500" style={{ fontFamily, fontSize: `${fontSize}pt` }}><LaTeXText text={note || t('writing.tableEditor.clickAddNote')} orderedCitations={orderedCitations} activeTemplateId={activeTemplateId} />
                     </div>
                   )}
                 </div>
@@ -407,8 +409,8 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
             </div>
             {showLitPanel && (
               <div className="w-80 bg-slate-50 border-l border-slate-200 flex flex-col p-6 animate-in slide-in-from-right duration-300 shrink-0 z-10">
-                <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-4 flex items-center gap-2"><i className="fa-solid fa-book-atlas"></i> 项目文献库</h4>
-                <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[10px] font-bold outline-none mb-4" placeholder="搜索文献..." value={litSearch} onChange={e => setLitSearch(e.target.value)} />
+                <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-4 flex items-center gap-2"><i className="fa-solid fa-book-atlas"></i> {t('writing.tableEditor.litLibrary')}</h4>
+                <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[10px] font-bold outline-none mb-4" placeholder={t('writing.tableEditor.searchLit')} value={litSearch} onChange={e => setLitSearch(e.target.value)} />
                 <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1">
                   {filteredLit.map(lit => (
                     <div key={lit.id} onMouseDown={(e) => e.preventDefault()} onClick={() => handleInsertLit(lit)} className="p-3 bg-white rounded-xl border border-slate-100 hover:border-indigo-400 hover:shadow-md transition-all cursor-pointer group">
@@ -421,8 +423,8 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
             )}
           </div>
           <footer className="p-4 lg:p-6 border-t border-slate-100 flex gap-4 shrink-0 bg-white shadow-xl relative z-40">
-            <button onClick={onClose} className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-xl text-[11px] font-black uppercase">取消编辑</button>
-            <button onClick={handleSave} className="flex-[2] py-4 bg-teal-600 text-white rounded-xl text-[11px] font-black uppercase shadow-xl hover:bg-black transition-all">保存至项目库</button>
+            <button onClick={onClose} className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-xl text-[11px] font-black uppercase">{t('writing.tableEditor.cancel')}</button>
+            <button onClick={handleSave} className="flex-[2] py-4 bg-teal-600 text-white rounded-xl text-[11px] font-black uppercase shadow-xl hover:bg-black transition-all">{t('writing.tableEditor.save')}</button>
           </footer>
         </div>
       </div>

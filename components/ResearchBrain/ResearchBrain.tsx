@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useRef, useEffect, useState, useMemo, lazy, Suspense } from 'react';
 import { useRagEngine } from '../../hooks/useRagEngine';
 import { useProjectContext } from '../../context/ProjectContext';
 import { GraphNode, GraphEdge } from '../../types';
@@ -9,6 +9,67 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const StarfieldGraph = lazy(() => import('./StarfieldGraph'));
+
+// ─── 3D 星空加载占位 ─────────────────────────────────────────────
+function StarfieldFallback() {
+    return (
+        <div className="w-full h-full flex items-center justify-center bg-[#020817]" style={{ borderRadius: '2rem' }}>
+            <div className="flex flex-col items-center gap-4">
+                <div className="relative w-20 h-20">
+                    <div className="absolute inset-0 rounded-full border-2 border-indigo-500/30 animate-ping" />
+                    <div className="absolute inset-2 rounded-full border-2 border-indigo-400/50 animate-pulse" />
+                    <div className="absolute inset-4 rounded-full bg-indigo-600/20 flex items-center justify-center">
+                        <i className="fa-solid fa-atom text-indigo-400 text-xl animate-spin" style={{ animationDuration: '3s' }} />
+                    </div>
+                </div>
+                <span className="text-[10px] font-black text-indigo-300/60 uppercase tracking-[0.3em]">
+                    初始化星空引擎...
+                </span>
+            </div>
+        </div>
+    );
+}
+
+// ─── 节点颜色映射 ─────────────────────────────────────────────────
+const getNodeColor = (type: string) => {
+    switch (type) {
+        case 'Project': return '#6366f1';
+        case 'Literature': return '#10b981';
+        case 'Characterization': return '#f43f5e';
+        default: return '#f59e0b';
+    }
+};
+
+const getNodeIcon = (type: string) => {
+    switch (type) {
+        case 'Project': return 'fa-vial';
+        case 'Literature': return 'fa-book';
+        case 'Characterization': return 'fa-microscope';
+        case 'TRL_Milestone': return 'fa-flag';
+        default: return 'fa-circle';
+    }
+};
+
+// ─── 图例 Badge ──────────────────────────────────────────────────
+function LegendBadge({ color, label }: { color: string; label: string }) {
+    return (
+        <div className="flex items-center gap-1.5">
+            <div
+                className="w-2 h-2 rounded-full"
+                style={{
+                    backgroundColor: color,
+                    boxShadow: `0 0 6px ${color}`,
+                }}
+            />
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                {label}
+            </span>
+        </div>
+    );
+}
+
+// ─── 主组件 ──────────────────────────────────────────────────────
 const ResearchBrain: React.FC = () => {
     const {
         projects, resources, activeTheme, showToast, navigate, setReturnPath
@@ -25,19 +86,11 @@ const ResearchBrain: React.FC = () => {
     // 图谱状态
     const [nodes, setNodes] = useState<GraphNode[]>([]);
     const [edges, setEdges] = useState<GraphEdge[]>([]);
-    const [scale, setScale] = useState(1);
-    const [offset, setOffset] = useState({ x: 0, y: 0 });
-    const [isPanning, setIsPanning] = useState(false);
     const [showSuccessPath, setShowSuccessPath] = useState(false);
     const [highlightedPath, setHighlightedPath] = useState<Set<string>>(new Set());
     const [pathCost, setPathCost] = useState<{ total: number, currency: string } | null>(null);
 
-    const svgRef = useRef<SVGSVGElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
-    const canvasRef = useRef<HTMLDivElement>(null);
-    // 触摸手势追踪
-    const lastTouchesRef = useRef<React.Touch[]>([]);
-    const lastTouchDistRef = useRef<number | null>(null);
 
     const activeProject = useMemo(() =>
         projects.find(p => p.id === selectedProjectId) || projects[0],
@@ -60,7 +113,7 @@ const ResearchBrain: React.FC = () => {
         if (node.type === 'Literature') {
             setQuery(`请深度分析这篇文献《${node.label}》的核心创新点和实验参数。`);
         } else if (node.type === 'Characterization') {
-            setQuery(`针对这次实验记录“${node.label}”，请从物理机理角度分析其结果的合理性。`);
+            setQuery(`针对这次实验记录"${node.label}"，请从物理机理角度分析其结果的合理性。`);
         }
     };
 
@@ -93,7 +146,7 @@ const ResearchBrain: React.FC = () => {
                     x: (nodesList[nodesList.length - 1].x) + (j % 2 === 0 ? 60 : -60),
                     y: (nodesList[nodesList.length - 1].y) + 80,
                     charData: { linkedLogId: log.id, analysisText: log.summaryInsight || log.description },
-                    meta: { timestamp: log.timestamp, status: log.status, milestoneId: ms.id } // 注入所属里程碑ID
+                    meta: { timestamp: log.timestamp, status: log.status, milestoneId: ms.id }
                 });
                 edgesList.push({ source: msId, target: logId, type: 'proves' });
             });
@@ -113,116 +166,24 @@ const ResearchBrain: React.FC = () => {
         setEdges(edgesList);
     }, [activeProject, resources]);
 
-    // ---- 触摸 & 滚轮手势（使用原生事件以支持 passive:false） ----
-    const getTouchDist = (t1: Touch, t2: Touch) => {
-        const dx = t1.clientX - t2.clientX;
-        const dy = t1.clientY - t2.clientY;
-        return Math.sqrt(dx * dx + dy * dy);
-    };
-
-    useEffect(() => {
-        const el = canvasRef.current;
-        if (!el) return;
-
-        // --- 滚轮/触摸板手势 ---
-        const onWheel = (e: WheelEvent) => {
-            e.preventDefault();
-            if (e.ctrlKey || e.metaKey) {
-                // Ctrl/Cmd+滚轮 或 macOS 触摸板捏合缩放（自动带 ctrlKey）
-                const direction = e.deltaY > 0 ? -1 : 1;
-                setScale(prev => Math.min(Math.max(prev + direction * 0.1, 0.4), 3));
-            } else {
-                // 双指滑动 → 平移视野
-                setOffset(prev => ({ x: prev.x - e.deltaX, y: prev.y - e.deltaY }));
-            }
-        };
-
-        // --- 触摸屏手势 ---
-        const onTouchStart = (e: TouchEvent) => {
-            const touches = Array.from(e.touches);
-            lastTouchesRef.current = touches as any;
-            if (touches.length === 2) {
-                e.preventDefault();
-                lastTouchDistRef.current = getTouchDist(touches[0], touches[1]);
-            } else {
-                lastTouchDistRef.current = null;
-            }
-        };
-
-        const onTouchMove = (e: TouchEvent) => {
-            const touches = Array.from(e.touches);
-            const prev = lastTouchesRef.current;
-            if (prev.length === 0) return;
-
-            if (touches.length === 2 && prev.length === 2) {
-                e.preventDefault();
-
-                const currCX = (touches[0].clientX + touches[1].clientX) / 2;
-                const currCY = (touches[0].clientY + touches[1].clientY) / 2;
-                const prevCX = ((prev[0] as any).clientX + (prev[1] as any).clientX) / 2;
-                const prevCY = ((prev[0] as any).clientY + (prev[1] as any).clientY) / 2;
-                setOffset(o => ({ x: o.x + currCX - prevCX, y: o.y + currCY - prevCY }));
-
-                const currDist = getTouchDist(touches[0], touches[1]);
-                if (lastTouchDistRef.current !== null && lastTouchDistRef.current > 0) {
-                    const ratio = currDist / lastTouchDistRef.current;
-                    setScale(s => Math.min(Math.max(s * ratio, 0.4), 3));
-                }
-                lastTouchDistRef.current = currDist;
-            }
-
-            lastTouchesRef.current = touches as any;
-        };
-
-        const onTouchEnd = (e: TouchEvent) => {
-            const touches = Array.from(e.touches);
-            lastTouchesRef.current = touches as any;
-            if (touches.length < 2) lastTouchDistRef.current = null;
-        };
-
-        // 使用 { passive: false } 确保 preventDefault() 可以生效
-        el.addEventListener('wheel', onWheel, { passive: false });
-        el.addEventListener('touchstart', onTouchStart, { passive: false });
-        el.addEventListener('touchmove', onTouchMove, { passive: false });
-        el.addEventListener('touchend', onTouchEnd, { passive: false });
-
-        return () => {
-            el.removeEventListener('wheel', onWheel);
-            el.removeEventListener('touchstart', onTouchStart);
-            el.removeEventListener('touchmove', onTouchMove);
-            el.removeEventListener('touchend', onTouchEnd);
-        };
-    }, []);
-
     useEffect(() => {
         if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }, [chatHistory, isLoading]);
 
-    const getNodeColor = (type: string) => {
-        switch (type) {
-            case 'Project': return '#6366f1';
-            case 'Literature': return '#10b981';
-            case 'Characterization': return '#f43f5e';
-            default: return '#f59e0b';
-        }
-    };
-
     const handleTraceSource = () => {
         if (!selectedNode || !activeProject) return;
 
-        setReturnPath('research_brain'); // 标记返回路径
+        setReturnPath('research_brain');
 
         if (selectedNode.type === 'Characterization' && selectedNode.meta?.milestoneId) {
-            // 跳转到详情页，并指定显示 logs 视图，且选中对应的里程碑
             navigate('project_detail', activeProject.id, `logs:${selectedNode.meta.milestoneId}`);
             showToast({ message: "正在回溯原始实验记录...", type: 'info' });
         } else if (selectedNode.type === 'TRL_Milestone') {
-            // 直接回溯研究节点
             navigate('project_detail', activeProject.id, `logs:${selectedNode.meta.realId}`);
             showToast({ message: "正在定位研究节点...", type: 'info' });
         } else if (selectedNode.type === 'Literature') {
             const resId = selectedNode.id.replace('lit_', '');
-            navigate('literature', activeProject.id, `${resId}_rw`);
+            navigate('literature', activeProject.id, `${resId}_rb`);
             showToast({ message: "正在打开文献详情...", type: 'info' });
         } else if (selectedNode.type === 'Project') {
             navigate('project_detail', activeProject.id, 'logs');
@@ -232,16 +193,41 @@ const ResearchBrain: React.FC = () => {
         }
     };
 
+    // 节点统计
+    const stats = useMemo(() => ({
+        total: nodes.length,
+        literature: nodes.filter(n => n.type === 'Literature').length,
+        milestones: nodes.filter(n => n.type === 'TRL_Milestone').length,
+        experiments: nodes.filter(n => n.type === 'Characterization').length,
+        connections: edges.length,
+    }), [nodes, edges]);
+
     return (
-        <div className="h-full flex flex-col gap-4 animate-reveal overflow-hidden px-4 py-2">
-            <header className="flex justify-between items-center bg-slate-900 px-6 py-4 rounded-[2rem] border border-white/5 shrink-0 shadow-2xl z-20">
+        <div className="h-full flex flex-col gap-3 animate-reveal overflow-hidden px-4 py-2">
+            {/* ── 顶部 Header ── */}
+            <header className="flex justify-between items-center px-6 py-3 rounded-[2rem] border border-white/5 shrink-0 shadow-2xl z-20"
+                style={{
+                    background: 'linear-gradient(135deg, rgba(6,8,25,0.95), rgba(15,23,42,0.95))',
+                    backdropFilter: 'blur(20px)',
+                }}
+            >
                 <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 via-purple-600 to-fuchsia-600 rounded-[1.2rem] flex items-center justify-center text-white shadow-xl ring-4 ring-indigo-500/20">
-                        <i className="fa-solid fa-brain text-2xl"></i>
+                    <div className="w-12 h-12 rounded-[1.2rem] flex items-center justify-center text-white shadow-xl relative overflow-hidden"
+                        style={{
+                            background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)',
+                        }}
+                    >
+                        <i className="fa-solid fa-brain text-xl relative z-10" />
+                        <div className="absolute inset-0 bg-white/10 animate-pulse" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-white italic uppercase tracking-tighter leading-none">智能科研决策中心</h2>
-                        <div className="flex items-center gap-4 mt-2">
+                        <h2 className="text-lg font-black text-white tracking-tight leading-none flex items-center gap-2">
+                            智能科研决策中心
+                            <span className="text-[8px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase tracking-widest">
+                                3D
+                            </span>
+                        </h2>
+                        <div className="flex items-center gap-4 mt-1.5">
                             <select
                                 value={selectedProjectId}
                                 onChange={(e) => setSelectedProjectId(e.target.value)}
@@ -260,6 +246,19 @@ const ResearchBrain: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    {/* 节点统计 */}
+                    <div className="hidden lg:flex items-center gap-3 px-4 py-1.5 bg-white/[0.03] rounded-xl border border-white/5">
+                        <div className="text-center">
+                            <div className="text-[13px] font-black text-white font-mono">{stats.total}</div>
+                            <div className="text-[7px] font-bold text-slate-500 uppercase">节点</div>
+                        </div>
+                        <div className="w-px h-6 bg-white/10" />
+                        <div className="text-center">
+                            <div className="text-[13px] font-black text-emerald-400 font-mono">{stats.connections}</div>
+                            <div className="text-[7px] font-bold text-slate-500 uppercase">连接</div>
+                        </div>
+                    </div>
+
                     <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
                         <button
                             onClick={() => {
@@ -271,183 +270,184 @@ const ResearchBrain: React.FC = () => {
                             }}
                             className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-colors flex items-center gap-2 ${showSuccessPath ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                         >
-                            <i className="fa-solid fa-code-branch"></i> 成功路径追踪
+                            <i className="fa-solid fa-code-branch" /> 成功路径
                         </button>
                     </div>
 
-                    <div className="w-px h-8 bg-white/10 mx-2"></div>
+                    <div className="w-px h-8 bg-white/10 mx-1" />
 
                     {isIndexing ? (
                         <div className="flex flex-col items-end gap-1.5">
                             <span className="text-[9px] font-black text-indigo-400 uppercase animate-pulse">建立语义索引...</span>
                             <div className="w-32 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                <div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${indexProgress}%` }}></div>
+                                <div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${indexProgress}%` }} />
                             </div>
                         </div>
                     ) : (
                         <button onClick={startIndexing} className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-black transition-all flex items-center gap-2 shadow-lg">
-                            <i className="fa-solid fa-database"></i> 训练大脑
+                            <i className="fa-solid fa-database" /> 训练大脑
                         </button>
                     )}
                 </div>
             </header>
 
-            <div className="flex-1 flex flex-row gap-4 min-h-0 overflow-hidden">
-                {/* 左侧：全链路交互图谱 */}
+            {/* ── 主体区域 ── */}
+            <div className="flex-1 flex flex-row gap-3 min-h-0 overflow-hidden">
+
+                {/* ━━ 左侧: 3D 星空图谱 ━━ */}
                 <div
-                    ref={canvasRef}
-                    className="flex-[1.8] bg-slate-950 rounded-[3rem] border border-slate-800 relative overflow-hidden group shadow-inner"
-                    onMouseDown={(e) => e.button === 0 && setIsPanning(true)}
-                    onMouseMove={(e) => isPanning && setOffset(prev => ({ x: prev.x + e.movementX, y: prev.y + e.movementY }))}
-                    onMouseUp={() => setIsPanning(false)}
-                    onMouseLeave={() => setIsPanning(false)}
-                    style={{ touchAction: 'none' }}
+                    className="flex-[1.8] relative overflow-hidden group"
+                    style={{
+                        borderRadius: '2rem',
+                        border: '1px solid rgba(99,102,241,0.15)',
+                        boxShadow: 'inset 0 0 80px rgba(99,102,241,0.03), 0 0 40px rgba(0,0,0,0.4)',
+                    }}
                 >
-                    <svg
-                        ref={svgRef}
-                        className="w-full h-full cursor-grab active:cursor-grabbing"
-                        style={{ contain: 'layout paint size', shapeRendering: 'geometricPrecision' }}
-                    >
-                        <pattern id="grid-dots" width="40" height="40" patternUnits="userSpaceOnUse">
-                            <circle cx="2" cy="2" r="1" fill="#1e293b" />
-                        </pattern>
-                        <rect width="100%" height="100%" fill="url(#grid-dots)" />
+                    <Suspense fallback={<StarfieldFallback />}>
+                        <StarfieldGraph
+                            nodes={nodes}
+                            edges={edges}
+                            selectedNode={selectedNode}
+                            highlightedPath={highlightedPath}
+                            onSelectNode={handleNodeClick}
+                        />
+                    </Suspense>
 
-                        <g transform={`translate(${offset.x}, ${offset.y}) scale(${scale})`} style={{ transformOrigin: '0 0' }}>
-                            {edges.map((e, i) => {
-                                const s = nodes.find(n => n.id === e.source);
-                                const t = nodes.find(n => n.id === e.target);
-                                if (!s || !t) return null;
-                                const isHighlighted = highlightedPath.has(s.id) && highlightedPath.has(t.id);
-                                return (
-                                    <line
-                                        key={i} x1={s.x} y1={s.y} x2={t.x} y2={t.y}
-                                        stroke={isHighlighted ? "#10b981" : "#1e293b"}
-                                        strokeWidth={isHighlighted ? "3" : "1"}
-                                        strokeDasharray={e.type === 'derived_from' ? '4 2' : '0'}
-                                        vectorEffect="non-scaling-stroke"
-                                        className="transition-[stroke] duration-300"
-                                    />
-                                );
-                            })}
-                            {nodes.map(n => {
-                                const isSelected = selectedNode?.id === n.id;
-                                const isHighlighted = highlightedPath.has(n.id);
-                                const color = getNodeColor(n.type);
-                                return (
-                                    <g
-                                        key={n.id}
-                                        onClick={(e) => { e.stopPropagation(); handleNodeClick(n); }}
-                                        className="cursor-pointer group/node"
-                                    >
-                                        {(isSelected || isHighlighted) && (
-                                            <circle cx={n.x} cy={n.y} r="32" fill="none" stroke={isHighlighted ? "#10b981" : color} strokeWidth="2" vectorEffect="non-scaling-stroke" className="animate-pulse" />
-                                        )}
-                                        <circle
-                                            cx={n.x} cy={n.y} r={n.type === 'Project' ? 18 : 12}
-                                            fill="#0f172a" stroke={isHighlighted ? "#10b981" : color}
-                                            strokeWidth="2"
-                                            vectorEffect="non-scaling-stroke"
-                                            className="transition-[stroke] duration-300"
-                                        />
-                                        <circle cx={n.x} cy={n.y} r={4} fill={isHighlighted ? "#10b981" : color} vectorEffect="non-scaling-stroke" />
-                                        <text
-                                            x={n.x} y={n.y + 30}
-                                            textAnchor="middle"
-                                            fill={isHighlighted ? "#fff" : "#94a3b8"}
-                                            className="text-[9px] font-black uppercase pointer-events-none select-none transition-colors duration-300"
-                                            style={{ transform: `scale(${1 / scale})`, transformOrigin: `${n.x}px ${n.y + 30}px` }}
-                                        >
-                                            {n.label}
-                                        </text>
-                                    </g>
-                                );
-                            })}
-                        </g>
-                    </svg>
+                    {/* 暗角蒙版 */}
+                    <div
+                        className="absolute inset-0 pointer-events-none z-20"
+                        style={{
+                            background: 'radial-gradient(ellipse at center, transparent 40%, rgba(2,5,16,0.4) 70%, rgba(2,5,16,0.8) 100%)',
+                            borderRadius: '2rem',
+                        }}
+                    />
 
-                    {/* 节点属性浮动卡片 */}
+                    {/* 图例 */}
+                    <div className="absolute bottom-5 left-5 flex items-center gap-4 px-4 py-2 bg-slate-900/70 backdrop-blur-xl rounded-xl border border-white/5 z-30">
+                        <LegendBadge color="#6366f1" label="课题" />
+                        <LegendBadge color="#10b981" label="文献" />
+                        <LegendBadge color="#f43f5e" label="实验" />
+                        <LegendBadge color="#f59e0b" label="里程碑" />
+                    </div>
+
+                    {/* 操作提示 */}
+                    <div className="absolute top-5 right-5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-30">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900/70 backdrop-blur-xl rounded-lg border border-white/5">
+                            <i className="fa-solid fa-hand text-slate-500 text-[10px]" />
+                            <span className="text-[9px] font-bold text-slate-500">拖拽旋转 · 滚轮缩放 · 点击节点</span>
+                        </div>
+                    </div>
+
+                    {/* ── 节点属性浮动卡片 ── */}
                     <AnimatePresence>
                         {selectedNode && (
                             <motion.div
                                 initial={{ opacity: 0, x: -20, scale: 0.95 }}
                                 animate={{ opacity: 1, x: 0, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
-                                className="absolute top-8 left-8 w-80 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-[2.5rem] shadow-2xl p-6 flex flex-col z-50 overflow-hidden"
+                                className="absolute top-6 left-6 w-72 z-50 overflow-hidden"
+                                style={{
+                                    background: 'linear-gradient(145deg, rgba(6,8,25,0.92), rgba(15,23,42,0.92))',
+                                    backdropFilter: 'blur(24px)',
+                                    border: '1px solid rgba(255,255,255,0.08)',
+                                    borderRadius: '1.5rem',
+                                    boxShadow: '0 20px 60px rgba(0,0,0,0.6), 0 0 30px rgba(99,102,241,0.08)',
+                                }}
                             >
-                                <div className="flex justify-between items-start mb-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white" style={{ backgroundColor: getNodeColor(selectedNode.type) }}>
-                                            <i className={`fa-solid ${selectedNode.type === 'Project' ? 'fa-vial' : selectedNode.type === 'Literature' ? 'fa-book' : 'fa-microscope'} text-sm`}></i>
-                                        </div>
-                                        <div className="min-w-0">
-                                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{selectedNode.type} 节点</span>
-                                            <h4 className="text-sm font-black text-white uppercase mt-0.5 truncate italic">{selectedNode.label}</h4>
-                                        </div>
-                                    </div>
-                                    <button onClick={() => setSelectedNode(null)} className="text-slate-500 hover:text-rose-500 transition-colors"><i className="fa-solid fa-times"></i></button>
-                                </div>
+                                {/* 顶部发光条 */}
+                                <div
+                                    className="h-0.5 w-full"
+                                    style={{
+                                        background: `linear-gradient(90deg, transparent, ${getNodeColor(selectedNode.type)}, transparent)`,
+                                    }}
+                                />
 
-                                <div className="space-y-4 max-h-80 overflow-y-auto custom-scrollbar pr-1">
-                                    {selectedNode.meta && Object.entries(selectedNode.meta).map(([k, v]: [string, any]) => {
-                                        if (k === 'realId' || k === 'milestoneId') return null; // 隐藏内部定位ID
-                                        return (
-                                            <div key={k} className="flex flex-col gap-1 border-b border-white/5 pb-2 last:border-0">
-                                                <span className="text-[8px] font-black text-indigo-400 uppercase tracking-tighter">{k}</span>
-                                                <span className="text-[11px] font-medium text-slate-300 leading-snug">{String(v)}</span>
+                                <div className="p-5">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div
+                                                className="w-9 h-9 rounded-xl flex items-center justify-center text-white relative overflow-hidden"
+                                                style={{
+                                                    backgroundColor: getNodeColor(selectedNode.type),
+                                                    boxShadow: `0 0 20px ${getNodeColor(selectedNode.type)}40`,
+                                                }}
+                                            >
+                                                <i className={`fa-solid ${getNodeIcon(selectedNode.type)} text-sm relative z-10`} />
                                             </div>
-                                        );
-                                    })}
-                                    {selectedNode.charData && (
-                                        <div className="p-4 bg-white/5 rounded-2xl border border-indigo-500/20 italic text-[11px] text-indigo-100/80 leading-relaxed shadow-inner">
-                                            “ {selectedNode.charData.analysisText} ”
+                                            <div className="min-w-0">
+                                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em]">{selectedNode.type}</span>
+                                                <h4 className="text-[13px] font-black text-white mt-0.5 truncate">{selectedNode.label}</h4>
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
+                                        <button onClick={() => setSelectedNode(null)} className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all">
+                                            <i className="fa-solid fa-times text-[10px]" />
+                                        </button>
+                                    </div>
 
-                                <div className="mt-6 flex flex-col gap-2">
-                                    <button
-                                        onClick={handleTraceSource}
-                                        className="w-full py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase shadow-lg hover:bg-indigo-500 transition-all active:scale-95 flex items-center justify-center gap-2"
-                                    >
-                                        <i className="fa-solid fa-arrow-right-long"></i> 查看原始数据源
-                                    </button>
-                                    <button
-                                        onClick={() => setQuery(`关于节点“${selectedNode.label}”，请提供更深入的科学见解。`)}
-                                        className="w-full py-2.5 bg-white/5 border border-white/10 text-slate-300 rounded-xl text-[9px] font-black uppercase hover:bg-white/10 transition-all flex items-center justify-center gap-2"
-                                    >
-                                        <i className="fa-solid fa-wand-magic-sparkles text-amber-400"></i> 提问 AI
-                                    </button>
+                                    <div className="space-y-3 max-h-52 overflow-y-auto custom-scrollbar pr-1">
+                                        {selectedNode.meta && Object.entries(selectedNode.meta).map(([k, v]: [string, any]) => {
+                                            if (k === 'realId' || k === 'milestoneId') return null;
+                                            return (
+                                                <div key={k} className="flex flex-col gap-0.5 border-b border-white/5 pb-2 last:border-0">
+                                                    <span className="text-[8px] font-black text-indigo-400/70 uppercase tracking-wider">{k}</span>
+                                                    <span className="text-[11px] font-medium text-slate-300 leading-snug">{String(v)}</span>
+                                                </div>
+                                            );
+                                        })}
+                                        {selectedNode.charData && (
+                                            <div className="p-3 bg-white/[0.03] rounded-xl border border-indigo-500/15 text-[11px] text-indigo-100/70 leading-relaxed italic">
+                                                " {selectedNode.charData.analysisText} "
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="mt-4 flex flex-col gap-2">
+                                        <button
+                                            onClick={handleTraceSource}
+                                            className="w-full py-2.5 rounded-xl text-[10px] font-black uppercase shadow-lg hover:brightness-110 transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-white"
+                                            style={{
+                                                background: `linear-gradient(135deg, ${getNodeColor(selectedNode.type)}, ${getNodeColor(selectedNode.type)}cc)`,
+                                            }}
+                                        >
+                                            <i className="fa-solid fa-arrow-right-long" /> 查看原始数据源
+                                        </button>
+                                        <button
+                                            onClick={() => setQuery(`关于节点"${selectedNode.label}"，请提供更深入的科学见解。`)}
+                                            className="w-full py-2 bg-white/5 border border-white/10 text-slate-300 rounded-xl text-[9px] font-black uppercase hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                                        >
+                                            <i className="fa-solid fa-wand-magic-sparkles text-amber-400" /> 提问 AI
+                                        </button>
+                                    </div>
                                 </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
-
-                    {/* 图谱浮动控制 */}
-                    <div className="absolute bottom-8 right-8 flex flex-col gap-2">
-                        <button onClick={() => setScale(prev => Math.min(3, prev + 0.2))} className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl text-white hover:bg-indigo-600 transition-all border border-white/10 shadow-xl"><i className="fa-solid fa-plus"></i></button>
-                        <button onClick={() => setScale(prev => Math.max(0.4, prev - 0.2))} className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl text-white hover:bg-indigo-600 transition-all border border-white/10 shadow-xl"><i className="fa-solid fa-minus"></i></button>
-                        <button onClick={() => { setOffset({ x: 0, y: 0 }); setScale(1); }} className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl text-white hover:bg-indigo-600 transition-all border border-white/10 shadow-xl"><i className="fa-solid fa-compress"></i></button>
-                    </div>
                 </div>
 
-                {/* 右侧：语义问答 - 现在是全屏高度 */}
-                <div className="flex-1 bg-white rounded-[3rem] shadow-2xl border border-slate-200 overflow-hidden flex flex-col min-w-0">
-                    <header className="px-6 py-4 bg-slate-50 border-b border-slate-100 shrink-0">
+                {/* ━━ 右侧: 语义问答 ━━ */}
+                <div className="flex-1 overflow-hidden flex flex-col min-w-0"
+                    style={{
+                        borderRadius: '2rem',
+                        background: 'linear-gradient(180deg, #ffffff, #f8fafc)',
+                        boxShadow: '0 20px 60px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)',
+                    }}
+                >
+                    <header className="px-6 py-3 border-b border-slate-100 shrink-0 bg-white/80 backdrop-blur-sm" style={{ borderTopLeftRadius: '2rem', borderTopRightRadius: '2rem' }}>
                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                            <i className="fa-solid fa-comments text-indigo-600"></i> 跨维度证据链合成 (RAG)
+                            <i className="fa-solid fa-comments text-indigo-600" /> 跨维度证据链合成 (RAG)
                         </h4>
                     </header>
 
-                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar bg-slate-50/20">
+                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
                         {chatHistory.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center px-6 gap-6">
                                 <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center shadow-inner">
-                                    <i className="fa-solid fa-microchip text-3xl"></i>
+                                    <i className="fa-solid fa-microchip text-3xl" />
                                 </div>
                                 <div>
                                     <h4 className="text-xl font-black text-slate-800 uppercase italic mb-2">交互式提问</h4>
                                     <p className="text-[11px] text-slate-500 font-medium italic leading-relaxed">
+                                        点击左侧3D星图中的节点，或直接输入问题。<br />
                                         AI 将基于本地全量文献和实验数据为您合成证据链。
                                     </p>
                                 </div>
@@ -455,7 +455,7 @@ const ResearchBrain: React.FC = () => {
                         ) : (
                             chatHistory.map((msg, idx) => (
                                 <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-reveal`}>
-                                    <div className={`max-w-[90%] p-5 rounded-[2rem] shadow-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white border border-slate-100 text-slate-800 rounded-tl-none border-l-4 border-l-indigo-500'}`}>
+                                    <div className={`max-w-[90%] p-5 rounded-[1.5rem] shadow-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white border border-slate-100 text-slate-800 rounded-tl-none border-l-4 border-l-indigo-500'}`}>
                                         <div className="markdown-body text-[12.5px] leading-relaxed">
                                             <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{msg.text}</ReactMarkdown>
                                         </div>
@@ -466,15 +466,15 @@ const ResearchBrain: React.FC = () => {
                         {isLoading && (
                             <div className="flex justify-start animate-pulse">
                                 <div className="bg-white border border-slate-100 p-4 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-3">
-                                    <i className="fa-solid fa-spinner animate-spin text-indigo-600"></i>
+                                    <i className="fa-solid fa-spinner animate-spin text-indigo-600" />
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">检索向量空间...</span>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <footer className="p-5 bg-white border-t border-slate-100 shrink-0">
-                        <div className="flex items-end gap-3 bg-slate-50 border border-slate-200 rounded-[2rem] p-2 focus-within:ring-4 focus-within:ring-indigo-100 transition-all">
+                    <footer className="p-4 bg-white border-t border-slate-100 shrink-0" style={{ borderBottomLeftRadius: '2rem', borderBottomRightRadius: '2rem' }}>
+                        <div className="flex items-end gap-3 bg-slate-50 border border-slate-200 rounded-[1.5rem] p-2 focus-within:ring-4 focus-within:ring-indigo-100 transition-all">
                             <textarea
                                 className="flex-1 bg-transparent border-none p-3 text-sm font-bold text-slate-700 outline-none resize-none h-12 max-h-32 italic"
                                 placeholder="输入您对当前课题或具体节点的科学疑问..."
@@ -487,7 +487,7 @@ const ResearchBrain: React.FC = () => {
                                 disabled={isLoading || !query.trim()}
                                 className="w-11 h-11 bg-indigo-600 text-white rounded-2xl shadow-xl hover:bg-black transition-all active:scale-90 disabled:opacity-30 flex items-center justify-center shrink-0"
                             >
-                                <i className="fa-solid fa-paper-plane text-base"></i>
+                                <i className="fa-solid fa-paper-plane text-base" />
                             </button>
                         </div>
                     </footer>

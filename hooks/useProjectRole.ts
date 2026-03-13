@@ -53,13 +53,25 @@ export const useProjectRole = (projectId: string | null): UseProjectRoleResult =
                 return;
             }
 
-            // 2. 检查 project_members 表中的角色
-            const { data: membership } = await supabase
-                .from('project_members')
-                .select('role')
-                .eq('project_id', projectId)
-                .eq('user_id', userId)
-                .maybeSingle();
+            // 2. 检查 project_members 表中的角色（如果表可用）
+            let membership = null;
+            try {
+                const { data, error: memberError } = await supabase
+                    .from('project_members')
+                    .select('role')
+                    .eq('project_id', projectId)
+                    .eq('user_id', userId)
+                    .maybeSingle();
+
+                if (memberError) {
+                    // 表不存在或 RLS 问题，静默跳过
+                    console.warn('[useProjectRole] project_members 查询跳过:', memberError.message);
+                } else {
+                    membership = data;
+                }
+            } catch {
+                // 网络错误等，静默跳过
+            }
 
             if (membership) {
                 setRole(membership.role as ProjectRole);

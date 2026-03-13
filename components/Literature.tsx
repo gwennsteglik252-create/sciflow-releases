@@ -112,7 +112,9 @@ const Literature: React.FC<LiteratureProps> = (props) => {
   };
 
   const handleBack = () => {
-    if (state.isReturnToWriting && state.selectedProjectId) {
+    if (state.isReturnToBrain && state.selectedProjectId) {
+      props.Maps('research_brain', state.selectedProjectId);
+    } else if (state.isReturnToWriting && state.selectedProjectId) {
       props.Maps('writing', state.selectedProjectId, 'literature');
     } else if (state.isReturnToProject && state.selectedProjectId) {
       props.Maps('project_detail', state.selectedProjectId, 'process');
@@ -145,8 +147,8 @@ const Literature: React.FC<LiteratureProps> = (props) => {
         handleCompareAnalysis={actions.handleCompareAnalysis}
         isSummarizing={state.isSummarizing}
         canSummarize={state.filteredResources.length >= 2}
-        isReturnMode={state.isReturnToWriting || state.isReturnToProject || state.isReturnToMatrix}
-        returnType={state.isReturnToWriting ? 'writing' : state.isReturnToProject ? 'project' : state.isReturnToMatrix ? 'matrix' : undefined}
+        isReturnMode={state.isReturnToWriting || state.isReturnToProject || state.isReturnToMatrix || state.isReturnToBrain}
+        returnType={state.isReturnToBrain ? 'brain' : state.isReturnToWriting ? 'writing' : state.isReturnToProject ? 'project' : state.isReturnToMatrix ? 'matrix' : undefined}
         searchFilters={state.searchFilters}
         onUpdateFilters={state.setSearchFilters}
         onOpenBibTeX={() => state.setShowBibTeXModal(true)}

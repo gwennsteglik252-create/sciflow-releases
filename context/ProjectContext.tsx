@@ -11,8 +11,11 @@ import { useScientificSession } from '../hooks/useScientificSession';
 import { useAppSession } from '../hooks/useAppSession';
 import { useCloudSync } from '../hooks/useCloudSync';
 import { MOCK_TEAM } from '../constants';
+import { UIContext } from './UIContext';
+import type { UIContextType } from './UIContext';
 
 export { useProjectContext } from './ProjectContextCore';
+export { useUIContext } from './UIContext';
 
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
@@ -137,7 +140,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await startGlobalTask({ id: 'inception_brainstorm', type: 'transformation', status: 'running', title: '孵化研究课题' }, async () => {
       try {
         const res = await brainstormTopicsEnhanced(domain);
-        updateInceptionSession({ suggestions: res });
+        updateInceptionSession({ suggestions: res, isThinking: false });
       } catch (e) {
         updateInceptionSession({ isThinking: false });
         throw e;
@@ -146,11 +149,11 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const runInceptionResearch = async (topic: any) => {
-    updateInceptionSession({ isThinking: true, selectedTopic: topic, stage: 'research' });
+    updateInceptionSession({ isThinking: true, selectedTopic: topic, stage: 'research', landscape: null, hotnessData: undefined, blueprint: null, review: null });
     await startGlobalTask({ id: 'inception_research', type: 'trend_analysis', status: 'running', title: '全球情报扫射' }, async () => {
       try {
         const res = await scanGlobalLandscape(topic.title, [inceptionSession.domain, ...topic.title.split(' ')], topic.type);
-        updateInceptionSession({ landscape: res, hotnessData: res.hotnessData });
+        updateInceptionSession({ landscape: res, hotnessData: res.hotnessData, isThinking: false });
       } catch (e) {
         updateInceptionSession({ isThinking: false });
         throw e;
@@ -159,7 +162,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const runInceptionBlueprint = async () => {
-    updateInceptionSession({ isThinking: true, stage: 'blueprint' });
+    updateInceptionSession({ isThinking: true, stage: 'blueprint', blueprint: null });
     await startGlobalTask({ id: 'inception_blueprint', type: 'transformation', status: 'running', title: '推演路线蓝图' }, async () => {
       try {
         const res = await generateBlueprint(inceptionSession.selectedTopic, inceptionSession.landscape);
@@ -172,7 +175,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const runInceptionReview = async () => {
-    updateInceptionSession({ isThinking: true, stage: 'review' });
+    updateInceptionSession({ isThinking: true, stage: 'review', review: null });
     await startGlobalTask({ id: 'inception_review', type: 'diagnose', status: 'running', title: '立项质询评审' }, async () => {
       try {
         const res = await runVirtualReview(inceptionSession.selectedTopic, inceptionSession.landscape);
@@ -265,6 +268,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       // 收集实验记录级 AI 问答的精华（仅取 model 回复）
       const chatInsights: { title: string; content: string }[] = [];
+      // 收集同步模块性能雷达的表征内容（XRD/XPS/SEM/TEM/电化学等）
+      const syncedModuleInsights: { title: string; content: string }[] = [];
       for (const m of (project.milestones ?? [])) {
         for (const log of (m.logs || [])) {
           if (log.chatHistory && log.chatHistory.length > 0) {
@@ -279,10 +284,56 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
               });
             }
           }
+          // 提取 deepAnalysis.syncedModules 中的表征性能数据
+          const deepRaw = log.deepAnalysis as any;
+          if (deepRaw && Array.isArray(deepRaw.syncedModules)) {
+            for (const sm of deepRaw.syncedModules) {
+              if (!sm) continue;
+              const metricsStr = sm.metrics && typeof sm.metrics === 'object'
+                ? Object.entries(sm.metrics).map(([k, v]) => `${k}: ${v}`).join('；')
+                : '';
+              const parts = [
+                `表征模块: ${sm.moduleLabel || sm.mode || '未知模块'}`,
+                sm.mode ? `分析类型: ${sm.mode}` : '',
+                metricsStr ? `关键性能指标: ${metricsStr}` : '',
+                sm.summary ? `分析摘要: ${String(sm.summary).substring(0, 500)}` : '',
+                sm.aiDeepAnalysis ? `深度分析: ${String(sm.aiDeepAnalysis).substring(0, 600)}` : '',
+              ].filter(Boolean).join('\n');
+              if (parts) {
+                syncedModuleInsights.push({
+                  title: `[表征数据-${sm.moduleLabel || sm.mode || '模块'}] ${log.content?.substring(0, 20) || '实验记录'}`,
+                  content: parts
+                });
+              }
+            }
+          }
+          // 提取组级别的 groupSyncedModules（表征中心组分析同步的数据）
+          const groupModulesRaw = (log as any).groupSyncedModules;
+          if (Array.isArray(groupModulesRaw)) {
+            for (const sm of groupModulesRaw) {
+              if (!sm) continue;
+              const metricsStr = sm.metrics && typeof sm.metrics === 'object'
+                ? Object.entries(sm.metrics).map(([k, v]) => `${k}: ${v}`).join('；')
+                : '';
+              const parts = [
+                `组表征模块: ${sm.moduleLabel || sm.mode || '未知模块'}`,
+                sm.mode ? `分析类型: ${sm.mode}` : '',
+                metricsStr ? `关键性能指标: ${metricsStr}` : '',
+                sm.summary ? `分析摘要: ${String(sm.summary).substring(0, 500)}` : '',
+                sm.aiDeepAnalysis ? `深度分析: ${String(sm.aiDeepAnalysis).substring(0, 600)}` : '',
+              ].filter(Boolean).join('\n');
+              if (parts) {
+                syncedModuleInsights.push({
+                  title: `[组表征-${sm.moduleLabel || sm.mode || '模块'}] ${log.content?.substring(0, 20) || '实验记录'}`,
+                  content: parts
+                });
+              }
+            }
+          }
         }
       }
-      // 合并 AI 文档和问答精华，限制总量
-      const allAiContext = [...aiDocuments, ...chatInsights.slice(-10)];
+      // 合并 AI 文档、问答精华和表征模块数据，限制总量
+      const allAiContext = [...aiDocuments, ...syncedModuleInsights.slice(-10), ...chatInsights.slice(-10)];
 
       const res = await generateAcademicReport(project.title, logsToUse, type, 'zh', allAiContext);
       if (res?.content) {
@@ -538,15 +589,41 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     (window as any).ProjectContextValue = contextValue;
   }
 
+  // ── UI Context（高频状态独立 Provider，减少全局重渲染） ──
+  const uiContextValue = useMemo<UIContextType>(() => ({
+    toast,
+    showToast: setToast,
+    hideToast: hideToastCb,
+    modals,
+    setModalOpen,
+    isAiCliOpen,
+    setIsAiCliOpen,
+    aiCliHistory,
+    setAiCliHistory,
+    isVoiceMode,
+    setIsVoiceMode,
+    searchQuery,
+    setSearchQuery,
+    aiStatus,
+    setAiStatus,
+  }), [
+    // toast 不放入依赖（高频变化），通过 ref 或直接读最新值
+    modals, isAiCliOpen, aiCliHistory, isVoiceMode, searchQuery, aiStatus,
+    setToast, hideToastCb, setModalOpen, setIsAiCliOpen, setAiCliHistory,
+    setIsVoiceMode, setSearchQuery, setAiStatus,
+  ]);
+
   return (
-    <ProjectContext.Provider value={contextValue}>
-      {!isSystemReady ? (
-        <div className="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-[9999]">
-          <div className="w-24 h-24 rounded-[2rem] border-4 border-indigo-500 border-t-transparent animate-spin mb-8"></div>
-          <h2 className="text-white text-xl font-black italic uppercase tracking-widest">Hydrating Research Vault...</h2>
-          <p className="text-indigo-400 text-[10px] mt-4 uppercase font-bold animate-pulse">Initializing IndexedDB Entities</p>
-        </div>
-      ) : children}
-    </ProjectContext.Provider>
+    <UIContext.Provider value={uiContextValue}>
+      <ProjectContext.Provider value={contextValue}>
+        {!isSystemReady ? (
+          <div className="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-[9999]">
+            <div className="w-24 h-24 rounded-[2rem] border-4 border-indigo-500 border-t-transparent animate-spin mb-8"></div>
+            <h2 className="text-white text-xl font-black italic uppercase tracking-widest">Hydrating Research Vault...</h2>
+            <p className="text-indigo-400 text-[10px] mt-4 uppercase font-bold animate-pulse">Initializing IndexedDB Entities</p>
+          </div>
+        ) : children}
+      </ProjectContext.Provider>
+    </UIContext.Provider>
   );
 };

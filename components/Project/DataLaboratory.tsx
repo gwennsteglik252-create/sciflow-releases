@@ -113,6 +113,45 @@ const DataLaboratory: React.FC<DataLaboratoryProps> = ({
         setShowFullHypothesis(false);
     }, [selectedMilestone?.id]);
 
+    // 当切换节点时，默认折叠所有实验组，仅最新组展开
+    useEffect(() => {
+        const logs = selectedMilestone?.logs || [];
+        const groupMap = new Map<string, ExperimentLog[]>();
+        logs.forEach(log => {
+            if (log.groupId) {
+                if (!groupMap.has(log.groupId)) groupMap.set(log.groupId, []);
+                groupMap.get(log.groupId)!.push(log);
+            }
+        });
+        // 只保留实际成组的（组内 >= 2 条记录）
+        const validGroupIds = Array.from(groupMap.entries())
+            .filter(([, gl]) => gl.length > 1)
+            .map(([gid]) => gid);
+
+        if (validGroupIds.length === 0) {
+            setCollapsedGroupIds(new Set());
+            return;
+        }
+
+        // 找到最新的实验组：以组内最晚 timestamp 为准
+        const getGroupLatestTime = (gid: string) => {
+            const gLogs = groupMap.get(gid)!;
+            return Math.max(...gLogs.map(l => {
+                try { return new Date(l.timestamp.replace(/\//g, '-')).getTime(); } catch { return 0; }
+            }));
+        };
+        let latestGroupId = validGroupIds[0];
+        let latestTime = getGroupLatestTime(validGroupIds[0]);
+        for (let i = 1; i < validGroupIds.length; i++) {
+            const t = getGroupLatestTime(validGroupIds[i]);
+            if (t > latestTime) { latestTime = t; latestGroupId = validGroupIds[i]; }
+        }
+
+        // 除最新组外，其余全部折叠
+        const collapsed = new Set(validGroupIds.filter(gid => gid !== latestGroupId));
+        setCollapsedGroupIds(collapsed);
+    }, [selectedMilestone?.id, selectedMilestone?.logs]);
+
     useEffect(() => {
         const onFullscreenChange = () => {
             setIsAttachmentFullscreen(!!document.fullscreenElement);

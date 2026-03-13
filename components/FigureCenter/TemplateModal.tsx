@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { FigureTemplate, TemplateModule } from '../../types/templates';
+import { useTranslation } from '../../locales/useTranslation';
 
 interface TemplateModalProps {
     // 模板浏览与应用
@@ -79,10 +80,10 @@ function renderStyleTags(template: FigureTemplate, module: TemplateModule) {
             tags.push(font);
         }
         if (sd?.connectionStyle?.style) tags.push(sd.connectionStyle.style);
-        if (sd?.groupConfig?.borderWidth) tags.push(`边框 ${sd.groupConfig.borderWidth}px`);
+        if (sd?.groupConfig?.borderWidth) tags.push(`${sd.groupConfig.borderWidth}px`);
     } else if (module === 'timeline') {
         if (sd?.pathType) tags.push(sd.pathType);
-        if (sd?.isHollow !== undefined) tags.push(sd.isHollow ? '空心' : '实心');
+        if (sd?.isHollow !== undefined) tags.push(sd.isHollow ? 'Hollow' : 'Solid');
         if (sd?.arrowStyle) tags.push(sd.arrowStyle);
     }
 
@@ -208,6 +209,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
     templateName, setTemplateName, onConfirmSave,
     module,
 }) => {
+    const { t } = useTranslation();
     const moduleLabel = MODULE_LABELS[module];
     const moduleIcon = MODULE_ICONS[module];
 
@@ -236,7 +238,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-black text-slate-800 uppercase italic tracking-tight leading-none">
-                                        {moduleLabel}样式模板
+                                        {moduleLabel}{t('figureCenter.templateModal.styleTemplate')}
                                     </h3>
                                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
                                         STYLE TEMPLATES
@@ -248,7 +250,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                                 className="px-3 py-2 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase shadow-lg shadow-indigo-500/30 flex items-center gap-1.5 hover:bg-indigo-700 transition-all active:scale-95 border border-indigo-400/50"
                             >
                                 <i className="fa-solid fa-plus" />
-                                保存当前样式
+                                {t('figureCenter.templateModal.saveCurrentStyle')}
                             </button>
                         </div>
 
@@ -259,7 +261,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                                 <div>
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mb-3 px-1">
                                         <i className="fa-solid fa-user text-[9px] text-slate-300" />
-                                        我的模板
+                                        {t('figureCenter.templateModal.myTemplates')}
                                     </label>
                                     <div className="space-y-2">
                                         {userTemplates.map((t) => (
@@ -282,7 +284,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                                 <div>
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mb-3 px-1">
                                         <i className="fa-solid fa-crown text-[9px] text-amber-400" />
-                                        预设模板
+                                        {t('figureCenter.templateModal.presetTemplates')}
                                     </label>
                                     <div className="space-y-2">
                                         {presets.map((t) => (
@@ -306,8 +308,8 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                                     <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                                         <i className="fa-solid fa-swatchbook text-2xl text-slate-300" />
                                     </div>
-                                    <p className="text-[11px] text-slate-400 font-bold">暂无样式模板</p>
-                                    <p className="text-[9px] text-slate-300 mt-1">点击「保存当前样式」创建你的第一个模板</p>
+                                    <p className="text-[11px] text-slate-400 font-bold">{t('figureCenter.templateModal.noTemplates')}</p>
+                                    <p className="text-[9px] text-slate-300 mt-1">{t('figureCenter.templateModal.noTemplatesHint')}</p>
                                 </div>
                             )}
                         </div>
@@ -317,7 +319,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                             onClick={() => setShowTemplateModal(false)}
                             className="mt-6 w-full py-3 bg-slate-100 text-slate-500 rounded-xl text-[10px] font-black uppercase hover:bg-slate-200 transition-all"
                         >
-                            关闭
+                            {t('figureCenter.templateModal.close')}
                         </button>
                     </div>
                 </div>
@@ -331,18 +333,18 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                             <div className="w-9 h-9 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg">
                                 <i className="fa-solid fa-swatchbook text-sm" />
                             </div>
-                            <h3 className="text-lg font-black text-slate-800 uppercase italic">保存样式模板</h3>
+                            <h3 className="text-lg font-black text-slate-800 uppercase italic">{t('figureCenter.templateModal.saveTemplate')}</h3>
                         </div>
 
                         <p className="text-[10px] text-slate-400 font-bold mb-3">
-                            将当前{moduleLabel}的视觉样式（颜色、字体、间距、连线等）保存为可复用模板
+                            {t('figureCenter.templateModal.saveDesc').replace('{module}', moduleLabel)}
                         </p>
 
                         <input
                             className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold outline-none mb-6 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all"
                             value={templateName}
                             onChange={(e) => setTemplateName(e.target.value)}
-                            placeholder="输入模板名称 (如: 我的 Nature 风格)..."
+                            placeholder={t('figureCenter.templateModal.templateNamePlaceholder')}
                             autoFocus
                         />
 
@@ -351,7 +353,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                                 onClick={() => setShowSaveModal(false)}
                                 className="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl text-[10px] font-black uppercase hover:bg-slate-200 transition-all"
                             >
-                                取消
+                                {t('figureCenter.templateModal.cancel')}
                             </button>
                             <button
                                 onClick={onConfirmSave}
@@ -359,7 +361,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                                 className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
                                 <i className="fa-solid fa-check" />
-                                确认保存
+                                {t('figureCenter.templateModal.confirmSave')}
                             </button>
                         </div>
                     </div>

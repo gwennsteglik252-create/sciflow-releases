@@ -213,8 +213,19 @@ const MechanismReport: React.FC<MechanismReportProps> = ({ analysisResult, isPro
                             font-family: 'TN-Numbers', 'Plus Jakarta Sans', system-ui, sans-serif !important;
                             margin-bottom: 0.75rem !important;
                         }
+                        .mechanism-report-content h1 {
+                            font-size: 18px !important;
+                            font-weight: 800 !important;
+                            margin-top: 0 !important;
+                            margin-bottom: 1rem !important;
+                            border-bottom: 2px solid rgba(99, 102, 241, 0.3) !important;
+                            padding-bottom: 10px !important;
+                            font-family: 'TN-Numbers', 'Plus Jakarta Sans', system-ui, sans-serif !important;
+                            color: #1e293b !important;
+                            line-height: 1.4 !important;
+                        }
                         .mechanism-report-content h2 {
-                            font-size: 16px !important;
+                            font-size: 14px !important;
                             margin-top: 1.5rem !important;
                             margin-bottom: 0.75rem !important;
                             border-bottom: 1px dashed rgba(99, 102, 241, 0.2) !important;

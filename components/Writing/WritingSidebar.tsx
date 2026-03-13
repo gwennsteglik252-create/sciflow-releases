@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../locales/useTranslation';
 import { ResearchProject, Literature, Milestone, WritingSnapshot, ProjectTable, ProjectLatexSnippet } from '../../types';
 
 import MaterialsPanel from './SidebarPanels/MaterialsPanel';
@@ -95,6 +96,7 @@ const tabColors: Record<string, string> = {
 
 const WritingSidebar: React.FC<WritingSidebarProps> = (props) => {
   const { activeTab, onTabChange, viewMode, documentOutline, onJumpToHeading, manuscriptMeta, onUpdateMeta, docType, onFindToken, language, editorContentRef, onApplyPolished, onOpenSubmissionSimulator } = props;
+  const { t } = useTranslation();
   const tabs = ['outline', 'materials', 'media', 'literature', 'mirror', 'polishing', 'review', 'publishing', 'history'];
   const filteredTabs = viewMode === 'triple' ? tabs.filter(t => t !== 'publishing') : tabs;
 
@@ -103,7 +105,7 @@ const WritingSidebar: React.FC<WritingSidebarProps> = (props) => {
       <div className="bg-slate-900 rounded-[2rem] p-1.5 flex shrink-0 shadow-lg overflow-x-auto no-scrollbar">
         {filteredTabs.map((tab) => (
           <button key={tab} onClick={() => onTabChange(tab)} className={`flex-1 py-2.5 px-3 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap ${activeTab === tab ? `${tabColors[tab]} text-white shadow-md` : 'text-slate-400 hover:text-white'}`}>
-            {tab === 'outline' ? '大纲' : tab === 'materials' ? '素材' : tab === 'media' ? '媒体' : tab === 'literature' ? '文献' : tab === 'mirror' ? '镜像' : tab === 'polishing' ? '润色' : tab === 'review' ? '审阅' : tab === 'history' ? '版本' : '发布'}
+            {tab === 'outline' ? t('writing.sidebar.outline') : tab === 'materials' ? t('writing.sidebar.materials') : tab === 'media' ? t('writing.sidebar.media') : tab === 'literature' ? t('writing.sidebar.literature') : tab === 'mirror' ? t('writing.sidebar.mirror') : tab === 'polishing' ? t('writing.sidebar.polishing') : tab === 'review' ? t('writing.sidebar.review') : tab === 'history' ? t('writing.sidebar.history') : t('writing.sidebar.publishing')}
           </button>
         ))}
       </div>

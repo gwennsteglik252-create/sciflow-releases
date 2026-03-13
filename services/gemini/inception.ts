@@ -1,7 +1,32 @@
 
 import { Type } from "@google/genai";
 import { callGeminiWithRetry, extractJson, FAST_MODEL, PRO_MODEL, GROUNDING_MODEL, SPEED_CONFIG } from "./core";
+import { getAppSettings } from "./core/constants";
 import { LabInfo, PatentRisk, Landscape, ResearchGap } from "../../types";
+
+/**
+ * Read aiOutputLanguage from user settings and return language instructions for prompts.
+ * 'auto' follows UI language (uiLanguage), defaults to Chinese.
+ */
+const getInceptionLang = () => {
+    const settings = getAppSettings();
+    let lang: 'zh' | 'en' = 'zh';
+    if (settings.aiOutputLanguage === 'en') {
+        lang = 'en';
+    } else if (settings.aiOutputLanguage === 'auto') {
+        lang = settings.uiLanguage === 'en' ? 'en' : 'zh';
+    }
+    const isEn = lang === 'en';
+    return {
+        lang,
+        isEn,
+        langRule: isEn
+            ? 'LANGUAGE REQUIREMENT: ALL output text fields MUST be written in professional academic English.'
+            : 'LANGUAGE REQUIREMENT: ALL output text fields MUST be written in Chinese.',
+        descSuffix: isEn ? ', must be in English' : ', must be in Chinese',
+        contentLang: isEn ? 'All content must be in English.' : 'All content must be in Chinese.',
+    };
+};
 
 /**
  * Stage 2: Global Landscape Scanning
@@ -17,22 +42,31 @@ export const scanGlobalLandscape = async (title: string, keywords: string[], top
     const currentDate = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
     const currentYear = now.getFullYear();
 
-    // ── Phase 1：独立调用，仅 googleSearch grounding，不加 responseSchema ──
+    // -- Phase 1: googleSearch grounding --
     let rawIntelligence = '';
     let groundingChunks: any[] = [];
+    const L = getInceptionLang();
 
     try {
         const groundingResult = await callGeminiWithRetry(async (ai) => {
-            const groundingPrompt = `当前日期：${currentDate}。请搜索并整理关于课题 "${title}" 的全球最新学术情报（优先 ${currentYear} 年），并标注信息来源。
+            const groundingPrompt = L.isEn
+                ? `Current date: ${currentDate}. Search and compile the latest global academic intelligence on "${title}" (prioritizing ${currentYear}). ${L.contentLang}
+Requirements:
+1. Top 10 globally active research labs/groups with institution, lab name, PI, and specific contributions.
+2. Source URLs must point to specific research output pages, NOT generic homepages.
+3. Recent patent landscape, barriers, and risks with source links (5+ items).
+4. ${topicType === 'frontier' ? '3-5 key under-explored research gaps.' : '3-5 core industrial barriers and improvement opportunities.'}
+5. Commercialization status (${currentYear}), market forecasts with authoritative sources.
+Please use Google Search to retrieve real-time web information.`
+                : `当前日期：${currentDate}。请搜索并整理关于课题 "${title}" 的全球最新学术情报（优先 ${currentYear} 年），并标注信息来源。${L.contentLang}
 要求：
-1. **重点聚焦国内动态**：搜索结果中，中国的研究实验室/研究组必须占绝大多数（约 70-80%），仅包含少量（20-30%）具有全球影响力的顶级国外课题组。
-2. 所有内容必须使用中文。
-3. 全球活跃的前 10 个研究实验室/研究组，必须明确：机构名（中国机构优先）、实验室名称、负责人 PI、在该课题的具体突破性贡献。
-4. **链接精确性要求**：对于每个研究组，源链接（sourceUrl）必须指向该研究组针对本课题的**具体研究成果、论文、新闻报道或实验室突破公告页面**。严禁仅提供大学或机构的官方主页链接。
-5. 近两年相关专利布局、技术陷阱、潜在壁垒风险及其对应的来源链接（至少 5 项，重点关注中国专利）。
-6. ${topicType === 'frontier' ? '该领域目前尚未被充分研究的 3-5 个核心空白方向（Research Gaps）。' : '该领域 3-5 个核心技术壁垒与工艺改进空间（Industrial Barriers）。'}
-7. 商业化/产业化现状（${currentYear}年）、市场规模预测及其权威报道来源。
-请务必利用 Google Search 插件获取实时的网络信息，生成的报告必须内容充实，避免空洞。`;
+1. **重点聚焦国内动态**：中国研究实验室/研究组必须占绝大多数（约 70-80%），仅包含少量具有全球影响力的顶级国外课题组。
+2. 全球活跃的前 10 个研究实验室/研究组，必须明确：机构名（中国机构优先）、实验室名称、负责人 PI、具体突破性贡献。
+3. **链接精确性要求**：sourceUrl 必须指向该研究组针对本课题的具体研究成果页面，严禁仅提供大学主页链接。
+4. 近两年相关专利布局、技术陷阱、潜在壁垒风险及来源链接（至少 5 项，重点关注中国专利）。
+5. ${topicType === 'frontier' ? '该领域目前尚未被充分研究的 3-5 个核心空白方向。' : '该领域 3-5 个核心技术壁垒与工艺改进空间。'}
+6. 商业化/产业化现状（${currentYear}年）、市场规模预测及权威报道来源。
+请务必利用 Google Search 插件获取实时的网络信息。`;
 
             return await ai.models.generateContent({
                 model: GROUNDING_MODEL,
@@ -57,24 +91,17 @@ export const scanGlobalLandscape = async (title: string, keywords: string[], top
     const extractionResult = await callGeminiWithRetry(async (ai) => {
         const sourceContext = groundingChunks.map((c, i) => `[ID ${i}] ${c.web?.title || 'Link'}: ${c.web?.uri}`).join('\n');
 
+        const newDimsPrompt = L.isEn
+            ? `\n8. keyPublications: 5-8 landmark or highly-cited papers. Include title, first/corresponding authors, journal, year, citation count, significance description, and whether it is a landmark paper (isLandmark).\n9. fundingLandscape: Global funding overview with totalGlobalFunding estimate, 3-5 topAgencies (name, country, recentProjects count, avgGrantSize, focusAreas), and fundingTrend (increasing/stable/declining).\n10. trlTimeline: 4-6 chronological milestones showing the technology readiness evolution. Each with year, trlLevel (1-9), milestone description, and actor (institution/person).\n11. geographicDistribution: 4-6 countries/regions. Each with country, labCount, publishedPapers (last 3 years), strength (dominant/strong/emerging/niche), keyInstitutions (2-3 names).\n12. translationReadiness: Object with marketSize estimate, cagr percentage, 3-5 keyPlayers (company, product, stage: R&D/Pilot/Commercial), policySupport description, and bottleneck.\n13. methodologyGaps: 3-5 methodology-level gaps. Each with gap description, impact (critical/moderate), and potentialApproach.\n14. interdisciplinaryLinks: 3-5 cross-disciplinary connections. Each with field (e.g. "Machine Learning", "Synthetic Biology"), connection description, maturity (emerging/growing/established), and optionally representativePaper.`
+            : `\n8. keyPublications: 5-8 篇里程碑或高被引论文。须含 title、authors、journal、year、citations、significance、isLandmark。\n9. fundingLandscape: 全球资金版图概览，含 totalGlobalFunding、3-5 个 topAgencies、fundingTrend。\n10. trlTimeline: 4-6 个 TRL 里程碑。每个含 year、trlLevel(1-9)、milestone、actor。\n11. geographicDistribution: 4-6 个国家/地区竞争力分布。含 country、labCount、publishedPapers、strength、keyInstitutions。\n12. translationReadiness: 产业转化路径，含 marketSize、cagr、keyPlayers、policySupport、bottleneck。\n13. methodologyGaps: 3-5 个方法学缺口。含 gap、impact(critical/moderate)、potentialApproach。\n14. interdisciplinaryLinks: 3-5 个跨学科关联。每个含 field（如“机器学习”“合成生物学”）、connection 交叉点描述、maturity(emerging/growing/established)、可选 representativePaper。`;
+
         const extractionPrompt = rawIntelligence.length > 100
-            ? `你是一个学术情报提取引擎。任务是根据原文生成符合 JSON Schema 的情报。
-规则：
-1. 仅输出 JSON 字符串，禁止任何自然语言对话。
-2. 所有提取的内容必须使用中文。
-3. **中国课题组优先**：提取至少 8 个研究组，其中 6 个以上应为中国机构。必须含负责人 PI 及其具体贡献。
-4. **源链接匹配规则**：activeLabs 的 sourceUrl 必须且只能指向该课题组在该课题的具体研究方案、成果或报道链接（即 Phase 1 中找到的特定页面）。**禁止使用通用的大学/机构主页（如 www.tsinghua.edu.cn）作为来源链接。**
-5. 5 个专利风险点、${topicType === 'frontier' ? '3-5 个深度研究缺口' : '3-5 个工艺优化/产业缺口'}、12 个研究趋势点。
-6. 每个描述字段必须详尽（50字以上），且在 sourceUrl 字段中填入最相关的 [ID i] 对应的完整 URL。
-7. 确保 JSON 绝对合法，符合 schema。
-
-Source List:
-${sourceContext}
-
-情报原文（来自网络搜索，${currentDate}）：
-${rawIntelligence.substring(0, 4000)}`
-            : `当前日期：${currentDate}。针对研究课题 "${title}"，基于你的训练数据生成一份详尽的科技版图 JSON 分析。
-要求：必须使用中文。重点生成中国研究组（占比 70% 以上）。研究组链接必须指向其具体成果。8+ 研究组（带负责人及贡献）、5+ 风险点、3-5 个深层缺口、12 个热度方向点。`;
+            ? (L.isEn
+                ? `You are an academic intelligence extraction engine. Extract structured JSON from the raw text.\nRules:\n1. Output only JSON, no conversation.\n2. ${L.contentLang}\n3. Extract at least 8 research groups with PI and contributions.\n4. sourceUrl must link to specific research outputs, NOT generic homepages.\n5. 5 patent risks, ${topicType === 'frontier' ? '3-5 deep research gaps' : '3-5 industrial gaps'}, 12 trend data points.\n6. Each description must be detailed (50+ words). Use [ID i] URLs from Source List.\n7. Ensure valid JSON.${newDimsPrompt}\n\nSource List:\n${sourceContext}\n\nRaw Intelligence (${currentDate}):\n${rawIntelligence.substring(0, 4000)}`
+                : `You are an academic intelligence extraction engine. Extract data in Chinese.\nRules:\n1. Output only JSON.\n2. ${L.contentLang}\n3. **Chinese groups priority**: 8+ groups, 6+ from China. Include PI and contributions.\n4. sourceUrl must link to specific research outputs. No generic homepages.\n5. 5 patent risks, ${topicType === 'frontier' ? '3-5 deep research gaps' : '3-5 industrial gaps'}, 12 trend points.\n6. Each description 50+ chars. Map sourceUrl to [ID i] from Source List.\n7. Valid JSON only.${newDimsPrompt}\n\nSource List:\n${sourceContext}\n\nRaw Intelligence (${currentDate}):\n${rawIntelligence.substring(0, 4000)}`)
+            : (L.isEn
+                ? `Current date: ${currentDate}. For topic "${title}", generate a comprehensive landscape JSON. ${L.contentLang} 8+ groups with PI, 5+ risks, 3-5 gaps, 12 trend points, 5-8 key publications, funding landscape, TRL timeline, geographic distribution, translation readiness, and methodology gaps.`
+                : `Current date: ${currentDate}. For topic "${title}", generate landscape JSON. ${L.contentLang} Chinese groups 70%+. 8+ groups with PI, 5+ risks, 3-5 gaps, 12 trend points, 5-8 key publications, funding landscape, TRL timeline, geographic distribution, translation readiness, methodology gaps.`);
 
         return await ai.models.generateContent({
             model: PRO_MODEL,
@@ -144,6 +171,127 @@ ${rawIntelligence.substring(0, 4000)}`
                                 },
                                 required: ['topic', 'x', 'y', 'val', 'isBlueOcean']
                             }
+                        },
+                        keyPublications: {
+                            type: Type.ARRAY,
+                            description: "5-8 landmark or highly-cited papers in this field",
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    title: { type: Type.STRING, description: "Paper title" },
+                                    authors: { type: Type.STRING, description: "First/corresponding author(s)" },
+                                    journal: { type: Type.STRING, description: "Journal name" },
+                                    year: { type: Type.NUMBER },
+                                    citations: { type: Type.NUMBER, description: "Approximate citation count" },
+                                    significance: { type: Type.STRING, description: "Why this paper matters" },
+                                    doi: { type: Type.STRING },
+                                    isLandmark: { type: Type.BOOLEAN, description: "True if this is a paradigm-shifting paper" }
+                                },
+                                required: ["title", "authors", "journal", "year", "citations", "significance", "isLandmark"]
+                            }
+                        },
+                        fundingLandscape: {
+                            type: Type.OBJECT,
+                            description: "Global funding overview for this research field",
+                            properties: {
+                                totalGlobalFunding: { type: Type.STRING, description: "Estimated total global investment" },
+                                topAgencies: {
+                                    type: Type.ARRAY,
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            name: { type: Type.STRING },
+                                            country: { type: Type.STRING },
+                                            recentProjects: { type: Type.NUMBER, description: "Number of projects funded in past 3 years" },
+                                            avgGrantSize: { type: Type.STRING },
+                                            focusAreas: { type: Type.ARRAY, items: { type: Type.STRING } }
+                                        },
+                                        required: ["name", "country", "recentProjects", "avgGrantSize", "focusAreas"]
+                                    }
+                                },
+                                fundingTrend: { type: Type.STRING, enum: ["increasing", "stable", "declining"] },
+                                sourceUrl: { type: Type.STRING }
+                            },
+                            required: ["totalGlobalFunding", "topAgencies", "fundingTrend"]
+                        },
+                        trlTimeline: {
+                            type: Type.ARRAY,
+                            description: "4-6 chronological TRL milestones showing technology evolution",
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    year: { type: Type.NUMBER },
+                                    trlLevel: { type: Type.NUMBER, description: "TRL 1-9" },
+                                    milestone: { type: Type.STRING, description: "What happened at this stage" },
+                                    actor: { type: Type.STRING, description: "Institution or person who drove this" }
+                                },
+                                required: ["year", "trlLevel", "milestone", "actor"]
+                            }
+                        },
+                        geographicDistribution: {
+                            type: Type.ARRAY,
+                            description: "4-6 countries/regions competitive landscape",
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    country: { type: Type.STRING },
+                                    labCount: { type: Type.NUMBER, description: "Number of active labs" },
+                                    publishedPapers: { type: Type.NUMBER, description: "Papers published in last 3 years" },
+                                    strength: { type: Type.STRING, enum: ["dominant", "strong", "emerging", "niche"] },
+                                    keyInstitutions: { type: Type.ARRAY, items: { type: Type.STRING }, description: "2-3 representative institutions" }
+                                },
+                                required: ["country", "labCount", "publishedPapers", "strength", "keyInstitutions"]
+                            }
+                        },
+                        translationReadiness: {
+                            type: Type.OBJECT,
+                            description: "Industry translation and commercialization readiness",
+                            properties: {
+                                marketSize: { type: Type.STRING, description: "Estimated market size" },
+                                cagr: { type: Type.STRING, description: "CAGR percentage" },
+                                keyPlayers: {
+                                    type: Type.ARRAY,
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            company: { type: Type.STRING },
+                                            product: { type: Type.STRING },
+                                            stage: { type: Type.STRING, enum: ["R&D", "Pilot", "Commercial"] }
+                                        },
+                                        required: ["company", "product", "stage"]
+                                    }
+                                },
+                                policySupport: { type: Type.STRING, description: "Government or policy support status" },
+                                bottleneck: { type: Type.STRING, description: "Core commercialization bottleneck" }
+                            },
+                            required: ["marketSize", "cagr", "keyPlayers", "policySupport", "bottleneck"]
+                        },
+                        methodologyGaps: {
+                            type: Type.ARRAY,
+                            description: "3-5 methodology-level research gaps",
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    gap: { type: Type.STRING, description: "Methodology gap description" },
+                                    impact: { type: Type.STRING, enum: ["critical", "moderate"] },
+                                    potentialApproach: { type: Type.STRING, description: "Potential solution or approach" }
+                                },
+                                required: ["gap", "impact", "potentialApproach"]
+                            }
+                        },
+                        interdisciplinaryLinks: {
+                            type: Type.ARRAY,
+                            description: "3-5 cross-disciplinary connections relevant to this field",
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    field: { type: Type.STRING, description: "Cross-discipline name, e.g. Machine Learning, Synthetic Biology" },
+                                    connection: { type: Type.STRING, description: "How the disciplines intersect" },
+                                    maturity: { type: Type.STRING, enum: ["emerging", "growing", "established"] },
+                                    representativePaper: { type: Type.STRING, description: "A representative paper title at the intersection" }
+                                },
+                                required: ["field", "connection", "maturity"]
+                            }
                         }
                     },
                     required: ["activeLabs", "researchGaps", "hotnessData", "commercialStatus", "patentRisks"]
@@ -199,12 +347,13 @@ ${rawIntelligence.substring(0, 4000)}`
         // 模糊关键词扫描：针对不同类型的数据采用不同的拾取逻辑
         const resolveSource = (url: string | undefined): string | undefined => {
             if (!url) return undefined;
-            if (url.startsWith('http')) return url;
+            // 优先解析 [ID X] 引用标记（AI 可能混在 http URL 中返回）
             const match = url.match(/\[ID\s*(\d+)\]/i);
             if (match) {
                 const idx = parseInt(match[1]);
                 return groundingChunks[idx]?.web?.uri;
             }
+            if (url.startsWith('http')) return url;
             return undefined;
         };
 
@@ -340,7 +489,14 @@ ${rawIntelligence.substring(0, 4000)}`
             patentRisks: result.patentRisks.length,
             commercialStatus: result.commercialStatus?.content?.substring?.(0, 80),
             researchGaps: result.researchGaps.length,
-            hotnessData: result.hotnessData.length
+            hotnessData: result.hotnessData.length,
+            keyPublications: result.keyPublications?.length ?? 0,
+            fundingLandscape: result.fundingLandscape ? 'present' : 'absent',
+            trlTimeline: result.trlTimeline?.length ?? 0,
+            geographicDistribution: result.geographicDistribution?.length ?? 0,
+            translationReadiness: result.translationReadiness ? 'present' : 'absent',
+            methodologyGaps: result.methodologyGaps?.length ?? 0,
+            interdisciplinaryLinks: result.interdisciplinaryLinks?.length ?? 0,
         });
 
         // 附加 grounding 来源链接
@@ -351,7 +507,7 @@ ${rawIntelligence.substring(0, 4000)}`
         return result;
     } catch (e) {
         console.error('[Inception] Phase 2 parse error:', e, extractionResult.text);
-        return { activeLabs: [], commercialStatus: '解析异常，请重试', patentRisks: [], researchGaps: [], hotnessData: [] };
+        return { activeLabs: [], commercialStatus: '解析异常，请重试', patentRisks: [], researchGaps: [], hotnessData: [], keyPublications: [], fundingLandscape: undefined, trlTimeline: [], geographicDistribution: [], translationReadiness: undefined, methodologyGaps: [], interdisciplinaryLinks: [] };
     }
 };
 
@@ -363,34 +519,38 @@ export const brainstormTopicsEnhanced = async (domain: string) => {
         const now = new Date();
         const currentDate = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
         const currentYear = now.getFullYear();
-        const prompt = `当前日期：${currentDate}。
-请基于 ${currentYear} 年最新学术动向，为研究领域 "${domain}" 策划 4 个具有顶刊发表潜力或重大产业影响力的课题。
-要求：
-1. 每个课题必须紧贴 ${currentYear} 年的研究热点。要求包含 2 个前沿探索类（Frontier Exploration，TRL 1-2）和 2 个产业化/商业化成熟类（Industrial/Commercial Mature，TRL 3+）。
-2. 聚焦当前（${currentYear}年）领域内的核心痛点与技术瓶颈。
-3. 每个课题需包含：title（课题名）、type（"frontier" 或 "mature"）、hypothesis（科学假设）、painPoint（当前核心痛点）、evolution（${currentYear}年前后的演进轨迹）、impact（预期学术贡献或产业价值）、estimatedTrl（技术成熟度 1-5）。
-仅输出 JSON 数组。`;
+        const L = getInceptionLang();
+        const prompt = L.isEn
+            ? `Current date: ${currentDate}.\nBased on ${currentYear} academic trends, propose 8 research topics with top-journal potential for "${domain}".\n\n${L.langRule}\n\nRequirements:\n1. Include 4 Frontier (type="frontier", TRL 1-2) and 4 Industrial Mature (type="mature", TRL 3+).\n2. Focus on ${currentYear} core bottlenecks and emerging opportunities.\n3. Topics should be diverse, covering different angles and sub-directions.\n4. Fields:\n   - title: descriptive topic title\n   - type: "frontier" or "mature"\n   - hypothesis: core scientific hypothesis (50+ words)\n   - painPoint: key technical pain point\n   - evolution: evolution trajectory\n   - impact: expected academic impact\n   - estimatedTrl: TRL level 1-5\n   - feasibility: 1-5 rating (5=highly feasible with current tech)\n   - novelty: 1-5 rating (5=paradigm-shifting originality)\n   - fundingPotential: recommended funding sources (e.g. "NSF CAREER, DOE")\n   - expectedPublications: expected publication outcomes (e.g. "1-2 Nature sub-journals, 3-4 Q1")\n   - timeToResult: time to first milestone result (e.g. "6-12 months")\n   - relatedFields: 2-3 cross-disciplinary tags\n   - riskWarning: main risk in 1 sentence\nOutput JSON array only.`
+            : `Current date: ${currentDate}.\nBased on ${currentYear} trends, for "${domain}" propose 8 topics.\n\n${L.langRule}\n\nRequirements:\n1. 4 Frontier (type="frontier", TRL 1-2) + 4 Mature (type="mature", TRL 3+).\n2. Core bottlenecks and emerging opportunities of ${currentYear}.\n3. Topics should be diverse, covering different sub-directions.\n4. Fields:\n   - title: 课题名称\n   - type: "frontier" 或 "mature"\n   - hypothesis: 核心科学假设（不少于50字）\n   - painPoint: 关键技术痛点\n   - evolution: 演进轨迹\n   - impact: 预期学术贡献\n   - estimatedTrl: TRL等级 1-5\n   - feasibility: 可行性评级 1-5（5=当前技术条件下高度可行）\n   - novelty: 创新性评级 1-5（5=范式级创新）\n   - fundingPotential: 推荐申报基金（如"国自然面上/青基、重点研发"）\n   - expectedPublications: 预期论文产出（如"1-2篇Nature子刊，3-4篇一区"）\n   - timeToResult: 首个阶段性成果周期（如"6-12个月"）\n   - relatedFields: 2-3个交叉学科标签\n   - riskWarning: 主要风险一句话说明\nJSON array only.`;
         const response = await ai.models.generateContent({
             model: PRO_MODEL,
             contents: prompt,
             config: {
                 ...SPEED_CONFIG,
-                thinkingConfig: { thinkingBudget: 1024 },
+                thinkingConfig: { thinkingBudget: 2048 },
                 responseMimeType: "application/json",
                 responseSchema: {
                     type: Type.ARRAY,
                     items: {
                         type: Type.OBJECT,
                         properties: {
-                            title: { type: Type.STRING },
+                            title: { type: Type.STRING, description: `Topic title${L.descSuffix}` },
                             type: { type: Type.STRING, enum: ["frontier", "mature"] },
-                            hypothesis: { type: Type.STRING },
-                            painPoint: { type: Type.STRING },
-                            evolution: { type: Type.STRING },
-                            impact: { type: Type.STRING },
-                            estimatedTrl: { type: Type.NUMBER },
+                            hypothesis: { type: Type.STRING, description: `Core hypothesis${L.descSuffix}` },
+                            painPoint: { type: Type.STRING, description: `Core pain point${L.descSuffix}` },
+                            evolution: { type: Type.STRING, description: `Evolution trajectory${L.descSuffix}` },
+                            impact: { type: Type.STRING, description: `Expected impact${L.descSuffix}` },
+                            estimatedTrl: { type: Type.NUMBER, description: "TRL level 1-5" },
+                            feasibility: { type: Type.NUMBER, description: "Feasibility rating 1-5 (5=highly feasible)" },
+                            novelty: { type: Type.NUMBER, description: "Novelty/originality rating 1-5 (5=paradigm-shifting)" },
+                            fundingPotential: { type: Type.STRING, description: `Recommended funding sources${L.descSuffix}` },
+                            expectedPublications: { type: Type.STRING, description: `Expected publication outcomes${L.descSuffix}` },
+                            timeToResult: { type: Type.STRING, description: `Time to first milestone result${L.descSuffix}` },
+                            relatedFields: { type: Type.ARRAY, items: { type: Type.STRING }, description: "2-3 cross-disciplinary tags" },
+                            riskWarning: { type: Type.STRING, description: `Main risk in 1 sentence${L.descSuffix}` },
                         },
-                        required: ['title', 'type', 'hypothesis', 'painPoint', 'evolution', 'impact', 'estimatedTrl']
+                        required: ['title', 'type', 'hypothesis', 'painPoint', 'evolution', 'impact', 'estimatedTrl', 'feasibility', 'novelty', 'fundingPotential', 'expectedPublications', 'timeToResult', 'relatedFields', 'riskWarning']
                     }
                 }
             }
@@ -420,20 +580,15 @@ export const generateBlueprint = async (topic: any, landscape: any) => {
         const currentYear = now.getFullYear();
 
         const topicType = topic?.type || 'frontier';
-        const gaps = landscape?.researchGaps?.slice(0, 3).map((g: any) => (typeof g === 'string' ? g : g?.content)).join('；') || '';
-        const topLabs = landscape?.activeLabs?.slice(0, 3).map((l: any) => l?.name).join('、') || '';
+        const gaps = landscape?.researchGaps?.slice(0, 3).map((g: any) => (typeof g === 'string' ? g : g?.content)).join('; ') || '';
+        const topLabs = landscape?.activeLabs?.slice(0, 3).map((l: any) => l?.name).join(', ') || '';
+        const L = getInceptionLang();
 
-        const prompt = `当前日期：${currentDate}。你是一名资深研究规划专家，请为以下课题生成一份极其详尽、专业的研究蓝图规划方案。
+        const promptHeader = L.isEn
+            ? `Current date: ${currentDate}. You are a senior research planning expert. Generate a detailed research blueprint.\n\n${L.langRule}\n\nTopic: ${topic?.title}\nType: ${topicType === 'frontier' ? 'Frontier Exploration' : 'Industrial Mature'}\nHypothesis: ${topic?.hypothesis}\nPain Point: ${topic?.painPoint}\nImpact: ${topic?.impact}\nGaps: ${gaps}\nCompeting Groups: ${topLabs}\n\nFrom a Research Director perspective, generate a complete JSON blueprint. All text fields must be detailed (50+ words):`
+            : `当前日期：${currentDate}。你是一名资深研究规划专家，请为以下课题生成一份极其详尽、专业的研究蓝图规划方案。\n\n${L.langRule}\n\n课题名称：${topic?.title}\n课题类型：${topicType === 'frontier' ? '前沿探索' : '产业化成熟'}\n核心科学假设：${topic?.hypothesis}\n攻关痛点：${topic?.painPoint}\n预期贡献：${topic?.impact}\n已识别研究缺口：${gaps}\n主要竞争课题组：${topLabs}\n\n请从研究总监视角, 生成一份包含以下所有维度的完整 JSON 蓝图，所有字段必须用中文填写，且每个字段不少于 50 字描述：`;
 
-课题名称：${topic?.title}
-课题类型：${topicType === 'frontier' ? '前沿探索' : '产业化成熟'}
-核心科学假设：${topic?.hypothesis}
-攻关痛点：${topic?.painPoint}
-预期贡献：${topic?.impact}
-已识别研究缺口：${gaps}
-主要竞争课题组：${topLabs}
-
-请从研究总监视角, 生成一份包含以下所有维度的完整 JSON 蓝图，所有字段必须用中文填写，且每个字段不少于 50 字描述：
+        const prompt = `${promptHeader}
 
 1. researchPhases: 4-5个研究阶段，每个阶段包含：
    - phaseId（如 P1, P2...）
@@ -480,7 +635,7 @@ export const generateBlueprint = async (topic: any, landscape: any) => {
    - conferencePlan: 参加会议计划（3-4个重要会议，含name、type："oral"|"poster"）
    - publicEngagement: 学术普及与影响力建设建议（80字以上）
 
-要求：必须输出合法 JSON，字段名必须完全匹配上述 schema，所有文本字段必须为中文，且详尽具体，不得有空字段或过于简短的描述。`;
+${L.isEn ? 'Requirements: Valid JSON, field names must match schema, all text detailed and specific, no empty fields.' : '要求：必须输出合法 JSON，字段名必须完全匹配上述 schema，所有文本字段详尽具体，不得有空字段或过于简短的描述。'}`;
 
         const response = await ai.models.generateContent({
             model: PRO_MODEL,
@@ -697,21 +852,51 @@ export const runVirtualReview = async (topic: any, landscape: any) => {
         const currentYear = now.getFullYear();
 
         const topicType = topic?.type || 'frontier';
-        const gaps = landscape?.researchGaps?.slice(0, 3).map((g: any) => (typeof g === 'string' ? g : g?.content)).join('；') || '';
-        const topLabs = landscape?.activeLabs?.slice(0, 5).map((l: any) => `${l?.name}(PI: ${l?.leader})`).join('、') || '';
-        const risks = landscape?.patentRisks?.slice(0, 3).map((r: any) => (typeof r === 'string' ? r : r?.description)).join('；') || '';
+        const gaps = landscape?.researchGaps?.slice(0, 3).map((g: any) => (typeof g === 'string' ? g : g?.content)).join('; ') || '';
+        const topLabs = landscape?.activeLabs?.slice(0, 5).map((l: any) => `${l?.name}(PI: ${l?.leader})`).join(', ') || '';
+        const risks = landscape?.patentRisks?.slice(0, 3).map((r: any) => (typeof r === 'string' ? r : r?.description)).join('; ') || '';
+        const L = getInceptionLang();
 
         const reviewFocusRigorous = topicType === 'frontier'
-            ? '请从科学严谨性角度审视：科学假设的逻辑闭合性、实验设计的变量控制、统计学效力、可重复性、数据完整性。'
-            : '请从工艺验证角度审视：工艺参数的精确度、放大效应的预判、GMP合规性、质量控制体系、批次一致性。';
+            ? (L.isEn ? 'Review scientific rigor: hypothesis logic, variable control, statistical power, reproducibility, data integrity.' : '请从科学严谨性角度审视：科学假设的逻辑闭合性、实验设计的变量控制、统计学效力、可重复性、数据完整性。')
+            : (L.isEn ? 'Review process validation: parameter accuracy, scale-up prediction, GMP compliance, quality control, batch consistency.' : '请从工艺验证角度审视：工艺参数的精确度、放大效应的预判、GMP合规性、质量控制体系、批次一致性。');
         const reviewFocusNova = topicType === 'frontier'
-            ? '请从创新突破角度审视：跨学科融合深度、范式转移潜力、概念新颖度、理论框架原创性、潜在的颠覆性影响。'
-            : '请从市场创新角度审视：技术壁垒构建、成本颠覆潜力、商业模式创新、供应链优化、差异化竞争力。';
+            ? (L.isEn ? 'Review innovation: interdisciplinary depth, paradigm shift potential, novelty, theoretical originality, disruptive impact.' : '请从创新突破角度审视：跨学科融合深度、范式转移潜力、概念新颖度、理论框架原创性、潜在的颠覆性影响。')
+            : (L.isEn ? 'Review market innovation: barrier construction, cost disruption, business model innovation, supply chain, differentiation.' : '请从市场创新角度审视：技术壁垒构建、成本颠覆潜力、商业模式创新、供应链优化、差异化竞争力。');
         const reviewFocusForge = topicType === 'frontier'
-            ? '请从工程可行性角度审视：实验条件的现实可达性、仪器设备可及性、材料供应链稳定性、时间线合理性、预算充足度。'
-            : '请从产业落地角度审视：试产到量产的路径、设备投资回报率、物料成本控制、产线兼容性、环保合规性。';
+            ? (L.isEn ? 'Review engineering feasibility: experimental conditions, equipment accessibility, material supply chain, timeline, budget.' : '请从工程可行性角度审视：实验条件的现实可达性、仪器设备可及性、材料供应链稳定性、时间线合理性、预算充足度。')
+            : (L.isEn ? 'Review industrial deployment: pilot-to-mass path, equipment ROI, material cost control, production line compatibility, environmental compliance.' : '请从产业落地角度审视：试产到量产的路径、设备投资回报率、物料成本控制、产线兼容性、环保合规性。');
 
-        const prompt = `当前日期：${currentDate}。你将扮演一个由三位资深专家组成的虚拟学术评审委员会，对以下课题进行多轮深度评审。
+        const prompt = L.isEn
+            ? `Current date: ${currentDate}. Role-play as a virtual academic review committee of 3 senior experts conducting multi-round deep review.
+
+${L.langRule}
+
+=== Topic Info ===
+Title: ${topic?.title}
+Type: ${topicType === 'frontier' ? 'Frontier Exploration' : 'Industrial Mature'}
+Hypothesis: ${topic?.hypothesis}
+Pain Point: ${topic?.painPoint}
+Impact: ${topic?.impact}
+Gaps: ${gaps}
+Competing Groups: ${topLabs}
+Known Risks: ${risks}
+
+=== Committee ===
+1. Dr. Rigor - strictest methodology reviewer. ${reviewFocusRigorous}
+2. Dr. Nova - interdisciplinary innovation hunter. ${reviewFocusNova}
+3. Dr. Forge - lab-to-production pragmatist. ${reviewFocusForge}
+
+=== Requirements ===
+Generate comprehensive review JSON:
+1. expertPanels (3 experts): expertId, expertName, expertRole, overallScore(0-100), verdict, dimensions(4), strengths(3-4), weaknesses(2-3), criticalQuestions(2-3), suggestions(2-3), detailedReview(200+ words).
+2. crossExamination (3-4 rounds): round, questioner, questionerName, question, responder, responderName, response, followUp.
+3. overallAssessment: overallScore, decision, decisionRationale, scoreDimensions(6: Academic Novelty, Technical Feasibility, Impact Potential, Resource Fitness, Competitive Edge, Risk Manageability), conditionalRequirements, summary(200+ words), executiveBrief(50 words max).
+
+All reviews must be detailed, professional, and in-depth. Each expert must have a distinctly different style.`
+            : `当前日期：${currentDate}。你将扮演一个由三位资深专家组成的虚拟学术评审委员会，对以下课题进行多轮深度评审。
+
+${L.langRule}
 
 === 课题信息 ===
 课题名称：${topic?.title}
@@ -724,47 +909,20 @@ export const runVirtualReview = async (topic: any, landscape: any) => {
 已知技术/专利风险：${risks}
 
 === 评审委员会成员 ===
-1. 严谨派专家 Dr. Rigor — 学术界最严苛的方法论审查官，关注科学假设逻辑、实验设计变量控制、数据完整性、统计效力。${reviewFocusRigorous}
-2. 创新派专家 Dr. Nova — 跨学科创新猎手，关注研究的范式转移潜力、颠覆性创新度、跨领域连接深度。${reviewFocusNova}
-3. 工程派专家 Dr. Forge — 从实验室到产线的实战专家，关注工程可行性、预算合理性、时间线可控性、资源可及性。${reviewFocusForge}
+1. 严谨派专家 Dr. Rigor — 学术界最严苛的方法论审查官。${reviewFocusRigorous}
+2. 创新派专家 Dr. Nova — 跨学科创新猎手。${reviewFocusNova}
+3. 工程派专家 Dr. Forge — 从实验室到产线的实战专家。${reviewFocusForge}
 
 === 评审要求 ===
-请生成一份极其详尽、专业的多维度评审报告 JSON，要求如下：
+请生成一份极其详尽、专业的多维度评审报告 JSON：
 
-1. **expertPanels**（3位专家各自的独立评审）：每位专家必须包含：
-   - expertId: "rigor" | "nova" | "forge"
-   - expertName: 专家代号 (Dr. Rigor / Dr. Nova / Dr. Forge)
-   - expertRole: 角色描述
-   - overallScore: 该专家给出的总分 (0-100)
-   - verdict: "approve" | "conditional" | "revise" | "reject"
-   - dimensions: 4个评分维度，每个含 name、score(0-100)、comment(50字以上)
-   - strengths: 3-4个优势点 (每条30字以上)
-   - weaknesses: 2-3个不足点 (每条30字以上)
-   - criticalQuestions: 2-3个尖锐质询问题 (模拟真实答辩场景)
-   - suggestions: 2-3条具体改进建议 (每条40字以上，需可操作)
-   - detailedReview: 该专家的完整评审意见 (200字以上，必须体现该专家的专业视角和评审风格)
+1. **expertPanels**（3位专家独立评审）：expertId, expertName, expertRole, overallScore(0-100), verdict, dimensions(4个,含name/score/comment), strengths(3-4), weaknesses(2-3), criticalQuestions(2-3), suggestions(2-3,40字+), detailedReview(200字+)
 
-2. **crossExamination**（模拟多轮交叉质询对话）：3-4轮对话，每轮含：
-   - round: 轮次编号
-   - questioner: 提问专家代号
-   - questionerName: 提问专家名称
-   - question: 尖锐质询问题 (模拟学术答辩中的交锋)
-   - responder: 回应者 (可以是课题负责人 "PI" 或另一位专家)
-   - responderName: 回应者名称
-   - response: 回应内容 (模拟课题负责人或专家的回应)
-   - followUp: 追问或总结 (可选)
+2. **crossExamination**（3-4轮交叉质询）：round, questioner, questionerName, question, responder, responderName, response, followUp
 
-3. **overallAssessment**（综合评估）：
-   - overallScore: 综合立项指数 (0-100)
-   - decision: "强烈推荐立项" | "建议立项" | "有条件立项" | "建议修改后重审" | "不建议立项"
-   - decisionRationale: 决策理由 (100字以上)
-   - scoreDimensions: 6个维度评分对象数组，每个含 name 和 score(0-100)：
-     学术新颖度(Academic Novelty)、技术可行性(Technical Feasibility)、影响因子潜力(Impact Potential)、资源匹配度(Resource Fitness)、竞争差异化(Competitive Edge)、风险可控度(Risk Manageability)
-   - conditionalRequirements: 如果是有条件立项，列出2-3条必须满足的前置条件
-   - summary: 综合评审总结 (200字以上)
-   - executiveBrief: 一句话执行摘要 (50字以内)
+3. **overallAssessment**（综合评估）：overallScore(0-100), decision, decisionRationale(100字+), scoreDimensions(6个维度), conditionalRequirements, summary(200字+), executiveBrief(50字内)
 
-所有文本必须使用中文，评审意见必须详尽、专业、有深度，模拟真实学术评审场景。每位专家的评审风格必须有明显差异化。`;
+所有评审意见必须详尽、专业、有深度。每位专家风格必须有明显差异化。`;
 
         const response = await ai.models.generateContent({
             model: PRO_MODEL,
@@ -874,20 +1032,35 @@ export const runVirtualReview = async (topic: any, landscape: any) => {
  */
 export const analyzePatentRisk = async (nodeLabel: string, context: string) => {
     return callGeminiWithRetry(async (ai) => {
-        const prompt = `你是一名为顶级科研机构服务的专利法专家和学术风险评估师。
+        const L = getInceptionLang();
+        const prompt = L.isEn
+            ? `You are a patent law expert and academic risk assessor for top research institutions.
+Conduct comprehensive patent infringement risk and academic compliance analysis.
+
+Target Node: ${nodeLabel}
+Context: ${context}
+
+Requirements:
+1. riskLevel: Risk level (Low, Medium, High, Critical).
+2. similarPatent: Identify similar existing patents with likely holders.
+3. blockageDesc: Describe potential patent walls or traps.
+4. advice: 3-5 actionable avoidance or patent positioning recommendations.
+
+${L.langRule}
+Output JSON.`
+            : `你是一名为顶级科研机构服务的专利法专家和学术风险评估师。
 请针对特定技术节点进行全方位的专利侵权风险与学术合规性分析。
 
 【分析目标节点】：${nodeLabel}
 【相关上下文】：${context}
 
 【分析要求】：
-1. **风险评级 (riskLevel)**：评估该节点在商业化或学术发布时的风险等级（Low, Medium, High, Critical）。
-2. **类似专利识别 (similarPatent)**：推测并描述可能存在的类似现有专利或学术优先权申报，标注可能的持有机构（如 MIT, Tsinghua, Intel 等）。
-3. **技术壁垒说明 (blockageDesc)**：详尽描述该节点可能遇到的“专利墙”或学术研究陷阱。
-4. **专业合规建议 (advice)**：提供 3-5 条具体、可操作的学术规避或专利布局建议。
+1. **风险评级 (riskLevel)**：评估风险等级（Low, Medium, High, Critical）。
+2. **类似专利识别 (similarPatent)**：推测类似现有专利，标注持有机构。
+3. **技术壁垒说明 (blockageDesc)**：详述可能遇到的“专利墙”或研究陷阱。
+4. **合规建议 (advice)**：3-5 条可操作的规避或专利布局建议。
 
-要求：使用高度专业的学术中文，分析需具备深度，严禁空洞。
-
+${L.langRule}
 输出 JSON 格式。`;
 
         const response = await ai.models.generateContent({
@@ -900,9 +1073,9 @@ export const analyzePatentRisk = async (nodeLabel: string, context: string) => {
                     type: Type.OBJECT,
                     properties: {
                         riskLevel: { type: Type.STRING, enum: ["Low", "Medium", "High", "Critical"] },
-                        similarPatent: { type: Type.STRING },
-                        blockageDesc: { type: Type.STRING },
-                        advice: { type: Type.STRING }
+                        similarPatent: { type: Type.STRING, description: `Similar patents${L.descSuffix}` },
+                        blockageDesc: { type: Type.STRING, description: `Technical barriers${L.descSuffix}` },
+                        advice: { type: Type.STRING, description: `Compliance advice${L.descSuffix}` }
                     },
                     required: ["riskLevel", "similarPatent", "blockageDesc", "advice"]
                 }
@@ -917,7 +1090,23 @@ export const analyzePatentRisk = async (nodeLabel: string, context: string) => {
  */
 export const generateTraceabilityReport = async (nodes: any[]) => {
     return callGeminiWithRetry(async (ai) => {
-        const prompt = `你是一名为国家实验室提供决策支持的资深科学分析师。
+        const L = getInceptionLang();
+        const prompt = L.isEn
+            ? `You are a senior scientific analyst providing decision support for national laboratories.
+Generate a detailed "Research Pathway Traceability & Reliability Audit Report" based on the pathway node data.
+
+Pathway Node Data:
+${JSON.stringify(nodes)}
+
+Report Requirements:
+1. Academic Background Review: Analyze the scientific starting point and evolutionary logic.
+2. Evidence Strength Audit: Assess reliability based on evidenceWeight and trlLevel.
+3. Key Bottleneck Identification: Identify 3 core technical blockers.
+4. Optimization Recommendations: Pathway optimization based on global competitive landscape.
+
+${L.langRule}
+Use Markdown with clear headings (# ## ###). Output Markdown text directly.`
+            : `你是一名为国家实验室提供决策支持的资深科学分析师。
 请基于以下技术路径的节点数据，生成一份极其详尽、具备前瞻性的“研究路径溯源与可靠性审计报告”。
 
 【路径节点数据】：
@@ -925,11 +1114,12 @@ ${JSON.stringify(nodes)}
 
 【报告生成要求】：
 1. **学术背景综述**：分析该路径的科学出发点与演进逻辑。
-2. **证据强度审计**：基于节点的 evidenceWeight 和 trlLevel，评估该路径的科学可靠性。
-3. **关键瓶颈识别**：指出影响该路径成功的 3 个核心技术卡点。
-4. **优化建议**：提供基于当前全球竞争格局的优化路径建议。
+2. **证据强度审计**：基于 evidenceWeight 和 trlLevel，评估科学可靠性。
+3. **关键瓶颈识别**：指出 3 个核心技术卡点。
+4. **优化建议**：提供基于全球竞争格局的优化路径建议。
 
-要求：使用 Markdown 语法输出，包含清晰的层级标题（# ## ###），文字风格要求严谨、权威、硬核。
+${L.langRule}
+要求：使用 Markdown 语法输出，包含清晰的层级标题（# ## ###）。
 
 输出：直接返回 Markdown 文本。`;
 
@@ -940,6 +1130,6 @@ ${JSON.stringify(nodes)}
                 ...SPEED_CONFIG,
             }
         });
-        return response.text || "报告生成异常，请检查 AI 服务状态。";
+        return response.text || (L.isEn ? 'Report generation failed, please check AI service status.' : '报告生成异常，请检查 AI 服务状态。');
     });
 };

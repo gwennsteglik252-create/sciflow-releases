@@ -35,7 +35,9 @@ import_electron.contextBridge.exposeInMainWorld("electron", {
   // ═══ 授权系统 API ═══
   getLicenseState: () => import_electron.ipcRenderer.invoke("get-license-state"),
   activateLicense: (code) => import_electron.ipcRenderer.invoke("activate-license", code),
-  resetTrial: () => import_electron.ipcRenderer.invoke("reset-trial")
+  resetTrial: () => import_electron.ipcRenderer.invoke("reset-trial"),
+  // ═══ 系统工具 ═══
+  openExternal: (url) => import_electron.ipcRenderer.invoke("open-external-url", url)
 });
 import_electron.contextBridge.exposeInMainWorld("electronAPI", {
   getApiKey: () => Promise.resolve(process.env.API_KEY || "")

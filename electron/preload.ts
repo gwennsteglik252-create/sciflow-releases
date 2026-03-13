@@ -42,6 +42,9 @@ contextBridge.exposeInMainWorld('electron', {
   getLicenseState: () => ipcRenderer.invoke('get-license-state'),
   activateLicense: (code: string) => ipcRenderer.invoke('activate-license', code),
   resetTrial: () => ipcRenderer.invoke('reset-trial'),
+
+  // ═══ 系统工具 ═══
+  openExternal: (url: string) => ipcRenderer.invoke('open-external-url', url),
 });
 
 contextBridge.exposeInMainWorld('electronAPI', {

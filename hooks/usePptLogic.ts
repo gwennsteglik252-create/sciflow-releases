@@ -173,6 +173,49 @@ const buildStructuredSlides = (
       return { name, values, delta };
     });
 
+  // ▶ 提取同步模块性能雷达的表征内容
+  const syncedModuleSummaryLines: string[] = [];
+  const syncedModuleMetricLines: string[] = [];
+  sortedLogs.forEach(log => {
+    const deepRaw = (log as any).deepAnalysis;
+    if (deepRaw && Array.isArray(deepRaw.syncedModules)) {
+      deepRaw.syncedModules.filter(Boolean).forEach((sm: any) => {
+        const label = sm.moduleLabel || sm.mode || '未知模块';
+        const mode = sm.mode ? `(${sm.mode})` : '';
+        // 收集指标摘要
+        if (sm.metrics && typeof sm.metrics === 'object') {
+          const topEntries = Object.entries(sm.metrics).slice(0, 5);
+          if (topEntries.length > 0) {
+            const metricsStr = topEntries.map(([k, v]) => `${k}=${v}`).join('；');
+            syncedModuleMetricLines.push(`${label}${mode}: ${metricsStr}`);
+          }
+        }
+        // 收集分析摘要
+        if (sm.summary) {
+          syncedModuleSummaryLines.push(`${label}: ${summarizeText(sm.summary, 80)}`);
+        }
+      });
+    }
+    // 提取组级别的 groupSyncedModules（组表征同步）
+    const groupModulesRaw = (log as any).groupSyncedModules;
+    if (Array.isArray(groupModulesRaw)) {
+      groupModulesRaw.filter(Boolean).forEach((sm: any) => {
+        const label = sm.moduleLabel || sm.mode || '未知模块';
+        const mode = sm.mode ? `(${sm.mode})` : '';
+        if (sm.metrics && typeof sm.metrics === 'object') {
+          const topEntries = Object.entries(sm.metrics).slice(0, 5);
+          if (topEntries.length > 0) {
+            const metricsStr = topEntries.map(([k, v]) => `${k}=${v}`).join('；');
+            syncedModuleMetricLines.push(`[组]${label}${mode}: ${metricsStr}`);
+          }
+        }
+        if (sm.summary) {
+          syncedModuleSummaryLines.push(`[组]${label}: ${summarizeText(sm.summary, 80)}`);
+        }
+      });
+    }
+  });
+
   const primaryMetricLine = topMetrics.length
     ? topMetrics.map(m => `${m.name}: 平均 ${safeMetric(average(m.values))}，区间 ${safeMetric(Math.min(...m.values))}~${safeMetric(Math.max(...m.values))}`).slice(0, 2)
     : ['当前日志中可结构化指标较少，建议补充 scientificData 字段以增强报告说服力。'];
@@ -250,7 +293,8 @@ const buildStructuredSlides = (
         points: [
           ...(planGoals.length ? planGoals : ['未填写 weeklyPlans.goals，建议在周计划里补充本周目标。']),
           `里程碑完成度: ${milestoneDone}/${milestoneTotal}`,
-          ...(aiHighlights[0] ? [`本周摘要: ${aiHighlights[0]}`] : [])
+          ...(aiHighlights[0] ? [`本周摘要: ${aiHighlights[0]}`] : []),
+          ...(syncedModuleSummaryLines.length > 0 ? [`表征同步: 本周已同步 ${syncedModuleSummaryLines.length} 个表征模块数据`] : [])
         ]
       },
       {
@@ -263,7 +307,8 @@ const buildStructuredSlides = (
         title: '核心数据与结果对比',
         points: [
           '以下为本周核心证据数据，建议汇报时优先讲“趋势变化+原因解释”。',
-          ...topMetrics.slice(0, 2).map(m => `${m.name}: 阶段变化 ${safeMetric(m.delta)}，平均值 ${safeMetric(average(m.values))}`)
+          ...topMetrics.slice(0, 2).map(m => `${m.name}: 阶段变化 ${safeMetric(m.delta)}，平均值 ${safeMetric(average(m.values))}`),
+          ...syncedModuleMetricLines.slice(0, 3)
         ],
         tableData: buildEvidenceTable(sortedLogs)
       },
@@ -330,6 +375,7 @@ const buildStructuredSlides = (
       points: [
         `本周期共完成 ${sortedLogs.length} 组已核验实验，成功 ${success.length} 组，观察 ${observed.length} 组。`,
         ...primaryMetricLine,
+        ...(syncedModuleMetricLines.length > 0 ? [`表征数据同步: ${syncedModuleMetricLines.slice(0, 2).join('；')}`] : []),
         ...(aiHighlights.length ? [`专家摘要: ${aiHighlights[0]}`] : [])
       ]
     },
@@ -362,6 +408,8 @@ const buildStructuredSlides = (
       title: '关键结果与科学发现',
       points: [
         ...topMetrics.slice(0, 3).map(m => `${m.name} 趋势 ${m.delta >= 0 ? '上升' : '下降'}，阶段变化 ${safeMetric(m.delta)}。`),
+        ...syncedModuleSummaryLines.slice(0, 2),
+        ...syncedModuleMetricLines.slice(0, 2),
         `最佳窗口记录: ${success.length ? summarizeText(success[success.length - 1].content, 52) : '暂无成功样本窗口。'}`,
         ...(aiHighlights.length > 1 ? [`补充洞察: ${aiHighlights[1]}`] : [])
       ]

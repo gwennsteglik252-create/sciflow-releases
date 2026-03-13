@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ManuscriptMeta, LevelStyle } from '../../../types';
 import { TEMPLATES } from '../WritingConfig';
+import { useTranslation } from '../../../locales/useTranslation';
 
 export interface OutlineItem {
     level: number;
@@ -20,16 +21,17 @@ interface OutlinePanelProps {
 }
 
 const FONT_OPTIONS = [
-  { name: 'Sans (Modern)', value: 'Arial, sans-serif' },
-  { name: 'Serif (Academic)', value: '"Times New Roman", Times, serif' },
-  { name: 'Mono', value: '"Courier New", Courier, monospace' }
+    { name: 'Sans (Modern)', value: 'Arial, sans-serif' },
+    { name: 'Serif (Academic)', value: '"Times New Roman", Times, serif' },
+    { name: 'Mono', value: '"Courier New", Courier, monospace' }
 ];
 
-const OutlinePanel: React.FC<OutlinePanelProps> = ({ 
-    outline, onJump, manuscriptMeta, onUpdateMeta, activeTemplateId, onSelectTemplate 
+const OutlinePanel: React.FC<OutlinePanelProps> = ({
+    outline, onJump, manuscriptMeta, onUpdateMeta, activeTemplateId, onSelectTemplate
 }) => {
     const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
     const [showStylesModal, setShowStylesModal] = useState(false);
+    const { t } = useTranslation();
 
     const toggleSection = (e: React.MouseEvent, sectionKey: string) => {
         e.stopPropagation();
@@ -81,11 +83,11 @@ const OutlinePanel: React.FC<OutlinePanelProps> = ({
             <div className="flex justify-between items-start px-1">
                 <div className="flex flex-col gap-1.5">
                     <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                        <i className="fa-solid fa-list-ol text-indigo-600"></i> 文档结构大纲
+                        <i className="fa-solid fa-list-ol text-indigo-600"></i> {t('writing.outlinePanel.docOutline')}
                     </h4>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase leading-none">实时解析多级标题锚点</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase leading-none">{t('writing.outlinePanel.parseHeadings')}</p>
                 </div>
-                <button 
+                <button
                     onClick={() => setShowStylesModal(true)}
                     className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 text-slate-400 hover:text-indigo-600 transition-all flex items-center justify-center shadow-sm active:scale-95"
                 >
@@ -96,7 +98,7 @@ const OutlinePanel: React.FC<OutlinePanelProps> = ({
             {/* 期刊模板快速切换 */}
             <div className="bg-indigo-50/50 p-2 rounded-xl border border-indigo-100 flex flex-wrap gap-1.5">
                 {TEMPLATES.map(tpl => (
-                    <button 
+                    <button
                         key={tpl.id}
                         onClick={() => onSelectTemplate?.(tpl.id)}
                         className={`px-2 py-1 rounded text-[7px] font-black uppercase border transition-all ${activeTemplateId === tpl.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white border-slate-200 text-slate-400 hover:border-indigo-300'}`}
@@ -108,7 +110,7 @@ const OutlinePanel: React.FC<OutlinePanelProps> = ({
 
             <div className="space-y-1 mt-2">
                 {visibleOutline.map((item: any, idx) => (
-                    <div 
+                    <div
                         key={idx}
                         className={`flex items-center group transition-all rounded-xl hover:bg-slate-50 ${item.level === 1 ? 'mt-2 mb-0.5' : ''}`}
                         style={{ paddingLeft: `${(item.level - 1) * 0.8}rem`, display: item.isVisible ? 'flex' : 'none' }}
@@ -131,14 +133,14 @@ const OutlinePanel: React.FC<OutlinePanelProps> = ({
                 <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[3000] flex items-center justify-center p-4">
                     <div className="bg-white w-full max-w-lg rounded-[2.5rem] p-8 animate-reveal shadow-2xl relative border-4 border-white flex flex-col max-h-[90vh]">
                         <button onClick={() => setShowStylesModal(false)} className="absolute top-8 right-8 text-slate-300 hover:text-rose-500 transition-all"><i className="fa-solid fa-times text-2xl"></i></button>
-                        <header className="mb-6 shrink-0"><h3 className="text-xl font-black text-slate-800 uppercase italic border-l-8 border-indigo-600 pl-6">排版高级设置</h3></header>
+                        <header className="mb-6 shrink-0"><h3 className="text-xl font-black text-slate-800 uppercase italic border-l-8 border-indigo-600 pl-6">{t('writing.outlinePanel.advancedStyle')}</h3></header>
                         <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6">
                             {(['h1', 'h2', 'h3'] as const).map(lvl => (
                                 <div key={lvl} className="space-y-3 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
                                     <span className="text-[9px] font-black text-indigo-600 uppercase">{lvl.toUpperCase()} Level</span>
                                     <div className="grid grid-cols-2 gap-3">
-                                        <div><label className="text-[7px] font-bold text-slate-400 block mb-1">Size (PT)</label><input type="number" step="0.5" className="w-full bg-slate-50 border border-slate-100 rounded-lg p-2 text-[10px] font-bold" value={currentOutlineStyles[lvl].fontSize} onChange={e => updateLevelStyle(lvl, { fontSize: parseFloat(e.target.value) || 9 })}/></div>
-                                        <div><label className="text-[7px] font-bold text-slate-400 block mb-1">Indent (REM)</label><input type="number" step="0.1" className="w-full bg-slate-50 border border-slate-100 rounded-lg p-2 text-[10px] font-bold" value={currentOutlineStyles[lvl].indent} onChange={e => updateLevelStyle(lvl, { indent: parseFloat(e.target.value) || 0 })}/></div>
+                                        <div><label className="text-[7px] font-bold text-slate-400 block mb-1">Size (PT)</label><input type="number" step="0.5" className="w-full bg-slate-50 border border-slate-100 rounded-lg p-2 text-[10px] font-bold" value={currentOutlineStyles[lvl].fontSize} onChange={e => updateLevelStyle(lvl, { fontSize: parseFloat(e.target.value) || 9 })} /></div>
+                                        <div><label className="text-[7px] font-bold text-slate-400 block mb-1">Indent (REM)</label><input type="number" step="0.1" className="w-full bg-slate-50 border border-slate-100 rounded-lg p-2 text-[10px] font-bold" value={currentOutlineStyles[lvl].indent} onChange={e => updateLevelStyle(lvl, { indent: parseFloat(e.target.value) || 0 })} /></div>
                                     </div>
                                     <div className="flex gap-2">
                                         <select className="flex-1 bg-slate-50 border border-slate-100 rounded-lg p-2 text-[9px] font-bold" value={currentOutlineStyles[lvl].fontFamily} onChange={e => updateLevelStyle(lvl, { fontFamily: e.target.value })}>{FONT_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.name}</option>)}</select>
@@ -147,7 +149,7 @@ const OutlinePanel: React.FC<OutlinePanelProps> = ({
                                 </div>
                             ))}
                         </div>
-                        <button onClick={() => setShowStylesModal(false)} className="mt-8 w-full py-4 bg-indigo-600 text-white rounded-2xl text-[11px] font-black uppercase shadow-xl hover:bg-black transition-all">保存设置</button>
+                        <button onClick={() => setShowStylesModal(false)} className="mt-8 w-full py-4 bg-indigo-600 text-white rounded-2xl text-[11px] font-black uppercase shadow-xl hover:bg-black transition-all">{t('writing.outlinePanel.saveSettings')}</button>
                     </div>
                 </div>, document.body
             )}

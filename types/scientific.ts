@@ -37,6 +37,90 @@ export interface Landscape {
   researchGaps: ResearchGap[];
   hotnessData: HotnessPoint[];
   sources?: string[];
+  // -- Phase 1 Enhancement --
+  keyPublications?: KeyPublication[];
+  fundingLandscape?: FundingLandscape;
+  trlTimeline?: TrlMilestone[];
+  // -- Phase 2 Enhancement --
+  geographicDistribution?: GeographicEntry[];
+  translationReadiness?: TranslationReadiness;
+  methodologyGaps?: MethodologyGap[];
+  // -- Phase 3 Enhancement --
+  interdisciplinaryLinks?: InterdisciplinaryLink[];
+}
+
+/** 关键论文 */
+export interface KeyPublication {
+  title: string;
+  authors: string;
+  journal: string;
+  year: number;
+  citations: number;
+  significance: string;
+  doi?: string;
+  isLandmark: boolean;
+}
+
+/** 资助机构 */
+export interface FundingAgency {
+  name: string;
+  country: string;
+  recentProjects: number;
+  avgGrantSize: string;
+  focusAreas: string[];
+}
+
+/** 资金版图 */
+export interface FundingLandscape {
+  totalGlobalFunding: string;
+  topAgencies: FundingAgency[];
+  fundingTrend: 'increasing' | 'stable' | 'declining';
+  sourceUrl?: string;
+}
+
+/** TRL 里程碑节点 */
+export interface TrlMilestone {
+  year: number;
+  trlLevel: number;
+  milestone: string;
+  actor: string;
+}
+
+/** 地理竞争分布 */
+export interface GeographicEntry {
+  country: string;
+  labCount: number;
+  publishedPapers: number;
+  strength: 'dominant' | 'strong' | 'emerging' | 'niche';
+  keyInstitutions: string[];
+}
+
+/** 产业转化路径 */
+export interface TranslationReadiness {
+  marketSize: string;
+  cagr: string;
+  keyPlayers: Array<{
+    company: string;
+    product: string;
+    stage: 'R&D' | 'Pilot' | 'Commercial';
+  }>;
+  policySupport: string;
+  bottleneck: string;
+}
+
+/** 方法学缺口 */
+export interface MethodologyGap {
+  gap: string;
+  impact: 'critical' | 'moderate';
+  potentialApproach: string;
+}
+
+/** 跨学科关联 */
+export interface InterdisciplinaryLink {
+  field: string;
+  connection: string;
+  maturity: 'emerging' | 'growing' | 'established';
+  representativePaper?: string;
 }
 
 export interface InceptionSession {

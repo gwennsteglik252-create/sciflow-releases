@@ -2,8 +2,7 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { ResearchProject, Literature } from '../../../types';
 import { SECTION_CONFIG } from '../WritingConfig';
-
-const CATEGORIES = ['核心理论', '工艺标准', '性能标杆', '专利检索'];
+import { useTranslation } from '../../../locales/useTranslation';
 
 interface LiteraturePanelProps {
     project: ResearchProject | undefined;
@@ -26,6 +25,13 @@ const LiteraturePanel: React.FC<LiteraturePanelProps> = ({
     isProcessing, highlightedResourceId, onViewDetails, onFindToken,
     orderedCitations
 }) => {
+    const { t } = useTranslation();
+    const CATEGORIES = [
+        t('writing.literaturePanel.categories.coreTheory'),
+        t('writing.literaturePanel.categories.processStandard'),
+        t('writing.literaturePanel.categories.performanceBenchmark'),
+        t('writing.literaturePanel.categories.patentSearch')
+    ];
     const [litSearchQuery, setLitSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -150,10 +156,10 @@ const LiteraturePanel: React.FC<LiteraturePanelProps> = ({
     return (
         <div className="space-y-3 animate-reveal">
             <div className="flex justify-between items-center px-1">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">关联文献库</p>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('writing.literaturePanel.linkedLiterature')}</p>
                 {citationOrder.size > 0 && (
                     <span className="text-[8px] font-black text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
-                        已引用 {citationOrder.size} 篇
+                        {t('writing.literaturePanel.cited')} {citationOrder.size} {t('writing.literaturePanel.pieces')}
                     </span>
                 )}
             </div>
@@ -162,7 +168,7 @@ const LiteraturePanel: React.FC<LiteraturePanelProps> = ({
                 <div className={`flex justify-between items-center cursor-pointer ${isPanelExpanded ? 'mb-2' : 'mb-0'}`} onClick={() => setIsPanelExpanded(!isPanelExpanded)}>
                     <div className="flex items-center gap-3">
                         <p className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-1">
-                            <i className="fa-solid fa-filter"></i> 智能筛选
+                            <i className="fa-solid fa-filter"></i> {t('writing.literaturePanel.smartFilter')}
                         </p>
                         {/* 已引用筛选开关 */}
                         <button
@@ -170,7 +176,7 @@ const LiteraturePanel: React.FC<LiteraturePanelProps> = ({
                             className={`px-2 py-0.5 rounded text-[7px] font-black uppercase transition-all border flex items-center gap-1 ${showCitedOnly ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm' : 'bg-white text-slate-400 border-slate-200 hover:border-indigo-300'}`}
                         >
                             <i className={`fa-solid ${showCitedOnly ? 'fa-check-circle' : 'fa-circle-dot opacity-40'}`}></i>
-                            仅看已引用
+                            {t('writing.literaturePanel.citedOnly')}
                         </button>
                     </div>
                     <button className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-400 transition-all">
@@ -186,7 +192,7 @@ const LiteraturePanel: React.FC<LiteraturePanelProps> = ({
                                     onClick={() => setSelectedCategory(null)}
                                     className={`px-2.5 py-1 rounded-lg text-[8px] font-bold border transition-all ${selectedCategory === null ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-300'}`}
                                 >
-                                    全部
+                                    {t('writing.literaturePanel.all')}
                                 </button>
                                 {CATEGORIES.map(cat => (
                                     <button
@@ -203,7 +209,7 @@ const LiteraturePanel: React.FC<LiteraturePanelProps> = ({
                         {allTags.length > 0 && (
                             <div>
                                 <p className="text-[7px] font-black text-slate-300 uppercase tracking-widest px-1 mb-1.5 flex items-center gap-1">
-                                    <i className="fa-solid fa-tags"></i> 标签云
+                                    <i className="fa-solid fa-tags"></i> {t('writing.literaturePanel.tagCloud')}
                                 </p>
                                 <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto custom-scrollbar pr-1">
                                     {allTags.map(tag => (
@@ -226,7 +232,7 @@ const LiteraturePanel: React.FC<LiteraturePanelProps> = ({
                 <i className="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[9px]"></i>
                 <input
                     type="text"
-                    placeholder="搜索关联文献..."
+                    placeholder={t('writing.literaturePanel.searchPlaceholder')}
                     className="w-full bg-slate-50 border border-slate-200/60 rounded-lg pl-8 pr-3 py-1.5 text-[9px] font-bold outline-none focus:ring-1 focus:ring-indigo-100 transition-all shadow-inner"
                     value={litSearchQuery}
                     onChange={e => setLitSearchQuery(e.target.value)}
@@ -252,12 +258,12 @@ const LiteraturePanel: React.FC<LiteraturePanelProps> = ({
                                     ? 'bg-emerald-50/40 border-emerald-300 shadow-sm hover:bg-emerald-50 hover:shadow-md'
                                     : 'bg-slate-50 border-slate-100 hover:border-emerald-200 shadow-none'
                                 }`}
-                            title="点击插入引用"
+                            title={t('writing.literaturePanel.clickToInsert')}
                         >
                             <div className="flex justify-between items-start gap-2 mb-2">
                                 <div className="flex items-start gap-2 flex-1">
                                     {seqNum && (
-                                        <span className="shrink-0 w-5 h-5 rounded bg-indigo-600 text-white flex items-center justify-center text-[9px] font-black shadow-sm" title={`文中第 ${seqNum} 处引用`}>
+                                        <span className="shrink-0 w-5 h-5 rounded bg-indigo-600 text-white flex items-center justify-center text-[9px] font-black shadow-sm" title={t('writing.literaturePanel.citationAt').replace('{num}', String(seqNum))}>
                                             {seqNum}
                                         </span>
                                     )}
@@ -276,22 +282,22 @@ const LiteraturePanel: React.FC<LiteraturePanelProps> = ({
                                     {isCited && (
                                         <p className="text-[7px] text-emerald-600 font-bold mt-1.5 truncate italic">
                                             <i className="fa-solid fa-location-dot mr-1"></i>
-                                            全文位置: {citingSections.join(', ')}
+                                            {t('writing.literaturePanel.fullTextLocation')} {citingSections.join(', ')}
                                         </p>
                                     )}
                                 </div>
 
                                 <div className="flex gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                                     {onViewDetails && (
-                                        <button onClick={() => onViewDetails(res)} className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-500 hover:bg-indigo-500 hover:text-white flex items-center justify-center transition-all shadow-sm" title="查看详情"><i className="fa-solid fa-eye text-[9px]"></i></button>
+                                        <button onClick={() => onViewDetails(res)} className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-500 hover:bg-indigo-500 hover:text-white flex items-center justify-center transition-all shadow-sm" title={t('writing.literaturePanel.viewDetails')}><i className="fa-solid fa-eye text-[9px]"></i></button>
                                     )}
                                     {isCited ? (
                                         <>
-                                            <button onClick={() => onFindToken?.('Cite', res.id)} className="w-6 h-6 rounded-lg bg-indigo-600 text-white hover:bg-black flex items-center justify-center transition-all shadow-md active:scale-95" title="全局追踪引用"><i className="fa-solid fa-location-crosshairs text-[9px]"></i></button>
-                                            <button onClick={() => onRemoveCitation(res)} className="w-6 h-6 rounded-lg bg-rose-50 text-rose-400 hover:bg-rose-500 hover:text-white transition-all shadow-sm" title="移除引用"><i className="fa-solid fa-eraser text-[9px]"></i></button>
+                                            <button onClick={() => onFindToken?.('Cite', res.id)} className="w-6 h-6 rounded-lg bg-indigo-600 text-white hover:bg-black flex items-center justify-center transition-all shadow-md active:scale-95" title={t('writing.literaturePanel.trackCitations')}><i className="fa-solid fa-location-crosshairs text-[9px]"></i></button>
+                                            <button onClick={() => onRemoveCitation(res)} className="w-6 h-6 rounded-lg bg-rose-50 text-rose-400 hover:bg-rose-500 hover:text-white transition-all shadow-sm" title={t('writing.literaturePanel.removeCitation')}><i className="fa-solid fa-eraser text-[9px]"></i></button>
                                         </>
                                     ) : (
-                                        <button onClick={() => onCiteLiterature(res)} className="w-6 h-6 rounded-lg bg-slate-200 text-slate-400 group-hover:bg-indigo-500 group-hover:text-white flex items-center justify-center transition-all" title="插入引用"><i className="fa-solid fa-quote-right text-[9px]"></i></button>
+                                        <button onClick={() => onCiteLiterature(res)} className="w-6 h-6 rounded-lg bg-slate-200 text-slate-400 group-hover:bg-indigo-500 group-hover:text-white flex items-center justify-center transition-all" title={t('writing.literaturePanel.insertCitation')}><i className="fa-solid fa-quote-right text-[9px]"></i></button>
                                     )}
                                 </div>
                             </div>
@@ -302,7 +308,7 @@ const LiteraturePanel: React.FC<LiteraturePanelProps> = ({
                     <div className="text-center py-12 opacity-40">
                         <i className="fa-solid fa-magnifying-glass text-2xl mb-2 text-slate-300"></i>
                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 italic">
-                            {showCitedOnly ? '全文尚无引用文献' : '未找到匹配文献'}
+                            {showCitedOnly ? t('writing.literaturePanel.noCitedLiterature') : t('writing.literaturePanel.noMatchingLiterature')}
                         </p>
                     </div>
                 )}
@@ -314,7 +320,7 @@ const LiteraturePanel: React.FC<LiteraturePanelProps> = ({
                 className="w-full py-3 bg-white border-2 border-emerald-100 text-emerald-600 rounded-xl text-[10px] font-black uppercase hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all shadow-sm flex items-center justify-center gap-2 mt-4 active:scale-95"
             >
                 {isProcessing ? <i className="fa-solid fa-spinner animate-spin"></i> : <i className="fa-solid fa-list-ol"></i>}
-                自动排版参考文献列表
+                {t('writing.literaturePanel.generateBibliography')}
             </button>
         </div>
     );

@@ -1,5 +1,6 @@
 
 import React, { useRef, useState } from 'react';
+import { useTranslation } from '../../locales/useTranslation';
 import { SUB_DIGITS, SUP_DIGITS, smartConvertChemistry } from '../../utils/scientificText';
 
 interface SubFigure {
@@ -40,6 +41,7 @@ export const CaptionTab: React.FC<CaptionTabProps> = ({
   onSelectOption, generatedCaption, setGeneratedCaption, isGenerating, onGenerate,
   onQuickSave, onInsert, selectedMedia
 }) => {
+  const { t } = useTranslation();
   const [subMode, setSubMode] = useState(false);
   const [symbolPanelOpen, setSymbolPanelOpen] = useState(false);
   const [subListOpen, setSubListOpen] = useState(true);
@@ -94,13 +96,13 @@ export const CaptionTab: React.FC<CaptionTabProps> = ({
           onClick={() => setIsCompositeMode(false)}
           className={`flex-1 py-1.5 rounded-md text-[9px] font-black uppercase transition-all ${!isCompositeMode ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}
         >
-          单图
+          {t('figureStudio.singleFigure')}
         </button>
         <button
           onClick={() => setIsCompositeMode(true)}
           className={`flex-1 py-1.5 rounded-md text-[9px] font-black uppercase transition-all ${isCompositeMode ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}
         >
-          组图模式
+          {t('figureStudio.compositeMode')}
         </button>
       </div>
 
@@ -113,7 +115,7 @@ export const CaptionTab: React.FC<CaptionTabProps> = ({
             >
               <div className="flex items-center gap-1.5">
                 <i className={`fa-solid fa-chevron-right text-[7px] text-slate-300 transition-transform ${subListOpen ? 'rotate-90' : ''}`}></i>
-                <span className="text-[8px] font-black text-slate-400 uppercase">子图列表</span>
+                <span className="text-[8px] font-black text-slate-400 uppercase">{t('figureStudio.subFigureList')}</span>
                 {subFigures.length > 0 && <span className="text-[8px] font-bold text-indigo-500 bg-indigo-50 px-1.5 rounded-full">{subFigures.length}</span>}
               </div>
               <div className="flex gap-1" onClick={e => e.stopPropagation()}>
@@ -123,9 +125,9 @@ export const CaptionTab: React.FC<CaptionTabProps> = ({
                   className="text-[8px] font-bold text-indigo-500 hover:bg-indigo-50 px-2 py-0.5 rounded transition-colors flex items-center gap-1 border border-indigo-100 disabled:opacity-50"
                 >
                   {isAnalyzingSub ? <i className="fa-solid fa-spinner animate-spin"></i> : <i className="fa-solid fa-wand-magic-sparkles"></i>}
-                  自动识别
+                  {t('figureStudio.autoDetect')}
                 </button>
-                <button onClick={onAddSubFigure} className="text-[8px] font-bold text-slate-500 hover:bg-slate-100 px-2 py-0.5 rounded transition-colors border border-slate-200">+添加</button>
+                <button onClick={onAddSubFigure} className="text-[8px] font-bold text-slate-500 hover:bg-slate-100 px-2 py-0.5 rounded transition-colors border border-slate-200">{t('figureStudio.addSubFigure')}</button>
               </div>
             </div>
             {subListOpen && (
@@ -144,7 +146,7 @@ export const CaptionTab: React.FC<CaptionTabProps> = ({
                 ))}
                 {subFigures.length === 0 && (
                   <div className="text-center py-4 text-[9px] text-slate-400 italic border-2 border-dashed border-slate-200 rounded-lg cursor-pointer hover:bg-white hover:border-indigo-200 transition-all" onClick={onAddSubFigure}>
-                    点击添加子图 (a, b...)
+                    {t('figureStudio.clickAddSubFigure')}
                   </div>
                 )}
               </div>
@@ -170,7 +172,7 @@ export const CaptionTab: React.FC<CaptionTabProps> = ({
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-3 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 min-h-[100px]">
               <i className="fa-solid fa-wand-magic-sparkles text-2xl opacity-50"></i>
-              <p className="text-[9px] font-bold uppercase">准备生成</p>
+              <p className="text-[9px] font-bold uppercase">{t('figureStudio.readyToGenerate')}</p>
             </div>
           )}
         </div>
@@ -233,32 +235,32 @@ export const CaptionTab: React.FC<CaptionTabProps> = ({
 
           <div className="p-3 pt-2">
             <div className="flex items-center justify-between mb-2 px-1">
-              <p className="text-[8px] font-black text-slate-400 uppercase">最终修订 (FINAL EDIT)</p>
+              <p className="text-[8px] font-black text-slate-400 uppercase">{t('figureStudio.finalEdit')}</p>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onMouseDown={(e) => { e.preventDefault(); handleSmartConvert(); }}
                   className="flex items-center gap-1 px-2 py-0.5 bg-indigo-600 text-white rounded text-[8px] font-black uppercase shadow-sm hover:bg-black transition-all active:scale-95"
-                  title="自动识别化学式并转换上下标"
+                  title={t('figureStudio.convertTooltip')}
                 >
                   <i className="fa-solid fa-wand-magic-sparkles text-amber-300 text-[7px]"></i>
-                  转换
+                  {t('figureStudio.convert')}
                 </button>
                 <button
                   type="button"
                   onMouseDown={(e) => { e.preventDefault(); setSymbolPanelOpen(!symbolPanelOpen); }}
                   className={`flex items-center gap-1 px-2 py-0.5 rounded text-[8px] font-black uppercase transition-all active:scale-95 ${symbolPanelOpen ? 'bg-violet-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-400 hover:text-slate-600 hover:border-slate-300'}`}
-                  title="科学符号面板"
+                  title={t('figureStudio.symbolPanelTooltip')}
                 >
                   <i className="fa-solid fa-keyboard text-[7px]"></i>
-                  符号
+                  {t('figureStudio.symbolPanel')}
                 </button>
               </div>
             </div>
             <textarea
               ref={captionRef}
               className="w-full bg-transparent text-[11px] text-slate-700 outline-none resize-none font-medium h-36 placeholder:text-slate-400 custom-scrollbar text-justify pr-2"
-              placeholder="在此编辑图注内容..."
+              placeholder={t('figureStudio.captionPlaceholder')}
               value={generatedCaption}
               onChange={(e) => { setGeneratedCaption(e.target.value); savedCursor.current = e.target.selectionStart; }}
               onBlur={saveCursor}
@@ -275,19 +277,19 @@ export const CaptionTab: React.FC<CaptionTabProps> = ({
           className="w-full py-3 bg-white text-indigo-600 border border-indigo-200 rounded-xl text-[10px] font-black uppercase hover:bg-indigo-50 transition-all flex items-center justify-center gap-2 shadow-sm"
         >
           {isGenerating ? <i className="fa-solid fa-spinner animate-spin"></i> : <i className="fa-solid fa-wand-magic-sparkles"></i>}
-          AI 联合生成 (图注+解析)
+          {t('figureStudio.aiJointGenerate')}
         </button>
 
         <div className="grid grid-cols-1 gap-2">
           <button
             onClick={() => {
               onQuickSave();
-              alert('深度描述及图注已成功保存到图片，可在侧栏一键插入。');
+              alert(t('figureStudio.savedSuccess'));
             }}
             disabled={!selectedMedia}
             className="w-full py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase shadow-sm hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
           >
-            <i className="fa-solid fa-floppy-disk"></i> 保存信息
+            <i className="fa-solid fa-floppy-disk"></i> {t('figureStudio.saveInfo')}
           </button>
         </div>
       </div>

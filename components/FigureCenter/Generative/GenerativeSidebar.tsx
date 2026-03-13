@@ -1,5 +1,6 @@
 import React, { RefObject, useRef } from 'react';
 import { useGenerativeDesigner } from '../../../hooks/useGenerativeDesigner';
+import { useTranslation } from '../../../locales/useTranslation';
 
 interface GenerativeSidebarProps {
   logic: ReturnType<typeof useGenerativeDesigner>;
@@ -7,6 +8,7 @@ interface GenerativeSidebarProps {
 }
 
 export const GenerativeSidebar: React.FC<GenerativeSidebarProps> = ({ logic, inputRef }) => {
+  const { t } = useTranslation();
   const {
     figureStyle, setFigureStyle, isGenerating, aspectRatio, setAspectRatio,
     chemContext, setChemContext, bioContext, setBioContext, mechContext, setMechContext, styleContext, setStyleContext,
@@ -36,7 +38,7 @@ export const GenerativeSidebar: React.FC<GenerativeSidebarProps> = ({ logic, inp
         <section className="space-y-4">
           <div className="flex justify-between items-end mb-2">
             <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <i className="fa-solid fa-palette text-orange-500"></i> 视觉配置 (VISUAL)
+              <i className="fa-solid fa-palette text-orange-500"></i> {t('figureCenter.generative.visualConfig')}
             </h4>
             <span className="text-[7px] font-bold text-slate-300 uppercase tracking-tighter bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">Preserving Academic Integrity</span>
           </div>
@@ -47,7 +49,7 @@ export const GenerativeSidebar: React.FC<GenerativeSidebarProps> = ({ logic, inp
                 className="flex items-center justify-between mb-2 px-1 cursor-pointer group/header select-none"
                 onClick={() => setIsStyleCollapsed(!isStyleCollapsed)}
               >
-                <label className="text-[8px] font-black text-slate-400 uppercase tracking-wider group-hover/header:text-slate-600 transition-colors">全局视觉风格</label>
+                <label className="text-[8px] font-black text-slate-400 uppercase tracking-wider group-hover/header:text-slate-600 transition-colors">{t('figureCenter.generative.globalStyle')}</label>
                 <div className={`w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center transition-transform duration-300 ${isStyleCollapsed ? '' : 'rotate-180'}`}>
                   <i className="fa-solid fa-chevron-down text-[6px] text-slate-400"></i>
                 </div>
@@ -58,27 +60,27 @@ export const GenerativeSidebar: React.FC<GenerativeSidebarProps> = ({ logic, inp
                   {[
                     {
                       id: '极简学术示意图 (Scheme)',
-                      name: '学术示意图',
+                      name: t('figureCenter.generative.styleScheme'),
                       detail: 'Minimalist Scheme',
                       icon: 'fa-project-diagram',
                       color: 'from-blue-500 to-indigo-500',
-                      desc: '扁平矢量化，线条构件清晰'
+                      desc: t('figureCenter.generative.styleSchemeDesc')
                     },
                     {
                       id: '扁平化工业流程图 (Flowchart)',
-                      name: '工业流程图',
+                      name: t('figureCenter.generative.styleFlowchart'),
                       detail: 'Technical Flowchart',
                       icon: 'fa-microchip',
                       color: 'from-emerald-500 to-teal-600',
-                      desc: '工业感强，模块逻辑导向'
+                      desc: t('figureCenter.generative.styleFlowchartDesc')
                     },
                     {
                       id: '顶级期刊 3D 机理图 (High-End 3D Abstract)',
-                      name: '3D 机理大图',
+                      name: t('figureCenter.generative.style3d'),
                       detail: 'High-End 3D Abstract',
                       icon: 'fa-cube',
                       color: 'from-indigo-600 to-violet-700',
-                      desc: '顶级期刊封面质感，光影丰富'
+                      desc: t('figureCenter.generative.style3dDesc')
                     }
                   ].map(style => (
                     <button
@@ -124,14 +126,14 @@ export const GenerativeSidebar: React.FC<GenerativeSidebarProps> = ({ logic, inp
                     <p className="text-[9px] font-black text-slate-600 uppercase tracking-tight truncate">
                       {figureStyle.split(' ')[0]}
                     </p>
-                    <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">已选风格 · 点击展开修改</p>
+                    <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">{t('figureCenter.generative.selectedStyle')}</p>
                   </div>
                 </div>
               )}
             </div>
 
             <div>
-              <label className="block text-[8px] font-black text-slate-400 uppercase mb-2 px-1">画布比例 (Aspect Ratio)</label>
+              <label className="block text-[8px] font-black text-slate-400 uppercase mb-2 px-1">{t('figureCenter.generative.aspectRatio')}</label>
               <div className="flex flex-wrap gap-1.5 p-1.5 bg-slate-50 rounded-2xl border border-slate-100">
                 {(['1:1', '4:3', '3:4', '16:9', '9:16'] as const).map(ratio => (
                   <button
@@ -155,7 +157,7 @@ export const GenerativeSidebar: React.FC<GenerativeSidebarProps> = ({ logic, inp
         <section ref={inputRef} className={`space-y-4 ${baseImage ? 'opacity-40 pointer-events-none' : ''}`}>
           <div className="flex justify-between items-center mb-1 px-1">
             <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <i className="fa-solid fa-wand-magic-sparkles text-rose-500"></i> 专业视觉建模 (Modeling)
+              <i className="fa-solid fa-wand-magic-sparkles text-rose-500"></i> {t('figureCenter.generative.modeling')}
             </h4>
             <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200">
               <button
@@ -175,11 +177,11 @@ export const GenerativeSidebar: React.FC<GenerativeSidebarProps> = ({ logic, inp
 
           <div className="space-y-2.5 animate-reveal">
             {[
-              { label: '研究主体 (Subject)', val: chemContext, set: setChemContext, color: 'indigo', icon: 'fa-vial', placeholder: 'e.g. Pt nanoparticles with core-shell structure...' },
-              { label: '应用场景 (App/Context)', val: bioContext, set: setBioContext, color: 'emerald', icon: 'fa-leaf', placeholder: 'e.g. In-vivo tumor cell targeting...' },
-              { label: '机理路径 (Mechanism)', val: mechContext, set: setMechContext, color: 'amber', icon: 'fa-route', placeholder: 'e.g. Charge transfer process via ligand...' },
-              { label: '视觉细化 (Visual Detail)', val: styleContext, set: setStyleContext, color: 'violet', icon: 'fa-eye', placeholder: 'e.g. Volumetric lighting, macro focus...' },
-              { label: '额外补充 (Additional)', val: userPrompt, set: setUserPrompt, color: 'rose', icon: 'fa-plus', placeholder: 'e.g. Blue gradient background, 4K render...' },
+              { label: t('figureCenter.generative.labelSubject'), val: chemContext, set: setChemContext, color: 'indigo', icon: 'fa-vial', placeholder: 'e.g. Pt nanoparticles with core-shell structure...' },
+              { label: t('figureCenter.generative.labelContext'), val: bioContext, set: setBioContext, color: 'emerald', icon: 'fa-leaf', placeholder: 'e.g. In-vivo tumor cell targeting...' },
+              { label: t('figureCenter.generative.labelMechanism'), val: mechContext, set: setMechContext, color: 'amber', icon: 'fa-route', placeholder: 'e.g. Charge transfer process via ligand...' },
+              { label: t('figureCenter.generative.labelVisual'), val: styleContext, set: setStyleContext, color: 'violet', icon: 'fa-eye', placeholder: 'e.g. Volumetric lighting, macro focus...' },
+              { label: t('figureCenter.generative.labelAdditional'), val: userPrompt, set: setUserPrompt, color: 'rose', icon: 'fa-plus', placeholder: 'e.g. Blue gradient background, 4K render...' },
             ].map((item, i) => (
               <div key={i} className="group">
                 <div className="flex items-center gap-1.5 mb-1 px-1">
@@ -206,8 +208,8 @@ export const GenerativeSidebar: React.FC<GenerativeSidebarProps> = ({ logic, inp
             onClick={handleEnhancePrompt}
             disabled={isEnhancing || isGenerating}
             className={`w-full py-3 rounded-[1.25rem] text-[9px] font-black uppercase tracking-[0.15em] transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 border-2 ${isEnhancing
-                ? 'bg-amber-50 border-amber-200 text-amber-600'
-                : 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-100 text-amber-700 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-100/50 hover:-translate-y-0.5'
+              ? 'bg-amber-50 border-amber-200 text-amber-600'
+              : 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-100 text-amber-700 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-100/50 hover:-translate-y-0.5'
               }`}
           >
             {isEnhancing ? (
@@ -215,7 +217,7 @@ export const GenerativeSidebar: React.FC<GenerativeSidebarProps> = ({ logic, inp
             ) : (
               <i className="fa-solid fa-wand-magic-sparkles text-sm"></i>
             )}
-            {isEnhancing ? 'AI 正在增强指令...' : '✨ AI 智能增强指令'}
+            {isEnhancing ? t('figureCenter.generative.enhancing') : t('figureCenter.generative.enhance')}
           </button>
         )}
 
@@ -224,19 +226,19 @@ export const GenerativeSidebar: React.FC<GenerativeSidebarProps> = ({ logic, inp
           <div className="mt-4 pt-6 border-t-2 border-dashed border-indigo-100 animate-reveal">
             <div className="flex justify-between items-center mb-3">
               <h4 className="text-[9px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-2">
-                <i className="fa-solid fa-pen-to-square"></i> 视觉迭代
+                <i className="fa-solid fa-pen-to-square"></i> {t('figureCenter.generative.iteration')}
               </h4>
               <button
                 onClick={handleExitIteration}
                 className="w-5 h-5 rounded-full bg-slate-100 text-slate-400 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shadow-sm"
-                title="取消迭代"
+                title={t('figureCenter.generative.cancelIteration')}
               >
                 <i className="fa-solid fa-times text-[9px]"></i>
               </button>
             </div>
 
             <div className="bg-amber-50 rounded-xl p-4 border border-amber-100 mb-4">
-              <p className="text-[9px] font-bold text-amber-700 uppercase mb-2">区域指令配置</p>
+              <p className="text-[9px] font-bold text-amber-700 uppercase mb-2">{t('figureCenter.generative.regionConfig')}</p>
               {regions.length > 0 ? (
                 <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
                   {regions.map((r, i) => (
@@ -248,7 +250,7 @@ export const GenerativeSidebar: React.FC<GenerativeSidebarProps> = ({ logic, inp
                       <textarea
                         className="w-full bg-slate-50 border-none rounded-lg p-2 text-[10px] font-medium outline-none resize-none focus:bg-white transition-colors"
                         rows={2}
-                        placeholder={`修改区域 #${i + 1} 的内容...`}
+                        placeholder={t('figureCenter.generative.regionPlaceholder').replace('{n}', String(i + 1))}
                         value={r.instruction}
                         onChange={(e) => updateRegionInstruction(r.id, e.target.value)}
                       />
@@ -258,17 +260,17 @@ export const GenerativeSidebar: React.FC<GenerativeSidebarProps> = ({ logic, inp
               ) : (
                 <div className="text-center py-4 text-amber-400 italic text-[9px]">
                   <i className="fa-solid fa-vector-square text-lg mb-1 block"></i>
-                  请在右侧图片上拖拽框选修改区域
+                  {t('figureCenter.generative.drawRegionHint')}
                 </div>
               )}
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="text-[8px] font-black text-slate-400 uppercase mb-1 block px-1">全局调整 / 背景指令</label>
+                <label className="text-[8px] font-black text-slate-400 uppercase mb-1 block px-1">{t('figureCenter.generative.globalAdjust')}</label>
                 <textarea
                   className="w-full h-16 bg-slate-50 border-none rounded-xl p-3 text-[10px] font-medium text-slate-700 outline-none shadow-inner resize-none focus:ring-2 focus:ring-indigo-100"
-                  placeholder="例如: 整体调亮, 风格更写实..."
+                  placeholder={t('figureCenter.generative.globalAdjustPlaceholder')}
                   value={userPrompt}
                   onChange={e => setUserPrompt(e.target.value)}
                 />
@@ -279,7 +281,7 @@ export const GenerativeSidebar: React.FC<GenerativeSidebarProps> = ({ logic, inp
                 className="w-full py-3 bg-amber-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-amber-600 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isGenerating ? <i className="fa-solid fa-spinner animate-spin"></i> : <i className="fa-solid fa-wand-magic"></i>}
-                {regions.length > 0 ? `执行 ${regions.length} 个区域重绘` : '执行全局迭代'}
+                {regions.length > 0 ? t('figureCenter.generative.executeRegions').replace('{n}', String(regions.length)) : t('figureCenter.generative.executeGlobal')}
               </button>
             </div>
           </div>
@@ -298,13 +300,13 @@ export const GenerativeSidebar: React.FC<GenerativeSidebarProps> = ({ logic, inp
               ) : (
                 <i className={`fa-solid ${results.length > 0 ? 'fa-arrows-rotate' : 'fa-bolt-lightning'} text-sm`}></i>
               )}
-              {isGenerating ? 'AI 建模处理中...' : (results.length > 0 ? '再次生成 (REGENERATE)' : '开始科研绘图绘图')}
+              {isGenerating ? t('figureCenter.generative.generating') : (results.length > 0 ? t('figureCenter.generative.regenerate') : t('figureCenter.generative.startGenerate'))}
             </button>
 
             {/* --- Section 4: External Upload (New Feature) --- */}
             <section className="pt-6 mt-2 border-t-2 border-dashed border-slate-100 animate-reveal">
               <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
-                <i className="fa-solid fa-cloud-arrow-up text-indigo-500"></i> 以图绘图 (Iteration)
+                <i className="fa-solid fa-cloud-arrow-up text-indigo-500"></i> {t('figureCenter.generative.uploadSection')}
               </h4>
               <div
                 onClick={() => uploadInputRef.current?.click()}
@@ -314,7 +316,7 @@ export const GenerativeSidebar: React.FC<GenerativeSidebarProps> = ({ logic, inp
                   <i className="fa-solid fa-image text-xl"></i>
                 </div>
                 <div className="text-center">
-                  <p className="text-[9px] font-black text-slate-700 uppercase tracking-tight">载入外部图片进行迭代</p>
+                  <p className="text-[9px] font-black text-slate-700 uppercase tracking-tight">{t('figureCenter.generative.uploadHint')}</p>
                   <p className="text-[7px] font-bold text-slate-400 uppercase mt-0.5 tracking-tighter">Support Image-to-Image / Local File</p>
                 </div>
                 <input

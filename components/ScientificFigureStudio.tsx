@@ -6,6 +6,7 @@ import { ImageViewer } from './ScientificFigureStudio/ImageViewer';
 import { CaptionTab } from './ScientificFigureStudio/CaptionTab';
 import { AnalysisTab } from './ScientificFigureStudio/AnalysisTab';
 import { AssetEditModal } from './ScientificFigureStudio/AssetEditModal';
+import { useTranslation } from '../locales/useTranslation';
 
 interface ProjectMediaItem {
   name: string;
@@ -39,6 +40,7 @@ const ScientificFigureStudio: React.FC<ScientificFigureStudioProps> = ({
   projectMedia, onUpdateAsset, onClose, isActive, initialRefId, onInsert, language = 'zh', project
 }) => {
   const [selectedMedia, setSelectedMedia] = useState<ProjectMediaItem | null>(null);
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'caption' | 'analysis'>('caption');
 
   const [generatedCaption, setGeneratedCaption] = useState('');
@@ -240,12 +242,12 @@ const ScientificFigureStudio: React.FC<ScientificFigureStudioProps> = ({
 
         <div className="w-96 bg-white border-l border-slate-200 flex flex-col p-6 shrink-0">
           <div className="mb-4">
-            <h4 className="text-[11px] font-black text-indigo-600 uppercase tracking-widest mb-1">AI 智能科研助手</h4>
+            <h4 className="text-[11px] font-black text-indigo-600 uppercase tracking-widest mb-1">{t('figureStudio.title')}</h4>
             <p className="text-[9px] text-slate-400 font-bold">Scientific Image Assistant</p>
           </div>
           <div className="flex bg-slate-100 p-1 rounded-xl mb-4">
-            <button onClick={() => setActiveTab('caption')} className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'caption' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>图注</button>
-            <button onClick={() => setActiveTab('analysis')} className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'analysis' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>深度描述</button>
+            <button onClick={() => setActiveTab('caption')} className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'caption' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>{t('figureStudio.captionTab')}</button>
+            <button onClick={() => setActiveTab('analysis')} className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'analysis' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>{t('figureStudio.analysisTab')}</button>
           </div>
 
           {activeTab === 'caption' ? (

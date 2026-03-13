@@ -106,7 +106,6 @@ const InceptionView: React.FC = () => {
     };
 
     const handleStageClick = (targetStage: string) => {
-        if (isThinking) return;
         if (canSwitchToStage(targetStage)) {
             updateInceptionSession({ stage: targetStage as any });
         } else {
@@ -149,74 +148,73 @@ const InceptionView: React.FC = () => {
     };
 
     return (
-        <div className="h-full flex flex-col gap-6 animate-reveal p-6 lg:p-10 bg-[#f8fafc] relative overflow-hidden">
+        <div className="h-full flex flex-col gap-4 animate-reveal p-4 lg:p-6 bg-[#f8fafc] relative overflow-hidden">
             <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #6366f1 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
 
-            <header className="shrink-0 flex flex-col md:flex-row justify-between items-center gap-6 relative z-50">
-                <div className="flex items-center gap-6">
-                    <div>
-                        <h2 className="text-3xl font-black text-slate-900 italic uppercase tracking-tighter flex items-center gap-4 leading-none">
+            <header className="shrink-0 flex flex-col gap-3 relative z-50">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-xl font-black text-slate-900 italic uppercase tracking-tighter flex items-center gap-3 leading-none">
                             <i className="fa-solid fa-compass text-indigo-600 animate-spin-slow"></i> 战略立项推演
                         </h2>
-                        <div className="flex items-center gap-2 mt-2">
-                            <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4rem]">Inception Pusher v4.5</p>
+                        <div className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3rem]">v4.5</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center bg-white p-1.5 rounded-[1.5rem] border border-slate-200 shadow-sm gap-1">
-                        <button onClick={handleSaveDraft} className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-indigo-700 transition-all active:scale-95 flex items-center gap-2 shadow-lg">
+                    <div className="flex items-center gap-1.5">
+                        <button onClick={handleSaveDraft} className="px-3 py-1.5 bg-indigo-600 text-white rounded-md text-[10px] font-black uppercase hover:bg-indigo-700 transition-all active:scale-95 flex items-center gap-1.5 shadow-sm">
                             <i className="fa-solid fa-floppy-disk"></i> 保存草稿
                         </button>
-                        <button onClick={() => setShowLibrary(true)} className="px-5 py-2.5 text-indigo-600 bg-indigo-50 rounded-xl text-[10px] font-black uppercase hover:bg-indigo-100 transition-all active:scale-95 flex items-center gap-2">
+                        <button onClick={() => setShowLibrary(true)} className="px-3 py-1.5 text-indigo-600 bg-indigo-50 rounded-md text-[10px] font-black uppercase hover:bg-indigo-100 transition-all active:scale-95 flex items-center gap-1.5">
                             <i className="fa-solid fa-box-archive"></i> 草稿库 ({savedDrafts.length})
                         </button>
-                        <button onClick={handleReset} className="w-10 h-10 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl flex items-center justify-center transition-all" title="重置推演">
-                            <i className="fa-solid fa-rotate-right text-xs"></i>
+                        <button onClick={handleReset} className="w-7 h-7 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md flex items-center justify-center transition-all" title="重置推演">
+                            <i className="fa-solid fa-rotate-right text-[10px]"></i>
                         </button>
                     </div>
                 </div>
 
-                <div className="flex bg-white shadow-2xl p-2 rounded-[2rem] border border-slate-100 gap-1 pointer-events-auto">
-                    {[
-                        { id: 'ideate', label: '选题孵化', icon: 'fa-egg' },
-                        { id: 'research', label: '情报扫射', icon: 'fa-satellite-dish' },
-                        { id: 'blueprint', label: '蓝图规划', icon: 'fa-map' },
-                        { id: 'review', label: '立项评审', icon: 'fa-user-check' }
-                    ].map((s, i) => {
-                        const isAvailable = canSwitchToStage(s.id);
-                        return (
-                            <button
-                                key={s.id}
-                                onClick={() => handleStageClick(s.id)}
-                                disabled={!isAvailable}
-                                className={`flex items-center gap-3 px-6 py-3 rounded-2xl transition-all duration-500 border-2 ${stage === s.id
-                                    ? 'bg-slate-900 text-white border-slate-900 shadow-xl scale-105'
-                                    : isAvailable
-                                        ? 'bg-white text-slate-600 border-slate-50 hover:border-indigo-200 cursor-pointer'
-                                        : 'bg-slate-50 text-slate-300 border-transparent cursor-not-allowed opacity-50'
-                                    }`}
-                            >
-                                <i className={`fa-solid ${s.icon} text-sm ${stage === s.id ? 'text-indigo-400' : ''}`}></i>
-                                <div className="flex flex-col text-left">
-                                    <span className="text-[8px] font-black uppercase opacity-50">Step 0{i + 1}</span>
-                                    <span className="text-[10px] font-black uppercase tracking-widest">{s.label}</span>
-                                </div>
-                            </button>
-                        );
-                    })}
+                <div className="flex justify-center">
+                    <div className="flex bg-white shadow-sm p-2 rounded-xl border border-slate-200 gap-1">
+                        {[
+                            { id: 'ideate', label: '选题孵化', icon: 'fa-egg' },
+                            { id: 'research', label: '情报扫射', icon: 'fa-satellite-dish' },
+                            { id: 'blueprint', label: '蓝图规划', icon: 'fa-map' },
+                            { id: 'review', label: '立项评审', icon: 'fa-user-check' }
+                        ].map((s, i) => {
+                            const isAvailable = canSwitchToStage(s.id);
+                            return (
+                                <button
+                                    key={s.id}
+                                    onClick={() => handleStageClick(s.id)}
+                                    disabled={!isAvailable}
+                                    className={`flex items-center gap-3 px-8 py-3.5 rounded-lg transition-all duration-300 text-sm font-black uppercase tracking-wider ${stage === s.id
+                                        ? 'bg-slate-900 text-white shadow-sm'
+                                        : isAvailable
+                                            ? 'text-slate-500 hover:bg-slate-50 cursor-pointer'
+                                            : 'text-slate-300 cursor-not-allowed opacity-50'
+                                        }`}
+                                >
+                                    <i className={`fa-solid ${s.icon} text-sm ${stage === s.id ? 'text-indigo-400' : ''}`}></i>
+                                    {s.label}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             </header>
 
             <div className="flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar relative z-10 pr-2">
                 {stage === 'ideate' && (
-                    <div className="flex-1 flex flex-col items-center justify-center max-w-7xl mx-auto w-full gap-16 pb-20">
-                        <div className="text-center space-y-8 w-full max-w-3xl">
-                            <h3 className="text-3xl font-black text-slate-900 uppercase italic tracking-tight">定义研究愿景或核心关键词</h3>
+                    <div className="flex-1 flex flex-col items-center justify-center max-w-7xl mx-auto w-full gap-8 pb-10">
+                        <div className="text-center space-y-4 w-full max-w-3xl">
+                            <h3 className="text-2xl font-black text-slate-900 uppercase italic tracking-tight">定义研究愿景或核心关键词</h3>
                             <div className="relative group">
-                                <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-violet-600 rounded-[2rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                                <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-violet-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
                                 <input
-                                    className="relative w-full bg-white border-4 border-slate-100 rounded-[2rem] px-12 py-8 text-2xl font-bold outline-none shadow-2xl focus:border-indigo-500 transition-all text-center"
+                                    className="relative w-full bg-white border-4 border-slate-100 rounded-lg px-10 py-5 text-xl font-bold outline-none shadow-2xl focus:border-indigo-500 transition-all text-center"
                                     placeholder="例如：钠离子电池界面稳定性、全固态电解质..."
                                     value={domain}
                                     onChange={e => updateInceptionSession({ domain: e.target.value })}
@@ -225,18 +223,18 @@ const InceptionView: React.FC = () => {
                                 <button
                                     onClick={handleBrainstorm}
                                     disabled={isThinking}
-                                    className="absolute right-4 top-4 bottom-4 px-12 bg-slate-900 text-white rounded-2xl font-black uppercase shadow-lg active:scale-95 transition-all hover:bg-indigo-600 disabled:opacity-50"
+                                    className="absolute right-3 top-3 bottom-3 px-10 bg-slate-900 text-white rounded-xl font-black uppercase shadow-lg active:scale-95 transition-all hover:bg-indigo-600 disabled:opacity-50"
                                 >
                                     {isThinking ? <i className="fa-solid fa-spinner animate-spin"></i> : '启动孵化'}
                                 </button>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full animate-reveal">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full animate-reveal">
                             {isThinking ? (
                                 // 加载骨架：AI 生成中
-                                [0, 1, 2, 3].map(i => (
-                                    <div key={i} className="bg-white p-10 rounded-[3.5rem] border-2 border-slate-50 shadow-xl flex flex-col gap-6 animate-pulse">
+                                [0, 1, 2, 3, 4, 5, 6, 7].map(i => (
+                                    <div key={i} className="bg-white p-6 rounded-xl border-2 border-slate-50 shadow-xl flex flex-col gap-4 animate-pulse">
                                         <div className="h-6 bg-slate-100 rounded-xl w-1/3" />
                                         <div className="h-8 bg-slate-200 rounded-2xl w-full" />
                                         <div className="h-8 bg-slate-100 rounded-2xl w-4/5" />
@@ -249,38 +247,100 @@ const InceptionView: React.FC = () => {
                             ) : Array.isArray(suggestions) && suggestions.map((s, i) => (
                                 <div
                                     key={i}
-                                    className="bg-white p-10 rounded-[3.5rem] border-2 border-slate-50 shadow-xl hover:shadow-indigo-100 hover:border-indigo-400 transition-all group cursor-pointer relative overflow-hidden flex flex-col"
+                                    className="bg-white p-5 rounded-xl border-2 border-slate-50 shadow-xl hover:shadow-indigo-100 hover:border-indigo-400 transition-all group cursor-pointer relative overflow-hidden flex flex-col"
                                     onClick={() => runInceptionResearch(s)}
                                 >
                                     <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
                                         <i className="fa-solid fa-microscope text-8xl"></i>
                                     </div>
-                                    <div className="flex justify-between items-start mb-8 relative z-10">
-                                        <div className="flex flex-col gap-2">
-                                            <span className="bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-xl text-[9px] font-black uppercase border border-indigo-100 w-fit">TRL {s.estimatedTrl}</span>
-                                            {s.type && (
-                                                <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase border w-fit ${s.type === 'frontier'
-                                                    ? 'bg-violet-50 text-violet-600 border-violet-100'
-                                                    : 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                                    }`}>
-                                                    {s.type === 'frontier' ? '前沿探索' : '产业成型'}
-                                                </span>
-                                            )}
+                                    <div className="flex justify-between items-start mb-3 relative z-10">
+                                        <div className="flex flex-col gap-1.5">
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="bg-indigo-50 text-indigo-600 px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase border border-indigo-100">TRL {s.estimatedTrl}</span>
+                                                {s.type && (
+                                                    <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase border ${s.type === 'frontier'
+                                                        ? 'bg-violet-50 text-violet-600 border-violet-100'
+                                                        : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                                        }`}>
+                                                        {s.type === 'frontier' ? '前沿' : '产业'}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
-                                            <i className="fa-solid fa-arrow-right"></i>
+                                        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
+                                            <i className="fa-solid fa-arrow-right text-[10px]"></i>
                                         </div>
                                     </div>
-                                    <h4 className="text-xl font-black text-slate-900 leading-tight mb-6 italic uppercase group-hover:text-indigo-600 transition-colors relative z-10">{s.title}</h4>
-                                    <div className="space-y-4 mt-auto relative z-10">
-                                        <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 group-hover:bg-white transition-colors">
-                                            <p className="text-[8px] font-black text-slate-400 uppercase mb-2 tracking-widest">演进轨迹</p>
-                                            <p className="text-[10px] text-slate-600 font-bold leading-relaxed text-justify">{s.evolution}</p>
+                                    <h4 className="text-[14px] font-black text-slate-900 leading-tight mb-2 italic group-hover:text-indigo-600 transition-colors relative z-10">{s.title}</h4>
+
+                                    {/* 可行性 + 创新性评分条 */}
+                                    <div className="flex items-center gap-3 mb-3 relative z-10">
+                                        <div className="flex items-center gap-1" title="可行性">
+                                            <span className="text-[8px] font-black text-slate-400 uppercase">可行</span>
+                                            <div className="flex gap-0.5">
+                                                {[1, 2, 3, 4, 5].map(n => (
+                                                    <i key={n} className={`fa-solid fa-circle text-[5px] ${n <= (s.feasibility || 0) ? 'text-emerald-400' : 'text-slate-200'}`}></i>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <div className="bg-rose-50/30 p-4 rounded-2xl border border-rose-100/50">
-                                            <p className="text-[8px] font-black text-rose-400 uppercase mb-1">攻关痛点</p>
-                                            <p className="text-[10px] text-rose-800 font-black italic leading-relaxed text-justify">" {s.painPoint} "</p>
+                                        <div className="flex items-center gap-1" title="创新性">
+                                            <span className="text-[8px] font-black text-slate-400 uppercase">创新</span>
+                                            <div className="flex gap-0.5">
+                                                {[1, 2, 3, 4, 5].map(n => (
+                                                    <i key={n} className={`fa-solid fa-diamond text-[5px] ${n <= (s.novelty || 0) ? 'text-violet-400' : 'text-slate-200'}`}></i>
+                                                ))}
+                                            </div>
                                         </div>
+                                    </div>
+
+                                    {/* 交叉学科标签 */}
+                                    {Array.isArray(s.relatedFields) && s.relatedFields.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mb-3 relative z-10">
+                                            {s.relatedFields.map((f: string, fi: number) => (
+                                                <span key={fi} className="px-2 py-0.5 bg-cyan-50 text-cyan-600 rounded text-[8px] font-bold border border-cyan-100">
+                                                    <i className="fa-solid fa-link text-[6px] mr-0.5"></i> {f}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-2 mt-auto relative z-10">
+                                        <div className="bg-slate-50/50 p-2.5 rounded-lg border border-slate-100 group-hover:bg-white transition-colors">
+                                            <p className="text-[9px] font-black text-slate-400 uppercase mb-1 tracking-widest">演进轨迹</p>
+                                            <p className="text-[11px] text-slate-600 font-bold leading-relaxed">{s.evolution}</p>
+                                        </div>
+                                        <div className="bg-rose-50/30 p-2.5 rounded-lg border border-rose-100/50">
+                                            <p className="text-[9px] font-black text-rose-400 uppercase mb-1">攻关痛点</p>
+                                            <p className="text-[11px] text-rose-800 font-black italic leading-relaxed">" {s.painPoint} "</p>
+                                        </div>
+
+                                        {/* 底部信息栏 */}
+                                        <div className="grid grid-cols-2 gap-1.5 pt-1">
+                                            {s.expectedPublications && (
+                                                <div className="p-2 bg-amber-50/50 rounded-lg border border-amber-100/50">
+                                                    <p className="text-[7px] font-black text-amber-500 uppercase mb-0.5">预期产出</p>
+                                                    <p className="text-[9px] font-bold text-amber-800 leading-snug">{s.expectedPublications}</p>
+                                                </div>
+                                            )}
+                                            {s.timeToResult && (
+                                                <div className="p-2 bg-sky-50/50 rounded-lg border border-sky-100/50">
+                                                    <p className="text-[7px] font-black text-sky-500 uppercase mb-0.5"><i className="fa-solid fa-clock mr-0.5"></i> 出成果</p>
+                                                    <p className="text-[9px] font-bold text-sky-800">{s.timeToResult}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {s.fundingPotential && (
+                                            <div className="p-2 bg-indigo-50/30 rounded-lg border border-indigo-100/50">
+                                                <p className="text-[7px] font-black text-indigo-400 uppercase mb-0.5"><i className="fa-solid fa-coins mr-0.5"></i> 基金申报</p>
+                                                <p className="text-[9px] font-bold text-indigo-700 leading-snug">{s.fundingPotential}</p>
+                                            </div>
+                                        )}
+                                        {s.riskWarning && (
+                                            <div className="flex items-start gap-1.5 p-2 bg-orange-50/30 rounded-lg border border-orange-100/50">
+                                                <i className="fa-solid fa-triangle-exclamation text-orange-400 text-[8px] mt-0.5 shrink-0"></i>
+                                                <p className="text-[9px] text-orange-700 font-medium italic leading-snug">{s.riskWarning}</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -290,9 +350,9 @@ const InceptionView: React.FC = () => {
 
                 {stage === 'research' && (
                     <div className="flex-1 flex flex-col gap-10 animate-reveal pb-20">
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-0">
-                            <div className="lg:col-span-4 flex flex-col gap-6">
-                                <div className="bg-slate-900 text-white p-12 rounded-[4rem] shadow-2xl relative overflow-hidden shrink-0 border border-white/5 h-full">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-0 items-start">
+                            <div className="lg:col-span-4 flex flex-col gap-6 lg:sticky lg:top-4">
+                                <div className="bg-slate-900 text-white p-12 rounded-2xl shadow-2xl relative overflow-hidden shrink-0 border border-white/5">
                                     <div className="absolute top-0 right-0 p-12 opacity-10">
                                         <i className="fa-solid fa-dna text-9xl"></i>
                                     </div>
@@ -320,7 +380,7 @@ const InceptionView: React.FC = () => {
                                     <div className="space-y-6 animate-reveal">
                                         {hotnessData && <CompetitiveHeatmap data={hotnessData} />}
 
-                                        <div className="bg-white p-12 rounded-[4rem] border-2 border-slate-100 shadow-2xl relative overflow-hidden">
+                                        <div className="bg-white p-12 rounded-2xl border-2 border-slate-100 shadow-2xl relative overflow-hidden">
                                             <div className="flex justify-between items-center mb-10">
                                                 <h4 className="text-[11px] font-black text-indigo-600 uppercase tracking-[0.3rem] flex items-center gap-3">
                                                     <i className="fa-solid fa-satellite-dish animate-pulse"></i> 全球科研版图实时扫描
@@ -328,7 +388,7 @@ const InceptionView: React.FC = () => {
                                                 <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Grounding Engine Active</span>
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-12">
+                                            <div className="grid grid-cols-2 gap-12 items-start">
                                                 <div className="space-y-8">
                                                     <div>
                                                         <p className="text-[9px] font-black text-slate-400 uppercase mb-4 tracking-widest flex items-center gap-2">
@@ -389,7 +449,7 @@ const InceptionView: React.FC = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="mt-12 p-8 bg-indigo-50/50 rounded-[2.5rem] border-2 border-dashed border-indigo-200 relative group/gap">
+                                            <div className="mt-12 p-8 bg-indigo-50/50 rounded-xl border-2 border-dashed border-indigo-200 relative group/gap">
                                                 <div className="absolute top-4 right-6 text-indigo-400 flex gap-2">
                                                     <i className="fa-solid fa-lightbulb text-2xl opacity-20"></i>
                                                 </div>
@@ -411,8 +471,318 @@ const InceptionView: React.FC = () => {
                                                 </div>
                                             </div>
 
+                                            {/* === NEW: Key Publications === */}
+                                            {landscape.keyPublications && landscape.keyPublications.length > 0 && (
+                                                <div className="mt-8 bg-white p-8 rounded-xl border border-slate-100 shadow-lg relative overflow-hidden">
+                                                    <div className="absolute top-0 right-0 p-6 opacity-[0.03]"><i className="fa-solid fa-book-open text-8xl"></i></div>
+                                                    <p className="text-[10px] font-black text-violet-600 uppercase mb-5 tracking-widest flex items-center gap-2">
+                                                        <i className="fa-solid fa-bookmark"></i> 关键论文图谱 (Key Publications)
+                                                    </p>
+                                                    <div className="space-y-3">
+                                                        {landscape.keyPublications.map((pub: any, i: number) => (
+                                                            <div key={i} className={`flex items-start gap-4 p-4 rounded-xl border transition-all hover:shadow-md ${pub.isLandmark ? 'bg-violet-50/50 border-violet-200 hover:border-violet-400' : 'bg-slate-50/50 border-slate-100 hover:border-slate-300'}`}>
+                                                                <div className="shrink-0 mt-1">
+                                                                    {pub.isLandmark ? (
+                                                                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-sm">
+                                                                            <i className="fa-solid fa-star text-white text-[10px]"></i>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                                                                            <i className="fa-solid fa-file-lines text-slate-400 text-[10px]"></i>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-start justify-between gap-2">
+                                                                        <p className="text-[12px] font-bold text-slate-800 leading-snug">{pub.title}</p>
+                                                                        <span className="shrink-0 px-2 py-0.5 bg-amber-50 text-amber-700 rounded-md text-[9px] font-black border border-amber-100 flex items-center gap-1">
+                                                                            <i className="fa-solid fa-quote-right text-[7px]"></i> {pub.citations?.toLocaleString()}
+                                                                        </span>
+                                                                    </div>
+                                                                    <p className="text-[10px] text-slate-500 font-medium mt-1">
+                                                                        {pub.authors} · <span className="font-bold text-indigo-500">{pub.journal}</span> · {pub.year}
+                                                                    </p>
+                                                                    <p className="text-[10px] text-slate-600 font-medium mt-2 italic leading-relaxed">{pub.significance}</p>
+                                                                </div>
+                                                                {pub.doi && (
+                                                                    <a href={pub.doi.startsWith('http') ? pub.doi : `https://doi.org/${pub.doi}`} target="_blank" rel="noreferrer" className="shrink-0 w-7 h-7 rounded-md bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-colors shadow-sm mt-1" title="DOI">
+                                                                        <i className="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                                                                    </a>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* === NEW: Funding Landscape === */}
+                                            {landscape.fundingLandscape && (
+                                                <div className="mt-8 grid grid-cols-2 gap-6">
+                                                    <div className="bg-gradient-to-br from-emerald-900 to-teal-800 text-white p-8 rounded-xl shadow-lg relative overflow-hidden col-span-2 lg:col-span-1">
+                                                        <div className="absolute top-0 right-0 p-6 opacity-10"><i className="fa-solid fa-coins text-8xl"></i></div>
+                                                        <p className="text-[10px] font-black text-emerald-300 uppercase mb-4 tracking-widest flex items-center gap-2">
+                                                            <i className="fa-solid fa-sack-dollar"></i> 全球资金版图
+                                                        </p>
+                                                        <div className="space-y-5">
+                                                            <div>
+                                                                <p className="text-[9px] font-black text-emerald-400/60 uppercase mb-1">全球投入规模</p>
+                                                                <p className="text-xl font-black italic">{landscape.fundingLandscape.totalGlobalFunding}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-[9px] font-black text-emerald-400/60 uppercase">趋势</span>
+                                                                <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase ${
+                                                                    landscape.fundingLandscape.fundingTrend === 'increasing' ? 'bg-emerald-500/30 text-emerald-200' :
+                                                                    landscape.fundingLandscape.fundingTrend === 'declining' ? 'bg-rose-500/30 text-rose-200' :
+                                                                    'bg-white/10 text-white/70'
+                                                                }`}>
+                                                                    <i className={`fa-solid ${
+                                                                        landscape.fundingLandscape.fundingTrend === 'increasing' ? 'fa-arrow-trend-up' :
+                                                                        landscape.fundingLandscape.fundingTrend === 'declining' ? 'fa-arrow-trend-down' :
+                                                                        'fa-minus'
+                                                                    } mr-1`}></i>
+                                                                    {landscape.fundingLandscape.fundingTrend === 'increasing' ? '上升' : landscape.fundingLandscape.fundingTrend === 'declining' ? '下降' : '持平'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-lg col-span-2 lg:col-span-1">
+                                                        <p className="text-[9px] font-black text-slate-400 uppercase mb-4 tracking-widest flex items-center gap-2">
+                                                            <i className="fa-solid fa-building-columns"></i> 主要资助机构
+                                                        </p>
+                                                        <div className="space-y-2.5">
+                                                            {landscape.fundingLandscape.topAgencies?.map((agency: any, i: number) => (
+                                                                <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-emerald-300 transition-all group/agency">
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-[11px] font-bold text-slate-800">{agency.name}</span>
+                                                                            <span className="text-[8px] font-black text-slate-400 uppercase px-1.5 py-0.5 bg-white rounded border border-slate-100">{agency.country}</span>
+                                                                        </div>
+                                                                        <p className="text-[9px] text-slate-500 mt-1">
+                                                                            近3年 <span className="font-bold text-emerald-600">{agency.recentProjects}</span> 项 · 均额 <span className="font-bold">{agency.avgGrantSize}</span>
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* === NEW: TRL Timeline === */}
+                                            {landscape.trlTimeline && landscape.trlTimeline.length > 0 && (
+                                                <div className="mt-8 bg-white p-8 rounded-xl border border-slate-100 shadow-lg relative overflow-hidden">
+                                                    <div className="absolute top-0 right-0 p-6 opacity-[0.03]"><i className="fa-solid fa-timeline text-8xl"></i></div>
+                                                    <p className="text-[10px] font-black text-sky-600 uppercase mb-6 tracking-widest flex items-center gap-2">
+                                                        <i className="fa-solid fa-stairs"></i> 技术成熟度演进 (TRL Timeline)
+                                                    </p>
+                                                    <div className="relative pl-8">
+                                                        {/* 垂直线 */}
+                                                        <div className="absolute left-3 top-1 bottom-1 w-0.5 bg-gradient-to-b from-sky-300 via-indigo-300 to-violet-300 rounded-full"></div>
+                                                        <div className="space-y-4">
+                                                            {landscape.trlTimeline.map((m: any, i: number) => (
+                                                                <div key={i} className="relative flex items-start gap-4 group/trl">
+                                                                    {/* 节点圆点 */}
+                                                                    <div className={`absolute -left-5 top-1.5 w-5 h-5 rounded-full border-2 flex items-center justify-center text-[8px] font-black shadow-sm transition-transform group-hover/trl:scale-125 ${
+                                                                        m.trlLevel >= 7 ? 'bg-emerald-500 border-emerald-400 text-white' :
+                                                                        m.trlLevel >= 4 ? 'bg-indigo-500 border-indigo-400 text-white' :
+                                                                        'bg-white border-sky-300 text-sky-600'
+                                                                    }`}>{m.trlLevel}</div>
+                                                                    <div className="flex-1 p-3 bg-slate-50/50 rounded-lg border border-slate-100 hover:border-sky-200 hover:bg-white transition-all">
+                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                            <span className="text-[10px] font-black text-sky-600 bg-sky-50 px-2 py-0.5 rounded border border-sky-100">{m.year}</span>
+                                                                            <span className="text-[9px] font-bold text-slate-400">{m.actor}</span>
+                                                                        </div>
+                                                                        <p className="text-[11px] font-bold text-slate-700 leading-relaxed">{m.milestone}</p>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {/* === NEW: Geographic Distribution === */}
+                                            {landscape.geographicDistribution && landscape.geographicDistribution.length > 0 && (
+                                                <div className="mt-8 bg-white p-8 rounded-xl border border-slate-100 shadow-lg relative overflow-hidden">
+                                                    <div className="absolute top-0 right-0 p-6 opacity-[0.03]"><i className="fa-solid fa-earth-asia text-8xl"></i></div>
+                                                    <p className="text-[10px] font-black text-cyan-600 uppercase mb-5 tracking-widest flex items-center gap-2">
+                                                        <i className="fa-solid fa-globe"></i> 全球地理竞争分布 (Geographic Distribution)
+                                                    </p>
+                                                    <div className="space-y-3">
+                                                        {landscape.geographicDistribution.map((geo: any, i: number) => {
+                                                            const strengthConfig: Record<string, { label: string; bg: string; text: string; bar: string }> = {
+                                                                dominant: { label: '主导', bg: 'bg-emerald-50', text: 'text-emerald-700', bar: 'bg-emerald-500' },
+                                                                strong: { label: '强势', bg: 'bg-indigo-50', text: 'text-indigo-700', bar: 'bg-indigo-500' },
+                                                                emerging: { label: '新兴', bg: 'bg-amber-50', text: 'text-amber-700', bar: 'bg-amber-500' },
+                                                                niche: { label: '小众', bg: 'bg-slate-50', text: 'text-slate-600', bar: 'bg-slate-400' }
+                                                            };
+                                                            const sc = strengthConfig[geo.strength] || strengthConfig.niche;
+                                                            const maxPapers = Math.max(...landscape.geographicDistribution!.map((g: any) => g.publishedPapers || 0), 1);
+                                                            const barWidth = Math.max(8, ((geo.publishedPapers || 0) / maxPapers) * 100);
+                                                            return (
+                                                                <div key={i} className="flex items-center gap-4 p-3 rounded-lg border border-slate-100 hover:border-cyan-200 hover:bg-cyan-50/20 transition-all">
+                                                                    <div className="w-24 shrink-0">
+                                                                        <p className="text-[12px] font-black text-slate-800">{geo.country}</p>
+                                                                        <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${sc.bg} ${sc.text} border`}>{sc.label}</span>
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="flex items-center gap-3 mb-1.5">
+                                                                            <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                                                                <div className={`h-full rounded-full ${sc.bar} transition-all duration-700`} style={{ width: `${barWidth}%` }}></div>
+                                                                            </div>
+                                                                            <span className="text-[9px] font-black text-slate-500 shrink-0 w-16 text-right">{geo.publishedPapers} 篇</span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 text-[9px] text-slate-400">
+                                                                            <span><i className="fa-solid fa-flask mr-1"></i>{geo.labCount} 实验室</span>
+                                                                            <span className="text-slate-200">|</span>
+                                                                            <span className="truncate">{Array.isArray(geo.keyInstitutions) ? geo.keyInstitutions.join('、') : (geo.keyInstitutions || '')}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* === NEW: Translation Readiness === */}
+                                            {landscape.translationReadiness && (
+                                                <div className="mt-8 bg-gradient-to-br from-slate-800 to-slate-900 text-white p-8 rounded-xl shadow-lg relative overflow-hidden">
+                                                    <div className="absolute top-0 right-0 p-6 opacity-5"><i className="fa-solid fa-rocket text-9xl"></i></div>
+                                                    <p className="text-[10px] font-black text-orange-300 uppercase mb-6 tracking-widest flex items-center gap-2">
+                                                        <i className="fa-solid fa-bolt"></i> 产业转化路径 (Translation Readiness)
+                                                    </p>
+
+                                                    <div className="grid grid-cols-3 gap-4 mb-6">
+                                                        <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                                                            <p className="text-[8px] font-black text-slate-500 uppercase mb-1">市场规模</p>
+                                                            <p className="text-lg font-black italic text-orange-300">{landscape.translationReadiness.marketSize}</p>
+                                                        </div>
+                                                        <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                                                            <p className="text-[8px] font-black text-slate-500 uppercase mb-1">CAGR</p>
+                                                            <p className="text-lg font-black italic text-emerald-400">{landscape.translationReadiness.cagr}</p>
+                                                        </div>
+                                                        <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                                                            <p className="text-[8px] font-black text-slate-500 uppercase mb-1">产业玩家</p>
+                                                            <p className="text-lg font-black italic text-indigo-400">{landscape.translationReadiness.keyPlayers?.length || 0}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    {landscape.translationReadiness.keyPlayers && landscape.translationReadiness.keyPlayers.length > 0 && (
+                                                        <div className="mb-6">
+                                                            <p className="text-[8px] font-black text-slate-500 uppercase mb-3 tracking-widest">关键产业玩家</p>
+                                                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                                                                {landscape.translationReadiness.keyPlayers.map((player: any, i: number) => {
+                                                                    const stageConfig: Record<string, { label: string; cls: string }> = {
+                                                                        'R&D': { label: '研发期', cls: 'bg-amber-500/20 text-amber-300' },
+                                                                        'Pilot': { label: '中试期', cls: 'bg-indigo-500/20 text-indigo-300' },
+                                                                        'Commercial': { label: '商业化', cls: 'bg-emerald-500/20 text-emerald-300' }
+                                                                    };
+                                                                    const sc = stageConfig[player.stage] || stageConfig['R&D'];
+                                                                    return (
+                                                                        <div key={i} className="p-3 bg-white/5 rounded-lg border border-white/10 hover:border-orange-500/30 transition-all">
+                                                                            <div className="flex items-center justify-between mb-1">
+                                                                                <span className="text-[10px] font-bold text-white">{player.company}</span>
+                                                                                <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${sc.cls}`}>{sc.label}</span>
+                                                                            </div>
+                                                                            <p className="text-[9px] text-slate-400 italic">{player.product}</p>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                                                            <p className="text-[8px] font-black text-emerald-400 uppercase mb-2 flex items-center gap-1"><i className="fa-solid fa-landmark"></i> 政策支持</p>
+                                                            <p className="text-[10px] text-slate-300 font-medium leading-relaxed italic">{landscape.translationReadiness.policySupport}</p>
+                                                        </div>
+                                                        <div className="p-4 bg-rose-500/10 rounded-xl border border-rose-500/20">
+                                                            <p className="text-[8px] font-black text-rose-400 uppercase mb-2 flex items-center gap-1"><i className="fa-solid fa-road-barrier"></i> 核心瓶颈</p>
+                                                            <p className="text-[10px] text-slate-300 font-medium leading-relaxed italic">{landscape.translationReadiness.bottleneck}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* === NEW: Methodology Gaps === */}
+                                            {landscape.methodologyGaps && landscape.methodologyGaps.length > 0 && (
+                                                <div className="mt-8 bg-white p-8 rounded-xl border border-slate-100 shadow-lg relative overflow-hidden">
+                                                    <div className="absolute top-0 right-0 p-6 opacity-[0.03]"><i className="fa-solid fa-microscope text-8xl"></i></div>
+                                                    <p className="text-[10px] font-black text-rose-600 uppercase mb-5 tracking-widest flex items-center gap-2">
+                                                        <i className="fa-solid fa-vials"></i> 方法学缺口 (Methodology Gaps)
+                                                    </p>
+                                                    <div className="space-y-3">
+                                                        {landscape.methodologyGaps.map((mg: any, i: number) => (
+                                                            <div key={i} className={`p-4 rounded-xl border transition-all hover:shadow-md ${mg.impact === 'critical' ? 'bg-rose-50/50 border-rose-200 hover:border-rose-400' : 'bg-amber-50/30 border-amber-100 hover:border-amber-300'}`}>
+                                                                <div className="flex items-start gap-3">
+                                                                    <div className={`mt-0.5 shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[10px] ${mg.impact === 'critical' ? 'bg-rose-500 text-white' : 'bg-amber-400 text-white'}`}>
+                                                                        <i className={`fa-solid ${mg.impact === 'critical' ? 'fa-circle-exclamation' : 'fa-circle-info'}`}></i>
+                                                                    </div>
+                                                                    <div className="flex-1">
+                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${mg.impact === 'critical' ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-amber-100 text-amber-700 border border-amber-200'}`}>
+                                                                                {mg.impact === 'critical' ? '关键缺口' : '中等缺口'}
+                                                                            </span>
+                                                                        </div>
+                                                                        <p className="text-[12px] font-bold text-slate-800 leading-relaxed mb-2">{mg.gap}</p>
+                                                                        <div className="flex items-start gap-2 p-2.5 bg-white/80 rounded-lg border border-slate-100">
+                                                                            <i className="fa-solid fa-lightbulb text-amber-400 text-[10px] mt-0.5 shrink-0"></i>
+                                                                            <p className="text-[10px] text-slate-600 font-medium italic leading-relaxed">{mg.potentialApproach}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* === NEW: Interdisciplinary Links === */}
+                                            {landscape.interdisciplinaryLinks && landscape.interdisciplinaryLinks.length > 0 && (
+                                                <div className="mt-8 bg-white p-8 rounded-xl border border-slate-100 shadow-lg relative overflow-hidden">
+                                                    <div className="absolute top-0 right-0 p-6 opacity-[0.03]"><i className="fa-solid fa-diagram-project text-8xl"></i></div>
+                                                    <p className="text-[10px] font-black text-teal-600 uppercase mb-5 tracking-widest flex items-center gap-2">
+                                                        <i className="fa-solid fa-circle-nodes"></i> 跨学科关联图谱 (Interdisciplinary Links)
+                                                    </p>
+                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                                        {landscape.interdisciplinaryLinks.map((link: any, i: number) => {
+                                                            const maturityConfig: Record<string, { label: string; bg: string; text: string; dot: string }> = {
+                                                                emerging: { label: '萌芽期', bg: 'bg-violet-50', text: 'text-violet-700', dot: 'bg-violet-400' },
+                                                                growing: { label: '成长期', bg: 'bg-teal-50', text: 'text-teal-700', dot: 'bg-teal-400' },
+                                                                established: { label: '成熟期', bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' }
+                                                            };
+                                                            const mc = maturityConfig[link.maturity] || maturityConfig.emerging;
+                                                            return (
+                                                                <div key={i} className="p-4 rounded-xl border border-slate-100 hover:border-teal-300 hover:shadow-md transition-all bg-slate-50/30 group/link">
+                                                                    <div className="flex items-center gap-3 mb-2">
+                                                                        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-sm group-hover/link:scale-110 transition-transform`}>
+                                                                            <i className="fa-solid fa-link text-white text-[10px]"></i>
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className="text-[12px] font-black text-slate-800">{link.field}</p>
+                                                                        </div>
+                                                                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md ${mc.bg} ${mc.text} border flex items-center gap-1`}>
+                                                                            <span className={`w-1.5 h-1.5 rounded-full ${mc.dot}`}></span>
+                                                                            {mc.label}
+                                                                        </span>
+                                                                    </div>
+                                                                    <p className="text-[10px] text-slate-600 font-medium leading-relaxed ml-11">{link.connection}</p>
+                                                                    {link.representativePaper && (
+                                                                        <div className="mt-2 ml-11 flex items-center gap-1.5 text-[9px] text-indigo-500 font-medium">
+                                                                            <i className="fa-solid fa-file-lines text-[8px]"></i>
+                                                                            <span className="italic truncate">{link.representativePaper}</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             <div className="mt-12 flex justify-end">
-                                                <button onClick={runInceptionBlueprint} className="px-12 py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase text-[12px] tracking-[0.3rem] shadow-xl hover:bg-indigo-600 transition-all hover:scale-[1.02] active:scale-95">
+                                                <button onClick={runInceptionBlueprint} className="px-12 py-5 bg-slate-900 text-white rounded-lg font-black uppercase text-[12px] tracking-[0.3rem] shadow-xl hover:bg-indigo-600 transition-all hover:scale-[1.02] active:scale-95">
                                                     同步蓝图推演 <i className="fa-solid fa-wand-sparkles ml-3"></i>
                                                 </button>
                                             </div>
@@ -420,9 +790,9 @@ const InceptionView: React.FC = () => {
                                     </div>
                                 ) : (
                                     <div className="flex-1 flex flex-col items-center justify-center py-40 gap-8">
-                                        <div className="w-28 h-28 bg-white rounded-[2.5rem] flex items-center justify-center shadow-2xl animate-pulse border border-slate-100 relative">
+                                        <div className="w-28 h-28 bg-white rounded-xl flex items-center justify-center shadow-2xl animate-pulse border border-slate-100 relative">
                                             <i className="fa-solid fa-radar text-5xl text-indigo-600"></i>
-                                            <div className="absolute inset-0 rounded-[2.5rem] border-2 border-indigo-500 animate-ping opacity-20"></div>
+                                            <div className="absolute inset-0 rounded-xl border-2 border-indigo-500 animate-ping opacity-20"></div>
                                         </div>
                                         <div className="text-center space-y-4 max-w-md">
                                             <div className="space-y-1">
@@ -452,7 +822,7 @@ const InceptionView: React.FC = () => {
                             <div className="grid grid-cols-12 gap-8">
                                 <div className="col-span-8 space-y-8">
                                     {/* 1. Research Phases */}
-                                    <div className="bg-white p-12 rounded-[4rem] border border-slate-100 shadow-2xl relative overflow-hidden">
+                                    <div className="bg-white p-12 rounded-2xl border border-slate-100 shadow-2xl relative overflow-hidden">
                                         <div className="flex justify-between items-center mb-10">
                                             <div className="flex flex-col">
                                                 <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-[0.3rem] italic">
@@ -467,7 +837,7 @@ const InceptionView: React.FC = () => {
                                         </div>
                                         <div className="space-y-6">
                                             {blueprint.researchPhases?.map((p: any, i: number) => (
-                                                <div key={i} className="flex gap-8 p-8 bg-slate-50/50 rounded-[2.5rem] border border-slate-100 hover:bg-white hover:shadow-xl hover:border-indigo-100 transition-all group relative">
+                                                <div key={i} className="flex gap-8 p-8 bg-slate-50/50 rounded-xl border border-slate-100 hover:bg-white hover:shadow-xl hover:border-indigo-100 transition-all group relative">
                                                     <div className="absolute top-6 right-8 opacity-5 group-hover:opacity-10 transition-opacity">
                                                         <span className="text-6xl font-black italic">{p.phaseId}</span>
                                                     </div>
@@ -513,7 +883,7 @@ const InceptionView: React.FC = () => {
 
                                     {/* 2. Collaboration & Risk */}
                                     <div className="grid grid-cols-2 gap-8">
-                                        <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-xl overflow-hidden relative">
+                                        <div className="bg-white p-10 rounded-xl border border-slate-100 shadow-xl overflow-hidden relative">
                                             <div className="absolute top-0 right-0 p-8 opacity-5">
                                                 <i className="fa-solid fa-users-viewfinder text-8xl"></i>
                                             </div>
@@ -538,7 +908,7 @@ const InceptionView: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-xl overflow-hidden relative">
+                                        <div className="bg-white p-10 rounded-xl border border-slate-100 shadow-xl overflow-hidden relative">
                                             <div className="absolute top-0 right-0 p-8 opacity-5 text-rose-500">
                                                 <i className="fa-solid fa-shield-virus text-8xl"></i>
                                             </div>
@@ -565,7 +935,7 @@ const InceptionView: React.FC = () => {
 
                                 <div className="col-span-4 flex flex-col gap-8">
                                     {/* 3. KPI Dashboard */}
-                                    <div className="bg-slate-900 text-white p-10 rounded-[4.5rem] shadow-2xl relative overflow-hidden flex-col border border-white/5">
+                                    <div className="bg-slate-900 text-white p-10 rounded-2xl shadow-2xl relative overflow-hidden flex-col border border-white/5">
                                         <div className="absolute top-0 right-0 p-8 opacity-5">
                                             <i className="fa-solid fa-chart-line text-9xl"></i>
                                         </div>
@@ -574,11 +944,11 @@ const InceptionView: React.FC = () => {
                                         </h4>
 
                                         <div className="grid grid-cols-2 gap-8 mb-10 relative z-10">
-                                            <div className="text-center p-6 bg-white/5 rounded-[2.5rem] border border-white/10">
+                                            <div className="text-center p-6 bg-white/5 rounded-xl border border-white/10">
                                                 <p className="text-[9px] font-black text-slate-500 uppercase mb-2">创新指数</p>
                                                 <p className="text-4xl font-black italic text-indigo-400">{blueprint.kpiDashboard?.innovationScore}<span className="text-xs ml-1">%</span></p>
                                             </div>
-                                            <div className="text-center p-6 bg-white/5 rounded-[2.5rem] border border-white/10">
+                                            <div className="text-center p-6 bg-white/5 rounded-xl border border-white/10">
                                                 <p className="text-[9px] font-black text-slate-500 uppercase mb-2">可行性度</p>
                                                 <p className="text-4xl font-black italic text-emerald-400">{blueprint.kpiDashboard?.feasibilityScore}<span className="text-xs ml-1">%</span></p>
                                             </div>
@@ -608,15 +978,15 @@ const InceptionView: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        <div className="mt-12 p-8 bg-indigo-500/10 rounded-[3rem] border border-indigo-500/20 text-center relative z-10">
+                                        <div className="mt-12 p-8 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-center relative z-10">
                                             <p className="text-[11px] font-bold text-slate-300 italic leading-relaxed text-center">
-                                                "{blueprint.kpiDashboard?.summary.substring(0, 120)}..."
+                                                "{blueprint.kpiDashboard?.summary?.substring(0, 120)}..."
                                             </p>
                                         </div>
                                     </div>
 
                                     {/* 4. Budget & Resources */}
-                                    <div className="bg-white p-10 rounded-[4rem] border border-slate-100 shadow-xl flex-1 flex flex-col">
+                                    <div className="bg-white p-10 rounded-2xl border border-slate-100 shadow-xl flex-1 flex flex-col">
                                         <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-8 flex items-center gap-2">
                                             <i className="fa-solid fa-coins text-amber-500"></i> 资源与经费概算
                                         </h4>
@@ -652,19 +1022,19 @@ const InceptionView: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <button onClick={runInceptionReview} className="w-full py-8 bg-indigo-600 text-white rounded-[3.5rem] font-black uppercase text-lg tracking-[0.4rem] shadow-2xl shadow-indigo-500/30 hover:bg-black transition-all hover:scale-[1.02] active:scale-95 leading-none relative group">
+                                    <button onClick={runInceptionReview} className="w-full py-8 bg-indigo-600 text-white rounded-xl font-black uppercase text-lg tracking-[0.4rem] shadow-2xl shadow-indigo-500/30 hover:bg-black transition-all hover:scale-[1.02] active:scale-95 leading-none relative group">
                                         <span className="relative z-10 flex items-center justify-center gap-4">
                                             提交评审质询 <i className="fa-solid fa-gavel"></i>
                                         </span>
-                                        <div className="absolute inset-x-4 inset-y-2 bg-white/10 rounded-[3rem] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                        <div className="absolute inset-x-4 inset-y-2 bg-white/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                     </button>
                                 </div>
                             </div>
                         ) : (
                             <div className="flex-1 flex flex-col items-center justify-center py-40 gap-8">
-                                <div className="w-28 h-28 bg-white rounded-[2.5rem] flex items-center justify-center shadow-2xl animate-pulse border border-slate-100 relative">
+                                <div className="w-28 h-28 bg-white rounded-xl flex items-center justify-center shadow-2xl animate-pulse border border-slate-100 relative">
                                     <i className="fa-solid fa-map-location-dot text-5xl text-indigo-600"></i>
-                                    <div className="absolute inset-0 rounded-[2.5rem] border-2 border-indigo-500 animate-ping opacity-20"></div>
+                                    <div className="absolute inset-0 rounded-xl border-2 border-indigo-500 animate-ping opacity-20"></div>
                                 </div>
                                 <div className="text-center space-y-6 max-w-md">
                                     <div className="space-y-1">
@@ -703,9 +1073,9 @@ const InceptionView: React.FC = () => {
                         {/* Loading state for review generation */}
                         {isThinking && !review && (
                             <div className="flex-1 flex flex-col items-center justify-center py-40 gap-8">
-                                <div className="w-28 h-28 bg-white rounded-[2.5rem] flex items-center justify-center shadow-2xl animate-pulse border border-slate-100 relative">
+                                <div className="w-28 h-28 bg-white rounded-xl flex items-center justify-center shadow-2xl animate-pulse border border-slate-100 relative">
                                     <i className="fa-solid fa-gavel text-5xl text-indigo-600"></i>
-                                    <div className="absolute inset-0 rounded-[2.5rem] border-2 border-indigo-500 animate-ping opacity-20"></div>
+                                    <div className="absolute inset-0 rounded-xl border-2 border-indigo-500 animate-ping opacity-20"></div>
                                 </div>
                                 <div className="text-center space-y-6 max-w-md">
                                     <div className="space-y-1">
@@ -742,7 +1112,7 @@ const InceptionView: React.FC = () => {
                                         const verdictMap: any = { approve: { label: '通过', cls: 'bg-emerald-500 text-white' }, conditional: { label: '有条件通过', cls: 'bg-amber-500 text-white' }, revise: { label: '需修改', cls: 'bg-orange-500 text-white' }, reject: { label: '不通过', cls: 'bg-rose-500 text-white' } };
                                         const vd = verdictMap[panel?.verdict] || verdictMap.conditional;
                                         return (
-                                            <div key={i} className={`bg-white rounded-[2.5rem] border-2 border-slate-50 shadow-xl hover:shadow-2xl hover:${meta.colorBorder} transition-all relative overflow-hidden flex flex-col group`}>
+                                            <div key={i} className={`bg-white rounded-xl border-2 border-slate-50 shadow-xl hover:shadow-2xl hover:${meta.colorBorder} transition-all relative overflow-hidden flex flex-col group`}>
                                                 {/* Header */}
                                                 <div className={`bg-gradient-to-r ${meta.gradFrom} ${meta.gradTo} p-6 pb-10 relative`}>
                                                     <div className="absolute top-0 right-0 p-4 opacity-10"><i className={`fa-solid ${meta.icon} text-6xl text-white`}></i></div>
@@ -847,7 +1217,7 @@ const InceptionView: React.FC = () => {
 
                             {/* === Section 2: Cross Examination Dialogue === */}
                             {review?.crossExamination && review.crossExamination.length > 0 && (
-                                <div className="bg-white rounded-[3rem] border-2 border-slate-100 shadow-xl p-8 relative overflow-hidden animate-reveal">
+                                <div className="bg-white rounded-xl border-2 border-slate-100 shadow-xl p-8 relative overflow-hidden animate-reveal">
                                     <div className="absolute top-0 right-0 p-6 opacity-[0.03]"><i className="fa-solid fa-comments text-9xl"></i></div>
                                     <div className="flex items-center gap-3 mb-8">
                                         <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center"><i className="fa-solid fa-gavel text-white text-sm"></i></div>
@@ -909,7 +1279,7 @@ const InceptionView: React.FC = () => {
 
                             {/* === Section 3: Overall Assessment Footer === */}
                             {review?.overallAssessment && (
-                                <div className="bg-slate-900 rounded-[3.5rem] shadow-2xl relative overflow-hidden border border-white/5 animate-reveal">
+                                <div className="bg-slate-900 rounded-xl shadow-2xl relative overflow-hidden border border-white/5 animate-reveal">
                                     <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-emerald-500/5 pointer-events-none"></div>
                                     <div className="p-10 relative z-10">
                                         {/* Top row: Score + Decision */}
@@ -943,19 +1313,29 @@ const InceptionView: React.FC = () => {
 
                                         {/* 6-Dimension Radar Bar */}
                                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-                                            {review.overallAssessment.scoreDimensions?.map((dim: any, di: number) => {
-                                                const dimColor = dim.score >= 85 ? 'text-emerald-400' : dim.score >= 70 ? 'text-indigo-400' : dim.score >= 55 ? 'text-amber-400' : 'text-rose-400';
-                                                const barColor = dim.score >= 85 ? 'bg-emerald-500' : dim.score >= 70 ? 'bg-indigo-500' : dim.score >= 55 ? 'bg-amber-500' : 'bg-rose-500';
-                                                return (
-                                                    <div key={di} className="bg-white/5 rounded-2xl p-4 border border-white/10 text-center hover:bg-white/10 transition-colors">
-                                                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-wider mb-2 leading-tight">{dim.name}</p>
-                                                        <p className={`text-2xl font-black italic ${dimColor} mb-2`}>{dim.score}</p>
-                                                        <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-                                                            <div className={`h-full ${barColor} rounded-full transition-all duration-1000`} style={{ width: `${dim.score}%` }}></div>
+                                            {(() => {
+                                                const raw = review.overallAssessment.scoreDimensions;
+                                                // Normalize: AI may return object like {"Academic Novelty": 85} instead of array
+                                                const dims: any[] = Array.isArray(raw)
+                                                    ? raw
+                                                    : (raw && typeof raw === 'object')
+                                                        ? Object.entries(raw).map(([name, score]) => ({ name, score: typeof score === 'number' ? score : 0 }))
+                                                        : [];
+                                                return dims.map((dim: any, di: number) => {
+                                                    const s = typeof dim.score === 'number' ? dim.score : 0;
+                                                    const dimColor = s >= 85 ? 'text-emerald-400' : s >= 70 ? 'text-indigo-400' : s >= 55 ? 'text-amber-400' : 'text-rose-400';
+                                                    const barColor = s >= 85 ? 'bg-emerald-500' : s >= 70 ? 'bg-indigo-500' : s >= 55 ? 'bg-amber-500' : 'bg-rose-500';
+                                                    return (
+                                                        <div key={di} className="bg-white/5 rounded-2xl p-4 border border-white/10 text-center hover:bg-white/10 transition-colors">
+                                                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-wider mb-2 leading-tight">{dim.name}</p>
+                                                            <p className={`text-2xl font-black italic ${dimColor} mb-2`}>{s}</p>
+                                                            <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                                                                <div className={`h-full ${barColor} rounded-full transition-all duration-1000`} style={{ width: `${s}%` }}></div>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                );
-                                            })}
+                                                    );
+                                                });
+                                            })()}
                                         </div>
 
                                         {/* Decision Rationale */}
@@ -991,10 +1371,10 @@ const InceptionView: React.FC = () => {
                                         <div className="flex justify-end">
                                             <button
                                                 onClick={handleFinalize}
-                                                className="px-14 py-6 bg-indigo-600 text-white rounded-[2.5rem] font-black uppercase text-base tracking-[0.3rem] shadow-2xl shadow-indigo-500/30 hover:bg-emerald-600 hover:scale-[1.02] transition-all active:scale-95 relative overflow-hidden group"
+                                                className="px-14 py-6 bg-indigo-600 text-white rounded-xl font-black uppercase text-base tracking-[0.3rem] shadow-2xl shadow-indigo-500/30 hover:bg-emerald-600 hover:scale-[1.02] transition-all active:scale-95 relative overflow-hidden group"
                                             >
                                                 <span className="relative z-10 flex items-center gap-3">正式开启项目课题 <i className="fa-solid fa-rocket"></i></span>
-                                                <div className="absolute inset-x-3 inset-y-1.5 bg-white/15 rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                                <div className="absolute inset-x-3 inset-y-1.5 bg-white/15 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                             </button>
                                         </div>
                                     </div>
@@ -1007,7 +1387,7 @@ const InceptionView: React.FC = () => {
 
             {showLibrary && (
                 <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[3000] flex items-center justify-center p-4 no-print">
-                    <div className="bg-white w-full max-w-lg rounded-[2.5rem] p-8 animate-reveal shadow-2xl relative border-4 border-white flex flex-col max-h-[80vh]">
+                    <div className="bg-white w-full max-w-lg rounded-xl p-8 animate-reveal shadow-2xl relative border-4 border-white flex flex-col max-h-[80vh]">
                         <h3 className="text-xl font-black text-slate-800 mb-6 uppercase italic border-l-4 border-indigo-600 pl-4">立项草稿库</h3>
                         <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
                             {savedDrafts.map(d => (

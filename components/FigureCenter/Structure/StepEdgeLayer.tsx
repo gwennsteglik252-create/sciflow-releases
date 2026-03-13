@@ -438,62 +438,55 @@ export const StepEdgeLayer: React.FC<StepEdgeLayerProps> = ({
                 {renderables.map((item) => (
                     <div
                         key={`label-html-${item.id}`}
-                        className="absolute flex items-center justify-center pointer-events-none"
+                        className={`absolute pointer-events-auto group/label ${item.isEditing ? 'z-[500]' : 'z-[200]'}`}
                         style={{
                             left: item.labelX + (item.offset?.x || 0),
                             top: item.labelY + (item.offset?.y || 0),
-                            width: 1,
-                            height: 1,
-                            overflow: 'visible',
                             transform: (() => {
+                                const base = 'translate(-50%, -50%)';
                                 const pos = item.labelPosition || 'on-line';
-                                if (pos === 'on-line') return 'none';
+                                if (pos === 'on-line') return base;
 
-                                // Calculate perpendicular offset
-                                // item.isHorizontal refers to whether the nodes are horizontally separated 
-                                // (meaning the main connector segment is horizontal)
                                 const isH = item.isHorizontal;
-                                if (pos === 'above') return isH ? 'translateY(-35px)' : 'translateX(-60px)';
-                                if (pos === 'below') return isH ? 'translateY(35px)' : 'translateX(60px)';
-                                if (pos === 'left') return isH ? 'translateX(-70px)' : 'translateX(-70px)';
-                                if (pos === 'right') return isH ? 'translateX(70px)' : 'translateX(70px)';
-                                return 'none';
+                                if (pos === 'above') return `${base} ${isH ? 'translateY(-35px)' : 'translateX(-60px)'}`;
+                                if (pos === 'below') return `${base} ${isH ? 'translateY(35px)' : 'translateX(60px)'}`;
+                                if (pos === 'left') return `${base} translateX(-70px)`;
+                                if (pos === 'right') return `${base} translateX(70px)`;
+                                return base;
                             })()
                         }}
                     >
-                        <div className={`relative flex items-center justify-center pointer-events-auto group/label ${item.isEditing ? 'z-50' : 'z-10'}`}>
-                            <span
-                                onMouseDown={(e) => onLabelMouseDown(e, item.idx, item.offset || { x: 0, y: 0 }, item.isHorizontal, false)}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (!dragInfo?.moved) {
-                                        setEditingConnectionIndex(item.idx);
-                                    }
-                                }}
-                                className={`px-3 py-1.5 rounded-md truncate max-w-[180px] cursor-move transition-all select-none block ${item.boxConfig?.backgroundColor === 'transparent' ? '' : 'shadow-md'} ${item.isEditing ? 'ring-4 ring-indigo-500/30 shadow-lg scale-110' : 'hover:scale-105'}`}
-                                style={{
-                                    fontFamily: item.labelConfig?.fontFamily && item.labelConfig.fontFamily !== 'inherit' ? item.labelConfig.fontFamily : undefined,
-                                    fontSize: item.labelConfig?.fontSize ? `${item.labelConfig.fontSize}pt` : item.labelFontSize ? `${item.labelFontSize}px` : '12px',
-                                    fontWeight: item.labelConfig?.fontWeight || '900',
-                                    fontStyle: item.labelConfig?.fontStyle || 'normal',
-                                    color: item.labelConfig?.color || '#1e293b',
-                                    textAlign: item.labelConfig?.textAlign || 'center',
-                                    backgroundColor: item.boxConfig?.backgroundColor || '#ffffff',
-                                    borderWidth: item.boxConfig?.borderWidth !== undefined ? `${item.boxConfig.borderWidth}px` : (item.boxConfig?.backgroundColor === 'transparent' ? '0px' : (item.isEditing ? '2px' : '1px')),
-                                    borderColor: item.boxConfig?.borderColor || (item.isEditing ? '#6366f1' : '#cbd5e1'),
-                                    borderStyle: 'solid'
-                                }}
-                            >
-                                {item.label || (item.isEditing ? '连线参数' : '')}
-                            </span>
-                            {/* Free drag handle */}
-                            <div
-                                onMouseDown={(e) => onLabelMouseDown(e, item.idx, item.offset || { x: 0, y: 0 }, item.isHorizontal, true)}
-                                className={`absolute -right-8 transition-all w-6 h-6 rounded-lg bg-indigo-50 text-indigo-400 flex items-center justify-center cursor-move hover:bg-indigo-600 hover:text-white shadow-sm ${item.isEditing ? 'opacity-100 animate-pulse' : 'opacity-0 group-hover/label:opacity-100'}`}
-                                title="自由拖拽标签位置"
-                            >
-                                <i className="fa-solid fa-up-down-left-right text-[10px]"></i>
-                            </div>
+                        <span
+                            onMouseDown={(e) => onLabelMouseDown(e, item.idx, item.offset || { x: 0, y: 0 }, item.isHorizontal, false)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (!dragInfo?.moved) {
+                                    setEditingConnectionIndex(item.idx);
+                                }
+                            }}
+                            className={`px-4 py-2 rounded-md whitespace-nowrap cursor-move transition-[transform,box-shadow] duration-200 select-none inline-block ${item.isEditing ? 'ring-4 ring-indigo-500/30 scale-110' : 'hover:scale-105'}`}
+                            style={{
+                                fontFamily: item.labelConfig?.fontFamily && item.labelConfig.fontFamily !== 'inherit' ? item.labelConfig.fontFamily : undefined,
+                                fontSize: item.labelConfig?.fontSize ? `${item.labelConfig.fontSize}pt` : item.labelFontSize ? `${item.labelFontSize}px` : '12px',
+                                fontWeight: item.labelConfig?.fontWeight || '900',
+                                fontStyle: item.labelConfig?.fontStyle || 'normal',
+                                color: item.labelConfig?.color || '#1e293b',
+                                textAlign: item.labelConfig?.textAlign || 'center',
+                                backgroundColor: item.boxConfig?.backgroundColor || '#ffffff',
+                                borderWidth: item.boxConfig?.borderWidth !== undefined ? `${item.boxConfig.borderWidth}px` : (item.boxConfig?.backgroundColor === 'transparent' ? '0px' : (item.isEditing ? '2px' : '1px')),
+                                borderColor: item.boxConfig?.borderColor || (item.isEditing ? '#6366f1' : '#cbd5e1'),
+                                borderStyle: 'solid'
+                            }}
+                        >
+                            {item.label || (item.isEditing ? '连线参数' : '')}
+                        </span>
+                        {/* Free drag handle */}
+                        <div
+                            onMouseDown={(e) => onLabelMouseDown(e, item.idx, item.offset || { x: 0, y: 0 }, item.isHorizontal, true)}
+                            className={`absolute -right-8 top-1/2 -translate-y-1/2 transition-all w-6 h-6 rounded-lg bg-indigo-50 text-indigo-400 flex items-center justify-center cursor-move hover:bg-indigo-600 hover:text-white shadow-sm ${item.isEditing ? 'opacity-100 animate-pulse' : 'opacity-0 group-hover/label:opacity-100'}`}
+                            title="自由拖拽标签位置"
+                        >
+                            <i className="fa-solid fa-up-down-left-right text-[10px]"></i>
                         </div>
                     </div>
                 ))}

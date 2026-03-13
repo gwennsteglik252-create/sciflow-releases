@@ -127,13 +127,13 @@ const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({ projects, isLight
     }
 
     return (
-        <div className={`h-full p-4 rounded-[2rem] border flex flex-col gap-2 ${isLight ? 'bg-white border-slate-100 shadow-sm' : 'bg-slate-800/80 border-white/5 shadow-xl'}`}>
+        <div className={`h-full p-2 pb-1 rounded-[2rem] border flex flex-col gap-0.5 overflow-hidden justify-end ${isLight ? 'bg-white border-slate-100 shadow-sm' : 'bg-slate-800/80 border-white/5 shadow-xl'}`}>
             {/* Header */}
             <div className="flex items-center justify-between shrink-0">
-                <h4 className={`text-xs font-black flex items-center gap-2 ${isLight ? 'text-slate-800' : 'text-white'}`}>
+                <h4 className={`text-[11px] font-black flex items-center gap-1.5 ${isLight ? 'text-slate-800' : 'text-white'}`}>
                     <i className="fa-solid fa-timeline text-violet-500" />
                     里程碑时间轴
-                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md ${isLight ? 'bg-violet-50 text-violet-500' : 'bg-violet-500/10 text-violet-400'}`}>
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md ${isLight ? 'bg-violet-50 text-violet-500' : 'bg-violet-500/10 text-violet-400'}`}>
                         {allMilestones.length} 节点
                     </span>
                 </h4>
@@ -148,9 +148,9 @@ const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({ projects, isLight
                                 className="flex items-center gap-1.5 cursor-pointer group"
                                 onClick={() => navigate?.('project_detail', proj.id, 'logs')}
                             >
-                                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.dot }} />
-                                <span className={`text-[8px] font-black uppercase tracking-wide truncate max-w-[80px] group-hover:underline ${isLight ? 'text-slate-500 group-hover:text-slate-800' : 'text-slate-400 group-hover:text-white'}`}>
-                                    {proj.title.substring(0, 10)}{proj.title.length > 10 ? '..' : ''}
+                                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.dot }} />
+                                <span className={`text-[10px] font-black uppercase tracking-wide truncate max-w-[100px] group-hover:underline ${isLight ? 'text-slate-500 group-hover:text-slate-800' : 'text-slate-400 group-hover:text-white'}`}>
+                                    {proj.title.substring(0, 12)}{proj.title.length > 12 ? '..' : ''}
                                 </span>
                             </div>
                         );
@@ -158,166 +158,215 @@ const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({ projects, isLight
                 </div>
             </div>
 
-            {/* Timeline Track */}
-            <div className="relative select-none" style={{ minHeight: 64 }}>
-                {/* 时间轴背景轨道 */}
-                <div className={`absolute left-0 right-0 h-0.5 top-7 rounded-full ${isLight ? 'bg-slate-100' : 'bg-white/10'}`} />
-                <div className="absolute left-0 right-0 h-px top-7 rounded-full bg-gradient-to-r from-indigo-200 via-violet-200 to-cyan-200 opacity-60" />
+            {/* Timeline Track — 上下交错分布 */}
+            {(() => {
+                /* ── 轨道布局常量 ── */
+                const TRACK_Y = 28;           // 轨道在容器中的 Y 位置（px）
+                const TIER_GAP = 22;          // 每层之间的间距（px）
+                const DOT_SIZE = 10;          // 圆点直径（px）
+                const STEM_LEN = 6;           // 竖线长度（px）
+                const CONTAINER_H = 68;       // 容器总高度（px）
 
-                {/* 今日竖线 */}
-                {nowPct >= 0 && nowPct <= 100 && (
-                    <div
-                        className="absolute top-0 bottom-0 flex flex-col items-center z-10"
-                        style={{ left: `${nowPct}%`, transform: 'translateX(-50%)' }}
-                    >
-                        <div className="w-px h-full bg-rose-400/70 border-l border-dashed border-rose-400" />
-                        <span className="absolute top-0 -translate-y-full text-[8px] font-black text-rose-500 uppercase tracking-widest whitespace-nowrap bg-rose-50 px-1.5 py-0.5 rounded-full border border-rose-100">
-                            今日
-                        </span>
-                    </div>
-                )}
+                /* ── 碰撞避让：多层分配算法 ── */
+                const sorted = allMilestones
+                    .map(ms => ({ ms, pct: Math.max(1, Math.min(99, getPct(ms.dueDate))) }))
+                    .sort((a, b) => a.pct - b.pct);
 
-                {/* 月份刻度 — 智能间隔 */}
-                {(() => {
-                    const ticks: { pct: number; label: string }[] = [];
-                    const totalMonths = (maxDate.getFullYear() - minDate.getFullYear()) * 12 + (maxDate.getMonth() - minDate.getMonth());
-                    // 根据跨度选择步长：≤6月按月，6-18月按季度，>18月按半年
-                    const stepMonths = totalMonths <= 6 ? 1 : totalMonths <= 18 ? 3 : 6;
-                    const cur = new Date(minDate);
-                    cur.setDate(1);
-                    cur.setHours(0, 0, 0, 0);
-                    // 对齐到步长的整数倍月份
-                    const alignedMonth = Math.ceil((cur.getMonth() + 1) / stepMonths) * stepMonths;
-                    cur.setMonth(alignedMonth);
-                    while (cur <= maxDate) {
-                        const pct = ((cur.getTime() - minDate.getTime()) / rangeMs) * 100;
-                        if (pct > 2 && pct < 98) {
-                            const m = cur.getMonth() + 1;
-                            const label = stepMonths >= 6 ? `${cur.getFullYear()}.${m}月` : `${m}月`;
-                            ticks.push({ pct, label });
+                const MIN_GAP = 10; // 10% 以内视为碰撞
+                // tier: 0 = 下方第1层（默认）, 1 = 上方第1层, 2 = 下方第2层, 3 = 上方第2层
+                const tierMap = new Map<string, number>();
+
+                // 每层追踪最后使用的位置百分比，用于碰撞检测
+                const tierLastPct: number[] = [-Infinity, -Infinity, -Infinity, -Infinity];
+                // 分配顺序：优先下方1层→上方1层→下方2层→上方2层
+                const tierOrder = [0, 1, 2, 3];
+
+                sorted.forEach(({ ms, pct }) => {
+                    let assigned = false;
+                    for (const tier of tierOrder) {
+                        if (pct - tierLastPct[tier] >= MIN_GAP) {
+                            tierMap.set(ms.id, tier);
+                            tierLastPct[tier] = pct;
+                            assigned = true;
+                            break;
                         }
-                        cur.setMonth(cur.getMonth() + stepMonths);
                     }
-                    return ticks.map((t, i) => (
-                        <div
-                            key={i}
-                            className="absolute top-7 flex flex-col items-center"
-                            style={{ left: `${t.pct}%`, transform: 'translateX(-50%)' }}
-                        >
-                            <div className={`w-px h-3 ${isLight ? 'bg-slate-200' : 'bg-white/10'}`} />
-                            <span className={`text-[7px] font-black uppercase tracking-widest mt-0.5 ${isLight ? 'text-slate-300' : 'text-slate-500'}`}>
-                                {t.label}
-                            </span>
-                        </div>
-                    ));
-                })()}
+                    if (!assigned) {
+                        // 所有层都冲突，选占用最少的一层
+                        const leastUsed = tierOrder.reduce((best, t) =>
+                            (tierLastPct[t] < tierLastPct[best] ? t : best), 0);
+                        tierMap.set(ms.id, leastUsed);
+                        tierLastPct[leastUsed] = pct;
+                    }
+                });
 
-                {/* 里程碑节点 — 带碰撞避让 */}
-                {(() => {
-                    // 预计算每个节点的百分比位置并排序，用于碰撞避让
-                    const sorted = allMilestones
-                        .map(ms => ({ ms, pct: Math.max(1, Math.min(99, getPct(ms.dueDate))) }))
-                        .sort((a, b) => a.pct - b.pct);
+                // tier → 实际像素偏移 (相对于 TRACK_Y)
+                const getTierOffset = (tier: number): { dotY: number; labelAbove: boolean } => {
+                    switch (tier) {
+                        case 0: return { dotY: TRACK_Y + 3, labelAbove: false };           // 下方第1层
+                        case 1: return { dotY: TRACK_Y - DOT_SIZE - 3, labelAbove: true }; // 上方第1层
+                        case 2: return { dotY: TRACK_Y + 3 + TIER_GAP, labelAbove: false }; // 下方第2层
+                        case 3: return { dotY: TRACK_Y - DOT_SIZE - 3 - TIER_GAP, labelAbove: true }; // 上方第2层
+                        default: return { dotY: TRACK_Y + 3, labelAbove: false };
+                    }
+                };
 
-                    // 判断相邻节点是否过近（阈值 8%），过近则交替上下
-                    const MIN_GAP = 8;
-                    const positionMap = new Map<string, 'above' | 'below'>();
-                    let lastPct = -Infinity;
-                    let lastSide: 'above' | 'below' = 'below';
-                    sorted.forEach(({ ms, pct }) => {
-                        if (pct - lastPct < MIN_GAP) {
-                            // 相邻太近，交替到另一侧
-                            const side = lastSide === 'below' ? 'above' : 'below';
-                            positionMap.set(ms.id, side);
-                            lastSide = side;
-                        } else {
-                            positionMap.set(ms.id, 'below');
-                            lastSide = 'below';
-                        }
-                        lastPct = pct;
-                    });
+                return (
+                    <div className="relative select-none" style={{ minHeight: CONTAINER_H }}>
+                        {/* 时间轴背景轨道 */}
+                        <div className={`absolute left-0 right-0 h-0.5 rounded-full ${isLight ? 'bg-slate-100' : 'bg-white/10'}`} style={{ top: TRACK_Y }} />
+                        <div className="absolute left-0 right-0 h-px rounded-full bg-gradient-to-r from-indigo-200 via-violet-200 to-cyan-200 opacity-60" style={{ top: TRACK_Y }} />
 
-                    return allMilestones.map((ms) => {
-                        const pct = Math.max(1, Math.min(99, getPct(ms.dueDate)));
-                        const sc = STATUS_CONFIG[ms.status] || STATUS_CONFIG['pending'];
-                        const past = isPast(ms.dueDate);
-                        const isActive = ms.status === 'in-progress';
-                        const isHovered = hoveredId === ms.id;
-                        const tone = NODE_TONE[ms.status] || NODE_TONE.pending;
-                        const labelMax = isHovered ? 106 : 84;
-                        const side = positionMap.get(ms.id) || 'below';
-                        const labelAnchorStyle: React.CSSProperties =
-                            pct < 12
-                                ? { left: 0, transform: 'translateX(0)' }
-                                : pct > 88
-                                    ? { left: 0, transform: 'translateX(-100%)' }
-                                    : { left: '50%', transform: 'translateX(-50%)' };
-
-                        // 上方标签：定位在圆点上方；下方标签：定位在轨道下方
-                        const labelPositionStyle: React.CSSProperties = side === 'above'
-                            ? { bottom: '100%', marginBottom: 4, ...labelAnchorStyle }
-                            : { top: 36, ...labelAnchorStyle };
-
-                        return (
+                        {/* 今日竖线 */}
+                        {nowPct >= 0 && nowPct <= 100 && (
                             <div
-                                key={ms.id}
-                                className="absolute flex flex-col items-center cursor-pointer z-20"
-                                style={{ left: `${pct}%`, transform: 'translateX(-50%)', top: 0 }}
-                                onMouseEnter={() => setHoveredId(ms.id)}
-                                onMouseLeave={() => setHoveredId(null)}
-                                onClick={() => navigate?.('project_detail', ms.projectId, 'logs')}
+                                className="absolute top-0 bottom-0 flex flex-col items-center z-10"
+                                style={{ left: `${nowPct}%`, transform: 'translateX(-50%)' }}
                             >
-                                {/* 节点圆点 */}
+                                <div className="w-px h-full bg-rose-400/70 border-l border-dashed border-rose-400" />
+                                <span className="absolute text-[8px] font-black text-rose-500 uppercase tracking-widest whitespace-nowrap bg-rose-50 px-1.5 py-0.5 rounded-full border border-rose-100"
+                                    style={{ top: TRACK_Y - 18 }}>
+                                    今日
+                                </span>
+                            </div>
+                        )}
+
+                        {/* 月份刻度 — 智能间隔 */}
+                        {(() => {
+                            const ticks: { pct: number; label: string }[] = [];
+                            const totalMonths = (maxDate.getFullYear() - minDate.getFullYear()) * 12 + (maxDate.getMonth() - minDate.getMonth());
+                            const stepMonths = totalMonths <= 6 ? 1 : totalMonths <= 18 ? 3 : 6;
+                            const cur = new Date(minDate);
+                            cur.setDate(1);
+                            cur.setHours(0, 0, 0, 0);
+                            const alignedMonth = Math.ceil((cur.getMonth() + 1) / stepMonths) * stepMonths;
+                            cur.setMonth(alignedMonth);
+                            while (cur <= maxDate) {
+                                const pct = ((cur.getTime() - minDate.getTime()) / rangeMs) * 100;
+                                if (pct > 2 && pct < 98) {
+                                    const m = cur.getMonth() + 1;
+                                    const label = stepMonths >= 6 ? `${cur.getFullYear()}.${m}月` : `${m}月`;
+                                    ticks.push({ pct, label });
+                                }
+                                cur.setMonth(cur.getMonth() + stepMonths);
+                            }
+                            return ticks.map((t, i) => (
                                 <div
-                                    className={`relative w-3.5 h-3.5 rounded-full border-2 border-white shadow-md transition-all duration-200 ${isHovered ? 'scale-[1.35]' : 'scale-100'} ${isActive ? 'animate-pulse' : ''}`}
-                                    style={{ backgroundColor: past && ms.status === 'pending' ? '#f59e0b' : tone.fill, boxShadow: isHovered ? tone.glow : 'none', marginTop: 20 }}
+                                    key={i}
+                                    className="absolute flex flex-col items-center"
+                                    style={{ left: `${t.pct}%`, transform: 'translateX(-50%)', top: TRACK_Y }}
                                 >
-                                    {ms.status === 'completed' && (
-                                        <i className="fa-solid fa-check text-white text-[5px] absolute inset-0 flex items-center justify-center" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }} />
-                                    )}
+                                    <div className={`w-px h-3 ${isLight ? 'bg-slate-200' : 'bg-white/10'}`} />
+                                    <span className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${isLight ? 'text-slate-300' : 'text-slate-500'}`}>
+                                        {t.label}
+                                    </span>
                                 </div>
+                            ));
+                        })()}
 
-                                {/* 竖线连轨道 */}
-                                {side === 'below' && (
-                                    <div className={`w-px h-4 ${tone.line}`} />
-                                )}
+                        {/* 里程碑节点 — 多层上下交错分布 */}
+                        {allMilestones.map((ms) => {
+                            const pct = Math.max(1, Math.min(99, getPct(ms.dueDate)));
+                            const sc = STATUS_CONFIG[ms.status] || STATUS_CONFIG['pending'];
+                            const past = isPast(ms.dueDate);
+                            const isActive = ms.status === 'in-progress';
+                            const isHovered = hoveredId === ms.id;
+                            const tone = NODE_TONE[ms.status] || NODE_TONE.pending;
+                            const labelMax = isHovered ? 150 : 110;
+                            const tier = tierMap.get(ms.id) ?? 0;
+                            const { dotY, labelAbove } = getTierOffset(tier);
 
-                                {/* 标签（上下交错避让） */}
+                            // 标签水平对齐方式（防止边缘溢出）
+                            const labelAnchorStyle: React.CSSProperties =
+                                pct < 12
+                                    ? { left: 0, transform: 'translateX(0)' }
+                                    : pct > 88
+                                        ? { right: 0, transform: 'translateX(0)' }
+                                        : { left: '50%', transform: 'translateX(-50%)' };
+
+                            // 竖线从圆点到轨道
+                            const stemTop = labelAbove ? dotY + DOT_SIZE : TRACK_Y + 1;
+                            const stemBottom = labelAbove ? TRACK_Y : dotY;
+                            const stemHeight = Math.abs(stemBottom - stemTop);
+
+                            return (
                                 <div
-                                    className={`absolute transition-all duration-150 ${isHovered ? 'z-50' : 'z-10'}`}
-                                    style={labelPositionStyle}
+                                    key={ms.id}
+                                    className="absolute cursor-pointer"
+                                    style={{ left: `${pct}%`, top: 0, bottom: 0, width: 0 }}
+                                    onMouseEnter={() => setHoveredId(ms.id)}
+                                    onMouseLeave={() => setHoveredId(null)}
+                                    onClick={() => navigate?.('project_detail', ms.projectId, 'logs')}
                                 >
+                                    {/* 连接竖线（圆点到轨道） */}
                                     <div
-                                        className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl border transition-all duration-150 backdrop-blur-sm ${isHovered
-                                            ? (isLight ? 'bg-slate-900 border-slate-700 text-white shadow-2xl scale-105' : 'bg-white border-slate-200 text-slate-800 shadow-2xl scale-105')
-                                            : (isLight ? 'bg-white/90 border-slate-100 shadow-sm' : 'bg-slate-800/85 border-white/10')
-                                            }`}
-                                        style={{ maxWidth: labelMax }}
+                                        className={`absolute left-0 ${tone.line} opacity-60`}
+                                        style={{
+                                            top: stemTop,
+                                            height: stemHeight,
+                                            width: 1,
+                                            transform: 'translateX(-0.5px)',
+                                        }}
+                                    />
+
+                                    <div
+                                        className={`absolute rounded-full border-[1.5px] border-white shadow-sm transition-all duration-200 ${isHovered ? 'scale-[1.4] z-50' : 'scale-100 z-20'} ${isActive ? 'animate-pulse' : ''}`}
+                                        style={{
+                                            width: DOT_SIZE,
+                                            height: DOT_SIZE,
+                                            top: dotY,
+                                            left: -DOT_SIZE / 2,
+                                            backgroundColor: past && ms.status === 'pending' ? '#f59e0b' : tone.fill,
+                                            boxShadow: isHovered ? tone.glow : undefined,
+                                        }}
                                     >
-                                        <div className="flex items-center gap-1">
-                                            <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: ms.projectColor }} />
-                                            <span className={`text-[7px] font-black truncate ${isHovered ? '' : (isLight ? 'text-slate-700' : 'text-slate-200')}`} style={{ maxWidth: isHovered ? 90 : 72 }}>
-                                                {ms.title}
-                                            </span>
-                                        </div>
-                                        <span className={`text-[6px] leading-none font-bold ${past && ms.status !== 'completed' ? 'text-amber-500' :
-                                            isHovered ? 'text-slate-400' :
-                                                (isLight ? 'text-slate-400' : 'text-slate-500')
-                                            }`}>
-                                            {past && ms.status !== 'completed' && ms.status !== 'failed' ? '⚠ ' : ''}{formatDate(ms.dueDate)}
-                                        </span>
-                                        {isHovered && (
-                                            <span className="text-[6px] font-black uppercase tracking-wider" style={{ color: tone.soft }}>
-                                                {sc.label}
-                                            </span>
+                                        {ms.status === 'completed' && (
+                                            <i className="fa-solid fa-check text-white text-[4px] absolute inset-0 flex items-center justify-center" />
                                         )}
                                     </div>
+
+                                    {/* 标签卡片 */}
+                                    <div
+                                        className={`absolute transition-all duration-150 ${isHovered ? 'z-50' : 'z-10'}`}
+                                        style={{
+                                            ...(labelAbove
+                                                ? { bottom: CONTAINER_H - dotY + 2 }
+                                                : { top: dotY + DOT_SIZE + STEM_LEN }),
+                                            ...labelAnchorStyle,
+                                        }}
+                                    >
+                                        <div
+                                            className={`flex flex-col items-center gap-px px-1.5 py-0.5 rounded-lg border transition-all duration-150 backdrop-blur-sm whitespace-nowrap ${isHovered
+                                                ? (isLight ? 'bg-slate-900 border-slate-700 text-white shadow-2xl scale-105' : 'bg-white border-slate-200 text-slate-800 shadow-2xl scale-105')
+                                                : (isLight ? 'bg-white/90 border-slate-100 shadow-sm' : 'bg-slate-800/85 border-white/10')
+                                                }`}
+                                            style={{ maxWidth: labelMax }}
+                                        >
+                                            <div className="flex items-center gap-0.5">
+                                                <div className="w-1 h-1 rounded-full shrink-0" style={{ backgroundColor: ms.projectColor }} />
+                                                <span className={`text-[8px] font-black truncate ${isHovered ? '' : (isLight ? 'text-slate-700' : 'text-slate-200')}`} style={{ maxWidth: isHovered ? 110 : 80 }}>
+                                                    {ms.title}
+                                                </span>
+                                            </div>
+                                            <span className={`text-[7px] leading-none font-bold ${past && ms.status !== 'completed' ? 'text-amber-500' :
+                                                isHovered ? 'text-slate-400' :
+                                                    (isLight ? 'text-slate-400' : 'text-slate-500')
+                                                }`}>
+                                                {past && ms.status !== 'completed' && ms.status !== 'failed' ? '⚠ ' : ''}{formatDate(ms.dueDate)}
+                                            </span>
+                                            {isHovered && (
+                                                <span className="text-[7px] font-black uppercase tracking-wider" style={{ color: tone.soft }}>
+                                                    {sc.label}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        );
-                    });
-                })()}
-            </div>
+                            );
+                        })}
+                    </div>
+                );
+            })()}
 
             {/* 底部状态汇总 */}
             <div className="flex items-center gap-4 pt-1 shrink-0 border-t border-dashed border-slate-100/50 flex-wrap">
@@ -327,7 +376,7 @@ const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({ projects, isLight
                     return (
                         <div key={key} className="flex items-center gap-1.5">
                             <div className={`w-1.5 h-1.5 rounded-full ${cfg.dotClass}`} />
-                            <span className={`text-[8px] font-black uppercase tracking-wide ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
+                            <span className={`text-[10px] font-black uppercase tracking-wide ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
                                 {cfg.label} · {count}
                             </span>
                         </div>
@@ -339,8 +388,8 @@ const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({ projects, isLight
                     if (overdueCount === 0) return null;
                     return (
                         <div className="flex items-center gap-1.5 ml-auto">
-                            <i className="fa-solid fa-triangle-exclamation text-amber-500 text-[8px] animate-pulse" />
-                            <span className="text-[8px] font-black text-amber-500 uppercase tracking-wide">{overdueCount} 项已逾期</span>
+                            <i className="fa-solid fa-triangle-exclamation text-amber-500 text-[10px] animate-pulse" />
+                            <span className="text-[10px] font-black text-amber-500 uppercase tracking-wide">{overdueCount} 项已逾期</span>
                         </div>
                     );
                 })()}

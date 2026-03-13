@@ -250,11 +250,11 @@ const Dashboard: React.FC<DashboardProps> = ({ projects = [], resources = [], na
   return (
     <div className="h-full flex flex-col gap-4 animate-reveal overflow-y-auto lg:overflow-hidden px-2 custom-scrollbar">
       {/* 顶部行：左 col-span-2 里程碑时间轴 | 右 col-span-1 统计矩阵 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 shrink-0">
-        <div className="lg:col-span-2 h-full">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 shrink-0 items-stretch">
+        <div className="lg:col-span-2">
           <MilestoneTimeline projects={projects || []} isLight={isLight} navigate={navigate} />
         </div>
-        <div className="lg:col-span-1 h-full grid grid-cols-2 gap-3 content-start">
+        <div className="lg:col-span-1 grid grid-cols-2 gap-3">
           {stats.map((stat) => (
             <div key={stat.label} className={`p-3.5 rounded-xl border transition-all hover:-translate-y-0.5 ${isLight ? 'bg-white border-slate-100 shadow-sm' : 'bg-slate-800/80 border-white/5 shadow-lg'}`}>
               <div className="flex items-center justify-between mb-1">

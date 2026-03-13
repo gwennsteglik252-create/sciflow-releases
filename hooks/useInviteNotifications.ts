@@ -1,6 +1,8 @@
 /**
  * useInviteNotifications — 登录后检查新的项目邀请
  *
+ * 使用本地 localStorage 跟踪已读状态，避免依赖 Supabase is_read 字段。
+ *
  * 返回：
  * - newInvites: 未读邀请列表
  * - hasNew: 是否有新邀请
@@ -8,8 +10,26 @@
  * - markAllAsRead: 标记所有为已读
  * - refresh: 手动刷新
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase, isSupabaseConfigured } from '../services/supabase';
+
+const READ_INVITES_KEY = 'sciflow_read_invites';
+
+/** 模块级标记：project_members 表是否可用（首次失败后置 false，停止后续查询） */
+let projectMembersAvailable = true;
+
+function getReadInviteIds(): Set<string> {
+    try {
+        const raw = localStorage.getItem(READ_INVITES_KEY);
+        return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch {
+        return new Set();
+    }
+}
+
+function saveReadInviteIds(ids: Set<string>) {
+    localStorage.setItem(READ_INVITES_KEY, JSON.stringify([...ids]));
+}
 
 export interface InviteNotification {
     projectId: string;
@@ -28,28 +48,30 @@ interface UseInviteNotificationsResult {
 
 export const useInviteNotifications = (): UseInviteNotificationsResult => {
     const [newInvites, setNewInvites] = useState<InviteNotification[]>([]);
+    const hasWarnedRef = useRef(false);
 
     const fetchInvites = useCallback(async () => {
-        if (!isSupabaseConfigured() || !supabase) return;
+        // 如果表不可用或未配置 Supabase，直接跳过
+        if (!projectMembersAvailable || !isSupabaseConfigured() || !supabase) return;
 
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session?.user?.id) return;
 
-            // 查询未读邀请
+            // 简单查询，不依赖 is_read 字段
             const { data, error } = await supabase
                 .from('project_members')
-                .select('project_id, role, invited_at, is_read')
-                .eq('user_id', session.user.id)
-                .eq('is_read', false);
+                .select('project_id, role, invited_at')
+                .eq('user_id', session.user.id);
 
             if (error) {
-                // is_read 字段可能不存在（用户未执行 ALTER TABLE SQL）
-                if (error.message?.includes('is_read')) {
-                    console.warn('[InviteNotifications] is_read 字段不存在，跳过通知检查');
-                    return;
+                // 表不存在或 RLS/权限问题 → 标记为不可用，不再重试
+                projectMembersAvailable = false;
+                if (!hasWarnedRef.current) {
+                    console.warn('[InviteNotifications] project_members 表不可用，已停止查询:', error.message);
+                    hasWarnedRef.current = true;
                 }
-                throw error;
+                return;
             }
 
             if (!data || data.length === 0) {
@@ -57,8 +79,17 @@ export const useInviteNotifications = (): UseInviteNotificationsResult => {
                 return;
             }
 
+            // 用本地已读列表过滤
+            const readIds = getReadInviteIds();
+            const unreadData = data.filter((d: any) => !readIds.has(d.project_id));
+
+            if (unreadData.length === 0) {
+                setNewInvites([]);
+                return;
+            }
+
             // 获取项目标题
-            const projectIds = data.map((d: any) => d.project_id);
+            const projectIds = unreadData.map((d: any) => d.project_id);
             const { data: projects } = await supabase
                 .from('projects')
                 .select('id, data')
@@ -69,7 +100,7 @@ export const useInviteNotifications = (): UseInviteNotificationsResult => {
                 projectTitleMap.set(p.id, p.data?.title || '未命名项目');
             });
 
-            const invites: InviteNotification[] = data.map((d: any) => ({
+            const invites: InviteNotification[] = unreadData.map((d: any) => ({
                 projectId: d.project_id,
                 projectTitle: projectTitleMap.get(d.project_id) || '未命名项目',
                 role: d.role,
@@ -91,40 +122,18 @@ export const useInviteNotifications = (): UseInviteNotificationsResult => {
     }, [fetchInvites]);
 
     const markAsRead = useCallback(async (projectId: string) => {
-        if (!isSupabaseConfigured() || !supabase) return;
-        try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session?.user?.id) return;
-
-            await supabase
-                .from('project_members')
-                .update({ is_read: true })
-                .eq('project_id', projectId)
-                .eq('user_id', session.user.id);
-
-            setNewInvites(prev => prev.filter(i => i.projectId !== projectId));
-        } catch (err: any) {
-            console.warn('[InviteNotifications] 标记已读失败:', err.message);
-        }
+        const readIds = getReadInviteIds();
+        readIds.add(projectId);
+        saveReadInviteIds(readIds);
+        setNewInvites(prev => prev.filter(i => i.projectId !== projectId));
     }, []);
 
     const markAllAsRead = useCallback(async () => {
-        if (!isSupabaseConfigured() || !supabase) return;
-        try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session?.user?.id) return;
-
-            await supabase
-                .from('project_members')
-                .update({ is_read: true })
-                .eq('user_id', session.user.id)
-                .eq('is_read', false);
-
-            setNewInvites([]);
-        } catch (err: any) {
-            console.warn('[InviteNotifications] 全部标记已读失败:', err.message);
-        }
-    }, []);
+        const readIds = getReadInviteIds();
+        newInvites.forEach(i => readIds.add(i.projectId));
+        saveReadInviteIds(readIds);
+        setNewInvites([]);
+    }, [newInvites]);
 
     return {
         newInvites,

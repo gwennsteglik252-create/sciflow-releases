@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { SavedFigureAssembly } from '../../../types';
+import { useTranslation } from '../../../locales/useTranslation';
 
 
 interface AssemblyModalsProps {
@@ -23,13 +24,14 @@ export const AssemblyModals: React.FC<AssemblyModalsProps> = ({
 }) => {
     const [renamingId, setRenamingId] = React.useState<string | null>(null);
     const [tempTitle, setTempTitle] = React.useState('');
+    const { t } = useTranslation();
 
     return (
         <>
             {showLibrary && (
                 <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[3000] flex items-center justify-center p-4">
                     <div className="bg-white w-full max-w-lg rounded-[2.5rem] p-8 animate-reveal shadow-2xl relative border-4 border-white flex flex-col max-h-[80vh]">
-                        <h3 className="text-xl font-black text-slate-800 mb-6 uppercase italic border-l-4 border-indigo-600 pl-4">拼版方案库</h3>
+                        <h3 className="text-xl font-black text-slate-800 mb-6 uppercase italic border-l-4 border-indigo-600 pl-4">{t('figureCenter.assembly.libraryTitle')}</h3>
                         <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
                             {savedAssemblies.map(s => (
                                 <div key={s.id} onClick={() => { if (renamingId !== s.id) handleLoadSaved(s); }} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex justify-between items-center group hover:border-indigo-300 transition-all cursor-pointer">
@@ -78,9 +80,9 @@ export const AssemblyModals: React.FC<AssemblyModalsProps> = ({
                                     <button onClick={(e) => handleDeleteSaved(s.id, e)} className="w-8 h-8 rounded-lg bg-white text-rose-300 hover:text-rose-500 hover:shadow-sm"><i className="fa-solid fa-trash-can text-[10px]"></i></button>
                                 </div>
                             ))}
-                            {savedAssemblies.length === 0 && <p className="text-center py-10 text-[10px] text-slate-400 italic">暂无保存的拼版方案</p>}
+                            {savedAssemblies.length === 0 && <p className="text-center py-10 text-[10px] text-slate-400 italic">{t('figureCenter.assembly.noSavedSchemes')}</p>}
                         </div>
-                        <button onClick={() => setShowLibrary(false)} className="mt-6 w-full py-3 bg-slate-100 text-slate-500 rounded-xl text-[10px] font-black uppercase hover:bg-slate-200">关闭</button>
+                        <button onClick={() => setShowLibrary(false)} className="mt-6 w-full py-3 bg-slate-100 text-slate-500 rounded-xl text-[10px] font-black uppercase hover:bg-slate-200">{t('figureCenter.assembly.close')}</button>
                     </div>
                 </div>
             )}
@@ -89,7 +91,7 @@ export const AssemblyModals: React.FC<AssemblyModalsProps> = ({
                 <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[3000] flex items-center justify-center p-4">
                     <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 animate-reveal shadow-2xl relative border-4 border-white">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-black text-slate-800 uppercase italic pl-2">保存当前拼版</h3>
+                            <h3 className="text-lg font-black text-slate-800 uppercase italic pl-2">{t('figureCenter.assembly.saveTitle')}</h3>
                             {saveTitle.includes('正在 AI') && (
                                 <div className="flex items-center gap-2 text-indigo-600 animate-pulse">
                                     <i className="fa-solid fa-sparkles text-xs"></i>
@@ -97,10 +99,10 @@ export const AssemblyModals: React.FC<AssemblyModalsProps> = ({
                                 </div>
                             )}
                         </div>
-                        <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold outline-none mb-6 focus:border-indigo-300" value={saveTitle} onChange={e => setSaveTitle(e.target.value)} placeholder="方案名称..." autoFocus />
+                        <input className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold outline-none mb-6 focus:border-indigo-300" value={saveTitle} onChange={e => setSaveTitle(e.target.value)} placeholder={t('figureCenter.assembly.schemeName')} autoFocus />
                         <div className="flex gap-3">
-                            <button onClick={() => setShowSaveModal(false)} className="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl text-[10px] font-black uppercase">取消</button>
-                            <button onClick={handleSaveConfirm} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase shadow-xl transition-all active:scale-95">确认保存</button>
+                            <button onClick={() => setShowSaveModal(false)} className="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl text-[10px] font-black uppercase">{t('figureCenter.assembly.cancel')}</button>
+                            <button onClick={handleSaveConfirm} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase shadow-xl transition-all active:scale-95">{t('figureCenter.assembly.confirmSave')}</button>
                         </div>
                     </div>
                 </div>

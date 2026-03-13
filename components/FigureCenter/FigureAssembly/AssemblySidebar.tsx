@@ -1,5 +1,6 @@
 import React from 'react';
 import { useProjectContext } from '../../../context/ProjectContext';
+import { useTranslation } from '../../../locales/useTranslation';
 
 interface AssemblySidebarProps {
     showGrid: boolean;
@@ -28,19 +29,20 @@ export const AssemblySidebar: React.FC<AssemblySidebarProps> = ({
 }) => {
     const { activeTheme } = useProjectContext();
     const isLightMode = activeTheme.type === 'light';
+    const { t } = useTranslation();
 
     return (
         <div className="w-72 bg-white rounded-[2rem] border border-slate-200 shadow-sm flex flex-col p-6 shrink-0 z-20 overflow-hidden h-full">
             <div className="flex items-center gap-2 mb-4 px-1">
                 <i className="fa-solid fa-images text-indigo-600"></i>
-                <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">素材资源库</h4>
+                <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">{t('figureCenter.assembly.assetLibrary')}</h4>
             </div>
 
             <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-2xl relative overflow-hidden shadow-inner">
                 <div className="flex justify-between items-center mb-4 relative z-10">
                     <div className="flex flex-col">
                         <span className="text-[9px] font-black text-slate-950 uppercase tracking-widest leading-none">SMART GRID</span>
-                        <span className="text-[6px] font-black text-indigo-400 uppercase tracking-tighter mt-1 opacity-60">默认设定</span>
+                        <span className="text-[6px] font-black text-indigo-400 uppercase tracking-tighter mt-1 opacity-60">{t('figureCenter.assembly.defaultSetting')}</span>
                     </div>
                     <button
                         onClick={() => setShowGrid(!showGrid)}
@@ -89,13 +91,13 @@ export const AssemblySidebar: React.FC<AssemblySidebarProps> = ({
                         onClick={handleManualSortAndLayout}
                         className="w-full py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg hover:shadow-indigo-200 transition-all flex items-center justify-center gap-2 active:scale-95"
                     >
-                        <i className="fa-solid fa-list-ol"></i> 排序 & 排版
+                        <i className="fa-solid fa-list-ol"></i> {t('figureCenter.assembly.sortLayout')}
                     </button>
                     <button
                         onClick={handleQuickSpatialLayout}
                         className="w-full py-2 bg-white border border-slate-200 text-slate-500 rounded-xl text-[9px] font-black uppercase hover:bg-slate-100 transition-all"
                     >
-                        快速空间整理
+                        {t('figureCenter.assembly.quickSpatial')}
                     </button>
                 </div>
 
@@ -107,7 +109,7 @@ export const AssemblySidebar: React.FC<AssemblySidebarProps> = ({
                         {isProcessingUpload ? <i className="fa-solid fa-spinner animate-spin"></i> : <i className="fa-solid fa-cloud-arrow-up"></i>}
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-slate-700 uppercase tracking-wide leading-none">上传本地图片</span>
+                        <span className="text-[10px] font-black text-slate-700 uppercase tracking-wide leading-none">{t('figureCenter.assembly.uploadLocal')}</span>
                         <span className="text-[7px] font-bold text-slate-400 uppercase mt-1">Upload Local Assets</span>
                     </div>
                     <input type="file" className="hidden" accept="image/*" multiple onChange={handleFileUpload} />
@@ -134,7 +136,7 @@ export const AssemblySidebar: React.FC<AssemblySidebarProps> = ({
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); onDeleteLocalAsset?.(item.id); }}
                                                 className="absolute top-1 right-1 bg-rose-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg active:scale-90 z-20"
-                                                title="移除素材"
+                                                title={t('figureCenter.assembly.removeAsset')}
                                             >
                                                 <i className="fa-solid fa-times text-[10px]"></i>
                                             </button>
@@ -149,7 +151,7 @@ export const AssemblySidebar: React.FC<AssemblySidebarProps> = ({
                         <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-inner mb-4">
                             <i className="fa-solid fa-image text-3xl opacity-20 text-indigo-400"></i>
                         </div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2rem] text-slate-400">图库暂空</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2rem] text-slate-400">{t('figureCenter.assembly.emptyLibrary')}</p>
                         <p className="text-[7px] font-bold text-slate-300 uppercase mt-1">Library is Empty</p>
                     </div>
                 )}
@@ -160,13 +162,13 @@ export const AssemblySidebar: React.FC<AssemblySidebarProps> = ({
                     onClick={handleExport}
                     className="w-full py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-2xl text-[10px] font-black uppercase shadow-lg hover:shadow-emerald-200 transition-all flex items-center justify-center gap-2 active:scale-95"
                 >
-                    <i className="fa-solid fa-file-export"></i> 导出组合图
+                    <i className="fa-solid fa-file-export"></i> {t('figureCenter.assembly.exportFigure')}
                 </button>
                 <button
                     onClick={handleClearAll}
                     className="w-full py-3 bg-rose-50 border border-rose-100 text-rose-500 rounded-2xl text-[9px] font-black uppercase hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95"
                 >
-                    <i className="fa-solid fa-trash-can"></i> 重置画布 & 清除缓存
+                    <i className="fa-solid fa-trash-can"></i> {t('figureCenter.assembly.resetCanvas')}
                 </button>
             </div>
         </div>

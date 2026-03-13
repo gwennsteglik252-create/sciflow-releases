@@ -1,7 +1,7 @@
 // ═══ SciFlow Pro — i18n Translation Hook ═══
 
-import { useCallback } from 'react';
-import { useProjectContext } from '../context/ProjectContext';
+import { useCallback, useContext } from 'react';
+import { ProjectContext } from '../context/ProjectContextCore';
 import zh from './zh';
 import en from './en';
 import type { TranslationKeys } from './zh';
@@ -29,11 +29,14 @@ function getByPath(obj: any, path: string): string {
  *   const { t, lang } = useTranslation();
  *   t('sidebar.dashboard')        // → '研究看板' (zh) / 'Dashboard' (en)
  *   t('settings.system.trialDaysRemaining', { days: 10 })  // → '剩余 10 天 · 14天免费试用'
+ * 
+ * 注意: 在 ProjectProvider 外部（如登录页）也能安全使用，会降级为默认语言。
  */
 export function useTranslation() {
-    const { appSettings } = useProjectContext();
-    const lang = appSettings.uiLanguage || 'zh';
+    const ctx = useContext(ProjectContext);
+    const lang = ctx?.appSettings?.uiLanguage || 'zh';
     const dictionary = locales[lang] || locales.zh;
+
 
     const t = useCallback((key: string, params?: Record<string, string | number>): string => {
         let value = getByPath(dictionary, key);

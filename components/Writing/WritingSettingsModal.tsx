@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ResearchProject } from '../../types';
 import { DocType, SECTION_CONFIG, TEMPLATES } from './WritingConfig';
+import { useTranslation } from '../../locales/useTranslation';
 
 interface WritingSettingsModalProps {
     show: boolean;
@@ -31,16 +32,17 @@ const WritingSettingsModal: React.FC<WritingSettingsModalProps> = ({
     const [aiAgentMode, setAiAgentMode] = useState<'editor' | 'reviewer' | 'translator'>('editor');
     const [wordCountGoal, setWordCountGoal] = useState('3000');
     const [protectTerms, setProtectTerms] = useState(true);
+    const { t } = useTranslation();
 
     const filteredTemplates = useMemo(() => {
         return templates.filter(t => t.docType === docType);
     }, [templates, docType]);
 
     const docTypes: { id: DocType; label: string; icon: string; color: string }[] = useMemo(() => [
-        { id: 'paper', label: '学术论文', icon: 'fa-file-lines', color: 'bg-indigo-600' },
-        { id: 'report', label: '技术报告', icon: 'fa-chart-pie', color: 'bg-teal-600' },
-        { id: 'patent', label: '发明专利', icon: 'fa-gavel', color: 'bg-violet-600' }
-    ], []);
+        { id: 'paper', label: t('writing.writingSettings.paper'), icon: 'fa-file-lines', color: 'bg-indigo-600' },
+        { id: 'report', label: t('writing.writingSettings.report'), icon: 'fa-chart-pie', color: 'bg-teal-600' },
+        { id: 'patent', label: t('writing.writingSettings.patent'), icon: 'fa-gavel', color: 'bg-violet-600' }
+    ], [t]);
 
     const handleSearchAdd = () => {
         if (!searchQuery.trim() || isSearching) return;
@@ -73,7 +75,7 @@ const WritingSettingsModal: React.FC<WritingSettingsModalProps> = ({
                 <button onClick={onClose} className="absolute top-6 right-6 text-slate-300 hover:text-rose-500 transition-all active:scale-90"><i className="fa-solid fa-times text-xl"></i></button>
 
                 <header className="mb-8 shrink-0 text-center">
-                    <h3 className="text-xl font-black text-slate-800 uppercase italic tracking-tighter">写作工作站配置</h3>
+                    <h3 className="text-xl font-black text-slate-800 uppercase italic tracking-tighter">{t('writing.writingSettings.title')}</h3>
                     <div className="w-10 h-1 bg-indigo-600 mx-auto mt-2 rounded-full opacity-20"></div>
                 </header>
 
@@ -81,7 +83,7 @@ const WritingSettingsModal: React.FC<WritingSettingsModalProps> = ({
                     {/* 1. Project Context */}
                     <section>
                         <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
-                            <i className="fa-solid fa-link"></i> 关联研究课题
+                            <i className="fa-solid fa-link"></i> {t('writing.writingSettings.linkedProject')}
                         </h4>
                         <div className="relative group">
                             <select
@@ -100,7 +102,7 @@ const WritingSettingsModal: React.FC<WritingSettingsModalProps> = ({
                     {/* 2. Document Type */}
                     <section>
                         <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
-                            <i className="fa-solid fa-shapes"></i> 文档体裁
+                            <i className="fa-solid fa-shapes"></i> {t('writing.writingSettings.docTypeSection')}
                         </h4>
                         <div className="grid grid-cols-3 gap-3">
                             {docTypes.map(type => (
@@ -129,7 +131,7 @@ const WritingSettingsModal: React.FC<WritingSettingsModalProps> = ({
                     {/* 3. Journal Template - Searchable discovery bar and dropdown */}
                     <section>
                         <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
-                            <i className="fa-solid fa-scroll"></i> 期刊排版模板
+                            <i className="fa-solid fa-scroll"></i> {t('writing.writingSettings.templateSection')}
                         </h4>
 
                         <div className="mb-4 bg-slate-50 border border-slate-200 rounded-2xl p-2 focus-within:ring-4 focus-within:ring-indigo-100 transition-all flex items-center gap-2">
@@ -138,7 +140,7 @@ const WritingSettingsModal: React.FC<WritingSettingsModalProps> = ({
                             </div>
                             <input
                                 className="flex-1 bg-transparent border-none outline-none text-[11px] font-bold text-slate-700 placeholder:text-slate-400"
-                                placeholder="输入新期刊名称以通过 AI 发现并添加..."
+                                placeholder={t('writing.writingSettings.searchTemplate')}
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                                 onKeyDown={e => e.key === 'Enter' && handleSearchAdd()}
@@ -148,7 +150,7 @@ const WritingSettingsModal: React.FC<WritingSettingsModalProps> = ({
                                 disabled={isSearching || !searchQuery.trim()}
                                 className="px-6 py-2 bg-indigo-500/80 text-white rounded-xl text-[9px] font-black uppercase shadow-lg active:scale-95 disabled:opacity-50"
                             >
-                                发现
+                                {t('writing.writingSettings.addAndCreate').split(':')[0]}
                             </button>
                         </div>
 
@@ -172,13 +174,13 @@ const WritingSettingsModal: React.FC<WritingSettingsModalProps> = ({
                     {/* 4. AI Agent Strategy - NEW FEATURE */}
                     <section>
                         <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
-                            <i className="fa-solid fa-robot"></i> AI 协作策略 (STRATEGY)
+                            <i className="fa-solid fa-robot"></i> {t('writing.writingSettings.aiAgentMode')}
                         </h4>
                         <div className="grid grid-cols-3 gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner">
                             {[
-                                { id: 'editor', label: '资深编辑', icon: 'fa-wand-magic-sparkles', sub: '侧重语言润色' },
-                                { id: 'reviewer', label: '批判评审', icon: 'fa-scale-balanced', sub: '侧重逻辑找茬' },
-                                { id: 'translator', label: '学术翻译', icon: 'fa-language', sub: '侧重地道直译' }
+                                { id: 'editor', label: t('writing.writingSettings.editorAgent'), icon: 'fa-wand-magic-sparkles', sub: t('writing.writingSettings.editorSub') },
+                                { id: 'reviewer', label: t('writing.writingSettings.reviewerAgent'), icon: 'fa-scale-balanced', sub: t('writing.writingSettings.reviewerSub') },
+                                { id: 'translator', label: t('writing.writingSettings.translatorAgent'), icon: 'fa-language', sub: t('writing.writingSettings.translatorSub') }
                             ].map(mode => (
                                 <button
                                     key={mode.id}
@@ -197,7 +199,7 @@ const WritingSettingsModal: React.FC<WritingSettingsModalProps> = ({
                     <section className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col">
                             <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
-                                <i className="fa-solid fa-bullseye text-rose-500"></i> 字数目标 (GOAL)
+                                <i className="fa-solid fa-bullseye text-rose-500"></i> {t('writing.writingSettings.wordCountGoal')}
                             </h4>
                             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex items-center justify-between gap-3 focus-within:border-indigo-400 transition-all shadow-sm">
                                 <input
@@ -211,14 +213,14 @@ const WritingSettingsModal: React.FC<WritingSettingsModalProps> = ({
                         </div>
                         <div className="flex flex-col">
                             <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
-                                <i className="fa-solid fa-shield-check text-emerald-500"></i> 术语一致性
+                                <i className="fa-solid fa-shield-check text-emerald-500"></i> {t('writing.writingSettings.protectTerms')}
                             </h4>
                             <button
                                 onClick={() => setProtectTerms(!protectTerms)}
                                 className={`flex-1 rounded-2xl border-2 transition-all flex items-center justify-center gap-3 px-4 py-3 shadow-sm ${protectTerms ? 'bg-emerald-50 border-emerald-500 text-emerald-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
                             >
                                 <i className={`fa-solid ${protectTerms ? 'fa-lock' : 'fa-lock-open'}`}></i>
-                                <span className="text-[10px] font-black uppercase">术语保护 {protectTerms ? 'ON' : 'OFF'}</span>
+                                <span className="text-[10px] font-black uppercase">{t('writing.writingSettings.protectTerms')} {protectTerms ? 'ON' : 'OFF'}</span>
                             </button>
                         </div>
                     </section>
@@ -226,14 +228,14 @@ const WritingSettingsModal: React.FC<WritingSettingsModalProps> = ({
                     {/* 6. Language Preference */}
                     <section>
                         <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
-                            <i className="fa-solid fa-language"></i> 辅助输出语言
+                            <i className="fa-solid fa-language"></i> {t('writing.writingSettings.writingLang')}
                         </h4>
                         <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 w-full shadow-inner">
                             <button
                                 onClick={() => setLanguage('zh')}
                                 className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${language === 'zh' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                             >
-                                学术中文 (SIMPLIFIED CHINESE)
+                                学术中文 (Chinese)
                             </button>
                             <button
                                 onClick={() => setLanguage('en')}
@@ -250,7 +252,7 @@ const WritingSettingsModal: React.FC<WritingSettingsModalProps> = ({
                         onClick={onClose}
                         className="w-full py-5 bg-slate-700/80 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all active:scale-95"
                     >
-                        完成并应用配置
+                        {t('writing.writingSettings.close')}
                     </button>
                 </footer>
             </div>

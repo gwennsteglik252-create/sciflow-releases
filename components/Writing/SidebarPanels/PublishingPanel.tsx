@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { ManuscriptMeta, AuthorProfile } from '../../../types';
 import { TEMPLATES, DocType } from '../WritingConfig';
 import { useProjectContext } from '../../../context/ProjectContext';
+import { useTranslation } from '../../../locales/useTranslation';
 
 interface PublishingPanelProps {
     templates: any[];
@@ -25,6 +26,7 @@ const PublishingPanel: React.FC<PublishingPanelProps> = ({
     onAddTemplate, onDeleteTemplate, docType
 }) => {
     const { teamMembers, showToast } = useProjectContext();
+    const { t } = useTranslation();
     const [isAdding, setIsAdding] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
@@ -72,7 +74,7 @@ const PublishingPanel: React.FC<PublishingPanelProps> = ({
 
     const handleImportFromTeam = (member: any) => {
         if (manuscriptMeta.authorList.some(a => a.name === member.name)) {
-            showToast({ message: "该研究员已在作者列表中", type: 'info' });
+            showToast({ message: t('writing.publishingPanel.alreadyInList'), type: 'info' });
             return;
         }
         const newAuthor: AuthorProfile = {
@@ -84,7 +86,7 @@ const PublishingPanel: React.FC<PublishingPanelProps> = ({
             isCoFirst: false
         };
         onUpdateMeta({ ...manuscriptMeta, authorList: [...manuscriptMeta.authorList, newAuthor] });
-        showToast({ message: `已从人力矩阵同步作者数据: ${member.name}`, type: 'success' });
+        showToast({ message: `${t('writing.publishingPanel.syncedAuthor')}: ${member.name}`, type: 'success' });
     };
 
     const contributionData = useMemo(() => {
@@ -134,17 +136,17 @@ const PublishingPanel: React.FC<PublishingPanelProps> = ({
     return (
         <div className="h-full overflow-y-auto custom-scrollbar animate-reveal pb-12 px-1">
             <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter italic mb-6 flex items-center gap-3">
-                <i className="fa-solid fa-print text-indigo-600"></i> 投稿发布中心
+                <i className="fa-solid fa-print text-indigo-600"></i> {t('writing.publishingPanel.title')}
             </h3>
 
             <section className="mb-6">
                 <div className="flex justify-between items-center mb-3">
                     <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                        <i className="fa-solid fa-scroll"></i> 投稿期刊模板
+                        <i className="fa-solid fa-scroll"></i> {t('writing.publishingPanel.templateSection')}
                     </h5>
                     {!isAdding && (
                         <button onClick={() => setIsAdding(true)} className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all">
-                            <i className="fa-solid fa-magnifying-glass-plus"></i> 发现
+                            <i className="fa-solid fa-magnifying-glass-plus"></i> {t('writing.publishingPanel.discover')}
                         </button>
                     )}
                 </div>
@@ -152,9 +154,9 @@ const PublishingPanel: React.FC<PublishingPanelProps> = ({
                 {isAdding && (
                     <div className="mb-4 p-4 bg-indigo-50/50 rounded-xl border-2 border-dashed border-indigo-200 animate-reveal shadow-inner">
                         <div className="flex gap-2">
-                            <input autoFocus className="flex-1 bg-white border border-indigo-200 rounded-xl px-4 py-2 text-xs font-bold outline-none shadow-sm focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="输入期刊全名..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearchAdd()} />
+                            <input autoFocus className="flex-1 bg-white border border-indigo-200 rounded-xl px-4 py-2 text-xs font-bold outline-none shadow-sm focus:ring-2 focus:ring-indigo-100 transition-all" placeholder={t('writing.publishingPanel.searchPlaceholder')} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearchAdd()} />
                             <button onClick={handleSearchAdd} disabled={isSearching || !searchQuery.trim()} className="px-4 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase shadow-xl hover:bg-black transition-all">
-                                {isSearching ? <i className="fa-solid fa-spinner animate-spin"></i> : '添加'}
+                                {isSearching ? <i className="fa-solid fa-spinner animate-spin"></i> : t('writing.publishingPanel.add')}
                             </button>
                         </div>
                     </div>
@@ -182,7 +184,7 @@ const PublishingPanel: React.FC<PublishingPanelProps> = ({
                     onClick={() => setIsMetaExpanded(!isMetaExpanded)}
                 >
                     <h5 className="text-[10px] font-black uppercase tracking-[0.2rem] flex items-center gap-3 italic">
-                        <i className="fa-solid fa-circle-info text-indigo-400"></i> 稿件元数据
+                        <i className="fa-solid fa-circle-info text-indigo-400"></i> {t('writing.publishingPanel.metaSection')}
                     </h5>
                     <i className={`fa-solid ${isMetaExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-[10px] opacity-40 group-hover:opacity-100`}></i>
                 </div>
@@ -190,11 +192,11 @@ const PublishingPanel: React.FC<PublishingPanelProps> = ({
                 {isMetaExpanded && (
                     <div className="mt-3 space-y-4 animate-reveal px-1">
                         <div>
-                            <label className="block text-[8px] font-black text-slate-400 uppercase mb-1.5 px-1">正式稿件标题</label>
+                            <label className="block text-[8px] font-black text-slate-400 uppercase mb-1.5 px-1">{t('writing.publishingPanel.manuscriptTitle')}</label>
                             <textarea className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-black italic outline-none focus:border-indigo-500 shadow-sm resize-none h-20" value={manuscriptMeta.title} onChange={e => onUpdateMeta({ ...manuscriptMeta, title: e.target.value })} />
                         </div>
                         <div>
-                            <label className="block text-[8px] font-black text-slate-400 uppercase mb-1.5 px-1">索引关键词</label>
+                            <label className="block text-[8px] font-black text-slate-400 uppercase mb-1.5 px-1">{t('writing.publishingPanel.keywords')}</label>
                             <input className="w-full bg-white border border-slate-200 rounded-xl p-3 text-[11px] font-bold outline-none focus:border-indigo-500 shadow-sm" value={manuscriptMeta.keywords} onChange={e => onUpdateMeta({ ...manuscriptMeta, keywords: e.target.value })} placeholder="Keyword 1, Keyword 2..." />
                         </div>
                     </div>
@@ -207,7 +209,7 @@ const PublishingPanel: React.FC<PublishingPanelProps> = ({
                     onClick={() => setIsAuthorsExpanded(!isAuthorsExpanded)}
                 >
                     <h5 className="text-[10px] font-black uppercase tracking-[0.2rem] flex items-center gap-3 italic">
-                        <i className="fa-solid fa-user-group text-emerald-400"></i> 作者贡献
+                        <i className="fa-solid fa-user-group text-emerald-400"></i> {t('writing.publishingPanel.authorsSection')}
                     </h5>
                     <i className={`fa-solid ${isAuthorsExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-[10px] opacity-40`}></i>
                 </div>
@@ -217,14 +219,14 @@ const PublishingPanel: React.FC<PublishingPanelProps> = ({
                         <div className="bg-indigo-600/5 rounded-xl border-2 border-dashed border-indigo-200 p-4 mb-4">
                             <div className="flex justify-between items-center mb-3">
                                 <div>
-                                    <h6 className="text-[9px] font-black text-indigo-700 uppercase tracking-widest leading-none">AI 贡献审计 (CRediT Analysis)</h6>
-                                    <p className="text-[7px] font-bold text-slate-400 uppercase mt-1">基于工作流自动分析建议</p>
+                                    <h6 className="text-[9px] font-black text-indigo-700 uppercase tracking-widest leading-none">{t('writing.publishingPanel.creditAnalysis')}</h6>
+                                    <p className="text-[7px] font-bold text-slate-400 uppercase mt-1">{t('writing.publishingPanel.creditSub')}</p>
                                 </div>
                                 <button
                                     onClick={() => setShowContributionMatrix(!showContributionMatrix)}
                                     className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase transition-all shadow-sm ${showContributionMatrix ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 border border-indigo-100 hover:bg-indigo-50'}`}
                                 >
-                                    {showContributionMatrix ? '收起' : '分析'}
+                                    {showContributionMatrix ? t('writing.publishingPanel.collapse') : t('writing.publishingPanel.analyze')}
                                 </button>
                             </div>
 
@@ -246,17 +248,17 @@ const PublishingPanel: React.FC<PublishingPanelProps> = ({
 
                         <div className="flex justify-between items-center mb-3 px-1">
                             <button onClick={() => setShowTeamImport(!showTeamImport)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition-all shadow-sm border ${showTeamImport ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-100'}`}>
-                                <i className="fa-solid fa-id-card-clip"></i> 人力矩阵导入
+                                <i className="fa-solid fa-id-card-clip"></i> {t('writing.publishingPanel.teamImport')}
                             </button>
                             <button onClick={handleAddAuthor} className="text-[8px] font-black text-slate-400 hover:text-indigo-600 flex items-center gap-1 transition-colors">
-                                <i className="fa-solid fa-plus-circle"></i> 新增作者
+                                <i className="fa-solid fa-plus-circle"></i> {t('writing.publishingPanel.addAuthor')}
                             </button>
                         </div>
 
                         {showTeamImport && (
                             <div className="bg-slate-900 p-4 rounded-xl border border-white/5 mb-4 animate-reveal shadow-xl">
                                 <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                    <i className="fa-solid fa-bolt"></i> 团队矩阵成员池
+                                    <i className="fa-solid fa-bolt"></i> {t('writing.publishingPanel.teamPool')}
                                 </p>
                                 <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
                                     {teamMembers.map(member => (
@@ -300,12 +302,12 @@ const PublishingPanel: React.FC<PublishingPanelProps> = ({
                                             </div>
                                             <div className="min-w-0">
                                                 <span className="text-[12px] font-black text-slate-800 truncate block leading-none">
-                                                    {author.name || '未录入姓名'}
+                                                    {author.name || t('writing.publishingPanel.noName')}
                                                     {author.isCoFirst && <span className="ml-1 text-emerald-500 font-black">†</span>}
                                                     {author.isCorresponding && <span className="ml-1 text-rose-500 font-black">*</span>}
                                                 </span>
                                                 <span className="text-[7.5px] font-black text-slate-400 truncate block uppercase mt-1 tracking-tight">
-                                                    {author.affiliation || '机构信息未对标'}
+                                                    {author.affiliation || t('writing.publishingPanel.noAffiliation')}
                                                 </span>
                                             </div>
                                         </div>
@@ -321,15 +323,15 @@ const PublishingPanel: React.FC<PublishingPanelProps> = ({
                                         <div className="mt-4 space-y-4 animate-reveal border-t border-slate-100 pt-4">
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div>
-                                                    <label className="block text-[7.5px] font-black text-slate-400 uppercase mb-1 px-1">作者姓名</label>
+                                                    <label className="block text-[7.5px] font-black text-slate-400 uppercase mb-1 px-1">{t('writing.publishingPanel.authorName')}</label>
                                                     <input className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-[10.5px] font-black outline-none" value={author.name} onChange={e => handleUpdateAuthor(author.id, { name: e.target.value })} />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[7.5px] font-black text-slate-400 uppercase mb-1 px-1">电子邮箱</label>
+                                                    <label className="block text-[7.5px] font-black text-slate-400 uppercase mb-1 px-1">{t('writing.publishingPanel.email')}</label>
                                                     <input className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-[10.5px] font-black outline-none" value={author.email} onChange={e => handleUpdateAuthor(author.id, { email: e.target.value })} />
                                                 </div>
                                                 <div className="col-span-2">
-                                                    <label className="block text-[7.5px] font-black text-slate-400 uppercase mb-1 px-1">所属机构 (AFFILIATION)</label>
+                                                    <label className="block text-[7.5px] font-black text-slate-400 uppercase mb-1 px-1">{t('writing.publishingPanel.affiliation')}</label>
                                                     <textarea className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-[9.5px] font-bold outline-none resize-none h-16" value={author.affiliation} onChange={e => handleUpdateAuthor(author.id, { affiliation: e.target.value })} />
                                                 </div>
                                             </div>
@@ -339,13 +341,13 @@ const PublishingPanel: React.FC<PublishingPanelProps> = ({
                                                     onClick={() => handleUpdateAuthor(author.id, { isCoFirst: !author.isCoFirst })}
                                                     className={`flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all border flex items-center justify-center gap-1.5 ${author.isCoFirst ? 'bg-emerald-600 text-white border-emerald-600 shadow-md' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
                                                 >
-                                                    共同第一 (†)
+                                                    {t('writing.publishingPanel.coFirst')}
                                                 </button>
                                                 <button
                                                     onClick={() => handleUpdateAuthor(author.id, { isCorresponding: !author.isCorresponding })}
                                                     className={`flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all border flex items-center justify-center gap-1.5 ${author.isCorresponding ? 'bg-rose-600 text-white border-rose-600 shadow-md' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
                                                 >
-                                                    通讯作者 (*)
+                                                    {t('writing.publishingPanel.corresponding')}
                                                 </button>
                                             </div>
                                         </div>
@@ -359,10 +361,10 @@ const PublishingPanel: React.FC<PublishingPanelProps> = ({
 
             <div className="space-y-3 mt-auto pt-4 border-t border-slate-100 no-print">
                 <button onClick={onExportWord} disabled={isProcessing} className="w-full py-4 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase shadow-lg hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-3 group">
-                    {isProcessing ? <i className="fa-solid fa-spinner animate-spin"></i> : <><i className="fa-solid fa-file-word text-base group-hover:scale-110 transition-transform"></i> 生成标准化 WORD 稿件</>}
+                    {isProcessing ? <i className="fa-solid fa-spinner animate-spin"></i> : <><i className="fa-solid fa-file-word text-base group-hover:scale-110 transition-transform"></i> {t('writing.publishingPanel.exportWord')}</>}
                 </button>
                 <button onClick={onExportPackage} disabled={isProcessing} className="w-full py-4 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg hover:bg-indigo-600 transition-all active:scale-95 flex items-center justify-center gap-3 group">
-                    {isProcessing ? <i className="fa-solid fa-spinner animate-spin"></i> : <><i className="fa-solid fa-file-export text-base group-hover:scale-110 transition-transform"></i> LATEX 完整投稿包</>}
+                    {isProcessing ? <i className="fa-solid fa-spinner animate-spin"></i> : <><i className="fa-solid fa-file-export text-base group-hover:scale-110 transition-transform"></i> {t('writing.publishingPanel.exportLatex')}</>}
                 </button>
             </div>
         </div>

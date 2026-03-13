@@ -4,6 +4,17 @@ import { ResearchProject, ExperimentLog, TransformationProposal, LogStatus, Mile
 import { diagnoseExperimentLog, summarizeExperimentLog, analyzeMechanism, generateNarrativeBriefing, generateMilestonesAI, generateMilestonesFromImageAI } from '../../services/gemini';
 import { analyzeLogMechanism } from '../../services/gemini/analysis';
 
+/**
+ * 智能去重：对同一条实验记录的同类文档（如 [AI审计]），移除旧版本后追加新版本。
+ * @param existingDocs 当前已有文档列表
+ * @param logId 实验记录 ID
+ * @param typePrefix 文档类型前缀，如 '[AI审计]'、'[总结]'、'[机理]'
+ * @returns 去除了同 logId + 同类型旧文档后的列表
+ */
+const deduplicateDocs = (existingDocs: any[], logId: string, typePrefix: string): any[] => {
+  return existingDocs.filter(d => !(d.sourceLogId === logId && d.title?.startsWith(typePrefix)));
+};
+
 /** 将任意日期字符串标准化为 YYYY-MM-DD（兼容 AI 返回的各种格式） */
 const normalizeDateStr = (d: string | undefined): string => {
   if (!d) return new Date().toISOString().split('T')[0];
@@ -40,7 +51,7 @@ export const useAiAndProposalActions = ({
             const updatedMilestones = project.milestones.map(m => ({
               ...m,
               logs: m.logs.map(l => l.id === log.id ? { ...l, auditInsight: result.insight, status: (result.isAnomaly ? 'Anomaly' : 'Verified') as LogStatus } : l),
-              ...(m.id === ownerMilestone?.id && { savedDocuments: [newDoc, ...(m.savedDocuments || [])] })
+              ...(m.id === ownerMilestone?.id && { savedDocuments: [newDoc, ...deduplicateDocs(m.savedDocuments || [], log.id, '[AI审计]')] })
             }));
             onUpdate({ ...project, milestones: updatedMilestones });
             showToast({ message: "AI 审计完成", type: 'success' });
@@ -68,7 +79,7 @@ export const useAiAndProposalActions = ({
             const updatedMilestones = project.milestones.map(m => ({
               ...m,
               logs: m.logs.map(l => l.id === log.id ? { ...l, summaryInsight: summary } : l),
-              ...(m.id === ownerMilestone?.id && { savedDocuments: [newDoc, ...(m.savedDocuments || [])] })
+              ...(m.id === ownerMilestone?.id && { savedDocuments: [newDoc, ...deduplicateDocs(m.savedDocuments || [], log.id, '[总结]')] })
             }));
             onUpdate({ ...project, milestones: updatedMilestones });
             showToast({ message: "记录总结完成", type: 'success' });
@@ -97,7 +108,7 @@ export const useAiAndProposalActions = ({
             const updatedMilestones = project.milestones.map(m => ({
               ...m,
               logs: m.logs.map(l => l.id === log.id ? { ...l, mechanismInsight: analysisResult } : l),
-              ...(m.id === ownerMilestone?.id && { savedDocuments: [newDoc, ...(m.savedDocuments || [])] })
+              ...(m.id === ownerMilestone?.id && { savedDocuments: [newDoc, ...deduplicateDocs(m.savedDocuments || [], log.id, '[机理]')] })
             }));
             onUpdate({ ...project, milestones: updatedMilestones });
             showToast({ message: "机理推导完成", type: 'success' });
@@ -149,6 +160,18 @@ export const useAiAndProposalActions = ({
           if (auditResult) newDocs.push({ id: `audit_${log.id}_${Date.now() + 1}`, timestamp, title: `[AI审计] ${logTitlePrefix}`, content: auditResult, sourceLogContent: log.content, sourceLogId: log.id, sourceLogIds: [log.id] });
           if (mechanismResult) newDocs.push({ id: `mech_${log.id}_${Date.now() + 2}`, timestamp, title: `[机理] ${logTitlePrefix}`, content: mechanismResult, sourceLogContent: log.content, sourceLogId: log.id, sourceLogIds: [log.id] });
 
+          // 智能去重：先移除同log的旧同类文档再追加新版本
+          const dedupeTypes = ['[总结]', '[AI审计]', '[机理]'];
+          const deduplicatedBase = (docs: any[]) => {
+            let result = docs;
+            dedupeTypes.forEach(prefix => {
+              if (newDocs.some(d => d.title?.startsWith(prefix))) {
+                result = deduplicateDocs(result, log.id, prefix);
+              }
+            });
+            return result;
+          };
+
           const updatedMilestones = project.milestones.map(m => ({
             ...m,
             logs: m.logs.map(l => l.id === log.id ? {
@@ -157,7 +180,7 @@ export const useAiAndProposalActions = ({
               ...(auditResult && { auditInsight: auditResult, status: auditStatus as any }),
               ...(mechanismResult && { mechanismInsight: mechanismResult })
             } : l),
-            ...(m.id === ownerMilestone?.id && { savedDocuments: [...newDocs, ...(m.savedDocuments || [])] })
+            ...(m.id === ownerMilestone?.id && { savedDocuments: [...newDocs, ...deduplicatedBase(m.savedDocuments || [])] })
           }));
           onUpdate({ ...project, milestones: updatedMilestones });
 

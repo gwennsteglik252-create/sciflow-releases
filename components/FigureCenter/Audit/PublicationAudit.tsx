@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useProjectContext } from '../../../context/ProjectContext';
 import { runVisualComplianceAudit, generateVisualFixes } from '../../../services/gemini/analysis';
+import { useTranslation } from '../../../locales/useTranslation';
 
 type JournalTarget = 'nature' | 'science' | 'jacs' | 'cell';
 type AuditScope = 'all' | 'assembly' | 'structural' | 'summary' | 'generative' | 'timeline' | 'tree' | 'sankey';
@@ -16,6 +17,7 @@ interface AuditIssue {
 
 export const PublicationAudit: React.FC = () => {
     const { projects, setProjects, showToast, activeTheme } = useProjectContext();
+    const { t } = useTranslation();
     const [journal, setJournal] = useState<JournalTarget>('nature');
     const [scope, setScope] = useState<AuditScope>('all');
     const [isScanning, setIsScanning] = useState(false);
@@ -28,19 +30,19 @@ export const PublicationAudit: React.FC = () => {
     const activeProject = useMemo(() => projects[0], [projects]);
 
     const SCOPE_CONFIG = [
-        { id: 'all', label: '全栈资产', icon: 'fa-layer-group', desc: '扫描整个项目的所有视觉输出' },
-        { id: 'assembly', label: '拼版画布', icon: 'fa-table-cells-large', desc: '针对 Figure 1 组合排版审计' },
-        { id: 'structural', label: '逻辑结构', icon: 'fa-diagram-project', desc: '针对流程图/框架图的逻辑校验' },
-        { id: 'summary', label: '综述圆环', icon: 'fa-circle-nodes', desc: '针对 Graphic Abstract 综述图审计' },
-        { id: 'timeline', label: '演进轨迹', icon: 'fa-timeline', desc: '针对成果演变时间轴的合规性检查' },
-        { id: 'generative', label: 'AI 原生图', icon: 'fa-robot', desc: '针对 3D 渲染图的物理真度检查' },
-        { id: 'tree', label: '分类树', icon: 'fa-sitemap', desc: '针对分类层级结构的逻辑完整性与排版审计' },
-        { id: 'sankey', label: '桑基图', icon: 'fa-diagram-sankey', desc: '针对桑基流量图的数据一致性与视觉审计' }
+        { id: 'all', label: t('figureCenter.audit.scopeAll'), icon: 'fa-layer-group', desc: t('figureCenter.audit.scopeAllDesc') },
+        { id: 'assembly', label: t('figureCenter.audit.scopeAssembly'), icon: 'fa-table-cells-large', desc: t('figureCenter.audit.scopeAssemblyDesc') },
+        { id: 'structural', label: t('figureCenter.audit.scopeStructural'), icon: 'fa-diagram-project', desc: t('figureCenter.audit.scopeStructuralDesc') },
+        { id: 'summary', label: t('figureCenter.audit.scopeSummary'), icon: 'fa-circle-nodes', desc: t('figureCenter.audit.scopeSummaryDesc') },
+        { id: 'timeline', label: t('figureCenter.audit.scopeTimeline'), icon: 'fa-timeline', desc: t('figureCenter.audit.scopeTimelineDesc') },
+        { id: 'generative', label: t('figureCenter.audit.scopeGenerative'), icon: 'fa-robot', desc: t('figureCenter.audit.scopeGenerativeDesc') },
+        { id: 'tree', label: t('figureCenter.audit.scopeTree'), icon: 'fa-sitemap', desc: t('figureCenter.audit.scopeTreeDesc') },
+        { id: 'sankey', label: t('figureCenter.audit.scopeSankey'), icon: 'fa-diagram-sankey', desc: t('figureCenter.audit.scopeSankeyDesc') }
     ];
 
     const handleRunAudit = async () => {
         if (!activeProject) {
-            showToast({ message: "未检测到项目数据，请先建立分析项目", type: 'info' });
+            showToast({ message: t('figureCenter.audit.noProjectData'), type: 'info' });
             return;
         }
         setIsScanning(true);
@@ -64,12 +66,12 @@ export const PublicationAudit: React.FC = () => {
         try {
             const results = await runVisualComplianceAudit(activeProject, journal, scope, extraContext);
             setAuditResults(results);
-            showToast({ message: `针对 [${SCOPE_CONFIG.find(s => s.id === scope)?.label}] 的合规审计完成`, type: 'success' });
+            showToast({ message: t('figureCenter.audit.auditDone').replace('{scope}', SCOPE_CONFIG.find(s => s.id === scope)?.label || ''), type: 'success' });
         } catch (e) {
-            showToast({ message: "审计引擎连接异常", type: 'error' });
-            // 回退到本地演示数据
+            showToast({ message: t('figureCenter.audit.auditError'), type: 'error' });
+            // Fallback to local demo data
             setAuditResults([
-                { id: 'mock1', type: 'color', severity: 'warning', message: '对比度不足', suggestion: '建议调整圆环图第二层配色以符合色盲友好标准。', targetName: 'Summary Infographic' }
+                { id: 'mock1', type: 'color', severity: 'warning', message: t('figureCenter.audit.contrastInsufficient'), suggestion: t('figureCenter.audit.contrastSuggestion'), targetName: 'Summary Infographic' }
             ]);
         } finally {
             setIsScanning(false);
@@ -81,13 +83,13 @@ export const PublicationAudit: React.FC = () => {
      */
     const handleAutoOptimize = async () => {
         if (!activeProject) {
-            showToast({ message: "未检测到项目数据", type: 'info' });
+            showToast({ message: t('figureCenter.audit.noProjectShort'), type: 'info' });
             return;
         }
         if (!auditResults || auditResults.length === 0) return;
 
         setIsOptimizing(true);
-        showToast({ message: "AI 正在计算最佳修复补丁并重构视觉 DNA...", type: 'info' });
+        showToast({ message: t('figureCenter.audit.aiOptimizing'), type: 'info' });
 
         try {
             const patchResult = await generateVisualFixes(activeProject, auditResults);
@@ -106,15 +108,15 @@ export const PublicationAudit: React.FC = () => {
                     }
                     return p;
                 }));
-                showToast({ message: `自动调优完成：${patchResult.optimizationSummary}`, type: 'success' });
+                showToast({ message: t('figureCenter.audit.optimizeDone').replace('{summary}', patchResult.optimizationSummary), type: 'success' });
             } else {
                 // 模拟优化完成
                 await new Promise(resolve => setTimeout(resolve, 1500));
-                showToast({ message: "已通过启发式算法优化字体与间距对标", type: 'success' });
+                showToast({ message: t('figureCenter.audit.optimizeFallback'), type: 'success' });
             }
             setAuditResults([]); // 清空问题列表
         } catch (e) {
-            showToast({ message: "优化执行失败，请手动修正", type: 'error' });
+            showToast({ message: t('figureCenter.audit.optimizeFailed'), type: 'error' });
         } finally {
             setIsOptimizing(false);
         }
@@ -137,7 +139,7 @@ export const PublicationAudit: React.FC = () => {
 
                     <section className="space-y-4">
                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
-                            <i className="fa-solid fa-paper-plane text-rose-500"></i> 目标投稿期刊
+                            <i className="fa-solid fa-paper-plane text-rose-500"></i> {t('figureCenter.audit.targetJournal')}
                         </h4>
                         <div className="grid grid-cols-2 gap-2">
                             {(['nature', 'science', 'jacs', 'cell'] as const).map(j => (
@@ -154,7 +156,7 @@ export const PublicationAudit: React.FC = () => {
 
                     <section className="space-y-4">
                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
-                            <i className="fa-solid fa-crosshairs text-indigo-500"></i> 审计目标画布
+                            <i className="fa-solid fa-crosshairs text-indigo-500"></i> {t('figureCenter.audit.auditTarget')}
                         </h4>
                         <div className="flex flex-col gap-2">
                             {SCOPE_CONFIG.map(s => (
@@ -184,13 +186,13 @@ export const PublicationAudit: React.FC = () => {
                         className="w-full py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase shadow-xl hover:bg-black transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
                     >
                         {isScanning ? <i className="fa-solid fa-circle-notch animate-spin"></i> : <i className="fa-solid fa-magnifying-glass-chart"></i>}
-                        启动深度审计
+                        {t('figureCenter.audit.startDeepAudit')}
                     </button>
                 </div>
 
                 {(auditResults || isOptimizing) && (
                     <div className={`p-8 rounded-[2.5rem] border shadow-sm text-center animate-reveal ${isLightMode ? 'bg-white border-slate-200' : 'bg-slate-800/80 border-white/5'}`}>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">合规质量得分</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{t('figureCenter.audit.qualityScore')}</p>
                         <div className="relative inline-block">
                             <span className={`text-6xl font-black italic tracking-tighter ${overallScore > 80 ? 'text-emerald-500' : overallScore > 50 ? 'text-amber-500' : 'text-rose-500'}`}>{overallScore}</span>
                             <span className="absolute -top-1 -right-4 text-slate-300 font-bold text-sm">%</span>
@@ -213,7 +215,7 @@ export const PublicationAudit: React.FC = () => {
                             </div>
                         </div>
                         <div className="text-center space-y-2">
-                            <h4 className={`text-xl font-black uppercase italic tracking-widest ${isLightMode ? 'text-slate-800' : 'text-white'}`}>正在分析项目视觉特征</h4>
+                            <h4 className={`text-xl font-black uppercase italic tracking-widest ${isLightMode ? 'text-slate-800' : 'text-white'}`}>{t('figureCenter.audit.scanning')}</h4>
                             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Collecting visual DNA and Checking Compliance...</p>
                         </div>
                     </div>
@@ -226,7 +228,7 @@ export const PublicationAudit: React.FC = () => {
                             </div>
                         </div>
                         <div className="text-center space-y-2">
-                            <h4 className={`text-xl font-black uppercase italic tracking-widest ${isLightMode ? 'text-slate-800' : 'text-white'}`}>正在应用 AI 优化方案</h4>
+                            <h4 className={`text-xl font-black uppercase italic tracking-widest ${isLightMode ? 'text-slate-800' : 'text-white'}`}>{t('figureCenter.audit.optimizingTitle')}</h4>
                             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Reconstructing Visual Assets...</p>
                         </div>
                     </div>
@@ -235,7 +237,7 @@ export const PublicationAudit: React.FC = () => {
                         <div className="flex justify-between items-center mb-8 px-2 border-b border-slate-100 pb-4">
                             <div>
                                 <h3 className="text-2xl font-black text-slate-800 uppercase italic flex items-center gap-3">
-                                    <i className="fa-solid fa-list-check text-indigo-500"></i> 合规性诊断报告
+                                    <i className="fa-solid fa-list-check text-indigo-500"></i> {t('figureCenter.audit.reportTitle')}
                                 </h3>
                                 <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">Total {auditResults.length} issues detected across the project</p>
                             </div>
@@ -244,7 +246,7 @@ export const PublicationAudit: React.FC = () => {
                                 disabled={auditResults.length === 0}
                                 className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase shadow-lg hover:bg-black transition-all active:scale-95 disabled:opacity-30"
                             >
-                                一键优化所有合规建议
+                                {t('figureCenter.audit.optimizeAll')}
                             </button>
                         </div>
 
@@ -266,7 +268,7 @@ export const PublicationAudit: React.FC = () => {
                                         <div className="p-5 bg-slate-50 rounded-[1.8rem] border border-slate-100 group-hover:bg-indigo-50/30 transition-colors">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <i className="fa-solid fa-wand-magic-sparkles text-indigo-500 text-[10px]"></i>
-                                                <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">AI 修复建议</span>
+                                                <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">{t('figureCenter.audit.aiFix')}</span>
                                             </div>
                                             <p className="text-[12px] font-medium text-slate-600 leading-relaxed italic text-justify">“ {issue.suggestion} ”</p>
                                         </div>
@@ -278,7 +280,7 @@ export const PublicationAudit: React.FC = () => {
                                 <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-inner">
                                     <i className="fa-solid fa-check-double text-4xl"></i>
                                 </div>
-                                <h4 className="text-xl font-black text-slate-800 uppercase italic">资产已处于最优合规状态</h4>
+                                <h4 className="text-xl font-black text-slate-800 uppercase italic">{t('figureCenter.audit.allCompliant')}</h4>
                                 <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">All visual elements aligned with target journal standards</p>
                             </div>
                         )}
@@ -289,7 +291,7 @@ export const PublicationAudit: React.FC = () => {
                             <i className="fa-solid fa-shield-virus text-5xl text-slate-200"></i>
                         </div>
                         <div className="text-center">
-                            <p className="text-xl font-black uppercase tracking-[0.5rem] italic text-slate-800">等待启动合规审计</p>
+                            <p className="text-xl font-black uppercase tracking-[0.5rem] italic text-slate-800">{t('figureCenter.audit.waitingAudit')}</p>
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 text-center">AI IS READY TO SCAN YOUR VISUAL ASSETS</p>
                         </div>
                     </div>

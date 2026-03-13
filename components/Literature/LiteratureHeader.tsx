@@ -19,7 +19,7 @@ interface LiteratureHeaderProps {
     isSummarizing: boolean;
     canSummarize: boolean;
     isReturnMode?: boolean;
-    returnType?: 'writing' | 'project' | 'matrix';
+    returnType?: 'writing' | 'project' | 'matrix' | 'brain';
     searchFilters: SearchFilters;
     onUpdateFilters: (filters: SearchFilters) => void;
     onOpenBibTeX: () => void;
@@ -49,9 +49,9 @@ const LiteratureHeader: React.FC<LiteratureHeaderProps> = ({
                 {/* Left: Navigation & Title */}
                 <div className="flex items-center gap-3 shrink-0">
                     {isReturnMode ? (
-                        <button onClick={onBackToProjects} className={`px-6 py-3 rounded-2xl flex items-center justify-center transition-all active:scale-95 shadow-md ${returnType === 'writing' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-violet-600 hover:bg-violet-700'} text-white gap-2`}>
-                            <i className={`fa-solid ${returnType === 'writing' ? 'fa-pen-nib' : returnType === 'project' ? 'fa-vials' : 'fa-flask'} text-xs`}></i>
-                            <span className="text-[11px] font-black uppercase">返回{returnType === 'writing' ? '写作' : returnType === 'project' ? '课题' : '矩阵'}</span>
+                        <button onClick={onBackToProjects} className={`px-6 py-3 rounded-2xl flex items-center justify-center transition-all active:scale-95 shadow-md ${returnType === 'writing' ? 'bg-indigo-600 hover:bg-indigo-700' : returnType === 'brain' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-violet-600 hover:bg-violet-700'} text-white gap-2`}>
+                            <i className={`fa-solid ${returnType === 'writing' ? 'fa-pen-nib' : returnType === 'brain' ? 'fa-brain' : returnType === 'project' ? 'fa-vials' : 'fa-flask'} text-xs`}></i>
+                            <span className="text-[11px] font-black uppercase">返回{returnType === 'writing' ? '写作' : returnType === 'brain' ? '中心大脑' : returnType === 'project' ? '课题' : '矩阵'}</span>
                         </button>
                     ) : (
                         <button onClick={onBackToProjects} className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all active:scale-90 shadow-md ${isLightMode ? 'text-slate-400 bg-slate-100 border-slate-200 hover:text-indigo-600' : 'text-slate-400 bg-white/5 border-white/10 hover:text-indigo-600'}`}>

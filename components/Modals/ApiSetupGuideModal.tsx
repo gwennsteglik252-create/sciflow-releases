@@ -163,7 +163,14 @@ const ApiSetupGuideModal: React.FC<ApiSetupGuideModalProps> = ({ show, onClose, 
 
                                             <div className="flex gap-2 pt-1">
                                                 <button
-                                                    onClick={() => window.open(provider.url, '_blank')}
+                                                    onClick={() => {
+                                                    const w = window as any;
+                                                    if (w.electron?.openExternal) {
+                                                        w.electron.openExternal(provider.url);
+                                                    } else {
+                                                        window.open(provider.url, '_blank');
+                                                    }
+                                                }}
                                                     className="flex-1 py-2.5 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-xl hover:bg-indigo-700 transition-all active:scale-95 shadow-sm"
                                                 >
                                                     <i className="fa-solid fa-arrow-up-right-from-square mr-1.5"></i>

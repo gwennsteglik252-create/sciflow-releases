@@ -4,6 +4,7 @@ import { ResearchProject, ProjectTable, Literature, ProjectLatexSnippet } from '
 import { TableEditorModal } from './TableEditorModal';
 import { LatexEditorModal } from './LatexEditorModal';
 import katex from 'katex';
+import { useTranslation } from '../../../locales/useTranslation';
 
 interface MediaPanelProps {
   project: ResearchProject | undefined;
@@ -35,6 +36,7 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
   orderedCitations, activeTemplateId, onCiteLiterature, onAddNode
 }) => {
   const [activeTab, setActiveTab] = useState<'images' | 'tables' | 'latex'>(activeSubTab || 'images');
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceFileInputRef = useRef<HTMLInputElement>(null);
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -138,19 +140,19 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
           onClick={() => handleTabChange('images')}
           className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 ${activeTab === 'images' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
         >
-          <i className="fa-solid fa-image"></i> 图片素材
+          <i className="fa-solid fa-image"></i> {t('writing.mediaPanel.tabImages')}
         </button>
         <button
           onClick={() => handleTabChange('tables')}
           className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 ${activeTab === 'tables' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
         >
-          <i className="fa-solid fa-table"></i> 科学表格
+          <i className="fa-solid fa-table"></i> {t('writing.mediaPanel.tabTables')}
         </button>
         <button
           onClick={() => handleTabChange('latex')}
           className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 ${activeTab === 'latex' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
         >
-          <i className="fa-solid fa-square-root-variable"></i> 公式
+          <i className="fa-solid fa-square-root-variable"></i> {t('writing.mediaPanel.tabLatex')}
         </button>
       </div>
 
@@ -161,13 +163,13 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
             className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-2xl text-[10px] font-black uppercase shadow-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform group shrink-0"
           >
             <i className="fa-solid fa-paintbrush text-sm group-hover:rotate-12 transition-transform"></i>
-            <span>启动 Scientific Figure Studio</span>
+            <span>{t('writing.mediaPanel.launchStudio')}</span>
           </button>
 
           <div className="p-4 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col gap-3 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all group bg-slate-50/50 shrink-0">
             <input
               className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[10px] font-bold outline-none border border-transparent focus:border-indigo-300 text-slate-600 placeholder:text-slate-400"
-              placeholder="输入图片描述 (可选)..."
+              placeholder={t('writing.mediaPanel.uploadDesc')}
               value={uploadDesc}
               onChange={(e) => setUploadDesc(e.target.value)}
             />
@@ -178,7 +180,7 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
               <div className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
                 <i className="fa-solid fa-cloud-arrow-up"></i>
               </div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-indigo-500">点击上传文件</p>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-indigo-500">{t('writing.mediaPanel.clickUpload')}</p>
             </div>
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
             <input type="file" ref={replaceFileInputRef} className="hidden" accept="image/*" onChange={(e) => {
@@ -192,7 +194,7 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
           </div>
 
           <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
-            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">项目媒体库</p>
+            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">{t('writing.mediaPanel.mediaLibrary')}</p>
             <div className="grid grid-cols-2 gap-3 pb-4">
               {projectMedia.map((file, idx) => {
                 const figNum = getFigureNumber(file.refId);
@@ -218,7 +220,7 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
                             className="w-full py-1 rounded-lg bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-500 transition-all shadow-sm gap-2 mb-1"
                           >
                             <i className="fa-solid fa-location-crosshairs text-[9px]"></i>
-                            <span className="text-[7px] font-black uppercase">定位文中引用</span>
+                            <span className="text-[7px] font-black uppercase">{t('writing.mediaPanel.locateCitation')}</span>
                           </button>
                         )}
 
@@ -228,7 +230,7 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
                             className="py-1.5 rounded-lg bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-500 transition-all shadow-sm gap-1.5"
                           >
                             <i className="fa-solid fa-image text-[9px]"></i>
-                            <span className="text-[7px] font-black uppercase">单栏插入</span>
+                            <span className="text-[7px] font-black uppercase">{t('writing.mediaPanel.singleColInsert')}</span>
                           </button>
 
                           <button
@@ -236,7 +238,7 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
                             className="py-1.5 rounded-lg bg-indigo-800 text-white flex items-center justify-center hover:bg-black transition-all shadow-sm gap-1.5"
                           >
                             <i className="fa-solid fa-arrows-left-right text-[9px]"></i>
-                            <span className="text-[7px] font-black uppercase">跨栏插入</span>
+                            <span className="text-[7px] font-black uppercase">{t('writing.mediaPanel.fullWidthInsert')}</span>
                           </button>
                         </div>
 
@@ -256,13 +258,13 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
                               onInsertText(cleanText);
                             } else {
                               console.warn("未找到 [Analysis] 标签或其内容为空。原始 description: ", file.description);
-                              alert('请先点击上方画笔图标进入深度编辑，由 AI 联合生成深度描述后再插入。');
+                              alert(t('writing.mediaPanel.noAnalysisAlert'));
                             }
                           }}
                           className="w-full py-1.5 rounded-lg bg-indigo-50/20 text-indigo-100 hover:bg-indigo-500 hover:text-white border border-indigo-400/30 transition-all shadow-sm flex items-center justify-center gap-1.5 mt-0.5"
                         >
                           <i className="fa-solid fa-microscope text-[9px]"></i>
-                          <span className="text-[7px] font-black uppercase">插入深度描述</span>
+                          <span className="text-[7px] font-black uppercase">{t('writing.mediaPanel.insertAnalysis')}</span>
                         </button>
                       </div>
 
@@ -272,7 +274,7 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
                         <button
                           onClick={(e) => { e.stopPropagation(); onOpenFigureStudio(file); }}
                           className="w-8 h-8 rounded-lg bg-white/10 text-white flex items-center justify-center hover:bg-white hover:text-indigo-600 transition-all"
-                          title="编辑"
+                          title={t('writing.mediaPanel.edit')}
                         >
                           <i className="fa-solid fa-pen-to-square text-[10px]"></i>
                         </button>
@@ -283,14 +285,14 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
                             replaceFileInputRef.current?.click();
                           }}
                           className="w-8 h-8 rounded-lg bg-white/10 text-amber-400 flex items-center justify-center hover:bg-amber-500 hover:text-white transition-all"
-                          title="替换图片（保留所有元信息）"
+                          title={t('writing.mediaPanel.replaceImage')}
                         >
                           <i className="fa-solid fa-arrow-right-arrow-left text-[10px]"></i>
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); onDeleteMedia(file.logId, file.fileIndex); }}
                           className="w-8 h-8 rounded-lg bg-white/10 text-rose-400 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
-                          title="删除"
+                          title={t('writing.mediaPanel.delete')}
                         >
                           <i className="fa-solid fa-trash-can text-[10px]"></i>
                         </button>
@@ -302,7 +304,7 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
                     </div>
                     {figNum > 0 && (
                       <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-indigo-600 text-white text-[8px] font-black shadow-sm pointer-events-none z-10">
-                        图 {figNum}
+                        {t('writing.mediaPanel.figLabel')} {figNum}
                       </div>
                     )}
                     {isInserted && (
@@ -315,7 +317,7 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
                 );
               })}
             </div>
-            {projectMedia.length === 0 && <div className="text-center py-10 text-slate-300 text-[10px] italic">暂无媒体文件</div>}
+            {projectMedia.length === 0 && <div className="text-center py-10 text-slate-300 text-[10px] italic">{t('writing.mediaPanel.noMedia')}</div>}
           </div>
         </>
       ) : activeTab === 'tables' ? (
@@ -325,7 +327,7 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
             className="w-full py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase shadow-lg flex items-center justify-center gap-2 hover:bg-emerald-700 transition-transform active:scale-95 group shrink-0 mb-4"
           >
             <i className="fa-solid fa-plus group-hover:rotate-90 transition-transform"></i>
-            <span>创建三线表</span>
+            <span>{t('writing.mediaPanel.createTable')}</span>
           </button>
 
           <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 pb-4">
@@ -344,7 +346,7 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
                   const isInserted = getIsInserted('Table', table.id);
                   const isHighlighted = highlightedResourceId?.includes(table.id);
                   const tableSeqNum = tableSeqMap.get(table.id);
-                  const tableLabelStr = tableSeqNum ? `表 ${tableSeqNum}` : null;
+                  const tableLabelStr = tableSeqNum ? `${t('writing.mediaPanel.tableLabel')} ${tableSeqNum}` : null;
                   return (
                     <div
                       key={table.id}
@@ -364,7 +366,7 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
                         </div>
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           {isInserted && (
-                            <button onClick={() => onFindToken?.('Table', table.id)} className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all flex items-center justify-center shadow-sm" title="定位到文中"><i className="fa-solid fa-location-crosshairs text-[10px]"></i></button>
+                            <button onClick={() => onFindToken?.('Table', table.id)} className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all flex items-center justify-center shadow-sm" title={t('writing.mediaPanel.locateInText')}><i className="fa-solid fa-location-crosshairs text-[10px]"></i></button>
                           )}
                           <button onClick={() => { setEditingTable(table); setShowTableModal(true); }} className="w-7 h-7 rounded-lg bg-slate-50 text-slate-400 hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center shadow-sm"><i className="fa-solid fa-pen text-[10px]"></i></button>
                           <button onClick={() => onDeleteTable(table.id)} className="w-7 h-7 rounded-lg bg-slate-50 text-rose-400 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shadow-sm"><i className="fa-solid fa-trash-can text-[10px]"></i></button>
@@ -376,13 +378,13 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onInsertText(`[Table:${table.id}]`); }}
                           className="flex-1 py-2 bg-slate-50 text-emerald-600 border border-emerald-100 rounded-xl text-[9px] font-black uppercase hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center gap-2"
                         >
-                          <i className="fa-solid fa-table"></i> 单栏插入
+                          <i className="fa-solid fa-table"></i> {t('writing.mediaPanel.tableSingleCol')}
                         </button>
                         <button
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onInsertText(`[Table:${table.id}:Full]`); }}
                           className="flex-1 py-2 bg-slate-50 text-indigo-600 border border-indigo-100 rounded-xl text-[9px] font-black uppercase hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center gap-2"
                         >
-                          <i className="fa-solid fa-arrows-left-right"></i> 通栏插入
+                          <i className="fa-solid fa-arrows-left-right"></i> {t('writing.mediaPanel.tableFullWidth')}
                         </button>
                       </div>
                     </div>
@@ -390,7 +392,7 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
                 });
 
               })() : (
-                <div className="text-center py-10 text-slate-300 text-[10px] italic">暂无保存的表格</div>
+                <div className="text-center py-10 text-slate-300 text-[10px] italic">{t('writing.mediaPanel.noTables')}</div>
               )}
             </div>
           </div>
@@ -402,7 +404,7 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
             className="w-full py-4 bg-violet-600 text-white rounded-2xl text-[10px] font-black uppercase shadow-lg flex items-center justify-center gap-2 hover:bg-violet-700 transition-transform active:scale-95 group shrink-0 mb-4"
           >
             <i className="fa-solid fa-plus group-hover:rotate-90 transition-transform"></i>
-            <span>创建 LATEX 公式</span>
+            <span>{t('writing.mediaPanel.createLatex')}</span>
           </button>
 
           <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 pb-4">
@@ -424,7 +426,7 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
                       </div>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {isInserted && (
-                          <button onClick={() => onFindToken?.('Math', snippet.id)} className="w-7 h-7 rounded-lg bg-violet-50 text-violet-600 hover:bg-violet-600 hover:text-white transition-all flex items-center justify-center shadow-sm" title="定位到文中"><i className="fa-solid fa-location-crosshairs text-[10px]"></i></button>
+                          <button onClick={() => onFindToken?.('Math', snippet.id)} className="w-7 h-7 rounded-lg bg-violet-50 text-violet-600 hover:bg-violet-600 hover:text-white transition-all flex items-center justify-center shadow-sm" title={t('writing.mediaPanel.locateInText')}><i className="fa-solid fa-location-crosshairs text-[10px]"></i></button>
                         )}
                         <button onClick={() => { setEditingSnippet(snippet); setShowLatexModal(true); }} className="w-6 h-6 rounded bg-slate-50 text-slate-400 hover:bg-violet-500 hover:text-white transition-all flex items-center justify-center shadow-sm"><i className="fa-solid fa-pen text-[9px]"></i></button>
                         <button onClick={() => onDeleteSnippet(snippet.id)} className="w-6 h-6 rounded bg-slate-50 text-rose-400 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shadow-sm"><i className="fa-solid fa-trash-can text-[10px]"></i></button>
@@ -440,19 +442,19 @@ const MediaPanel: React.FC<MediaPanelProps> = ({
                         onClick={() => onInsertText(`$${snippet.content}$`)}
                         className="flex-1 py-2 bg-slate-50 text-indigo-600 border border-indigo-100 rounded-xl text-[9px] font-black uppercase hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center gap-1 active:scale-95 shadow-sm"
                       >
-                        行内插入
+                        {t('writing.mediaPanel.inlineInsert')}
                       </button>
                       <button
                         onClick={() => onInsertText(`[Math:${snippet.id}]`)}
                         className="flex-1 py-2 bg-violet-50 text-violet-600 border border-violet-200 rounded-xl text-[9px] font-black uppercase hover:bg-violet-600 hover:text-white transition-all flex items-center justify-center gap-1 active:scale-95 shadow-sm"
                       >
-                        模块插入
+                        {t('writing.mediaPanel.blockInsert')}
                       </button>
                     </div>
                   </div>
                 )
               }) : (
-                <div className="text-center py-10 text-slate-300 text-[10px] italic">暂无保存的公式片段</div>
+                <div className="text-center py-10 text-slate-300 text-[10px] italic">{t('writing.mediaPanel.noSnippets')}</div>
               )}
             </div>
           </div>

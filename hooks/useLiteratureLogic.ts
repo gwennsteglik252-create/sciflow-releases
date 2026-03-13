@@ -117,6 +117,7 @@ export const useLiteratureLogic = ({
   const [isReturnToWriting, setIsReturnToWriting] = useState(false);
   const [isReturnToProject, setIsReturnToProject] = useState(false);
   const [isReturnToMatrix, setIsReturnToMatrix] = useState(false);
+  const [isReturnToBrain, setIsReturnToBrain] = useState(false);
 
   type LocalArchiveEntry = { name: string; path?: string; file?: File };
 
@@ -133,9 +134,22 @@ export const useLiteratureLogic = ({
 
   useEffect(() => {
     if (initialResourceId) {
-      if (initialResourceId.endsWith('_rw')) {
+      if (initialResourceId.endsWith('_rb')) {
+        setIsReturnToBrain(true);
+        setIsReturnToWriting(false);
+        setIsReturnToProject(false);
+        setIsReturnToMatrix(false);
+        const cleanId = initialResourceId.replace('_rb', '');
+        const res = resources.find(r => r.id === cleanId);
+        if (res) {
+          setSelectedItemId(cleanId);
+          setViewMode('list');
+          if (res.type !== activeType) setActiveType(res.type);
+        }
+      } else if (initialResourceId.endsWith('_rw')) {
         setIsReturnToWriting(true);
         setIsReturnToProject(false);
+        setIsReturnToBrain(false);
         const cleanId = initialResourceId.replace('_rw', '');
         const res = resources.find(r => r.id === cleanId);
         if (res) {
@@ -147,6 +161,7 @@ export const useLiteratureLogic = ({
         setIsReturnToProject(true);
         setIsReturnToWriting(false);
         setIsReturnToMatrix(false);
+        setIsReturnToBrain(false);
         const cleanId = initialResourceId.replace('_rp', '');
         const res = resources.find(r => r.id === cleanId);
         if (res) {
@@ -158,6 +173,7 @@ export const useLiteratureLogic = ({
         setIsReturnToMatrix(true);
         setIsReturnToProject(false);
         setIsReturnToWriting(false);
+        setIsReturnToBrain(false);
         const cleanId = initialResourceId.replace('_rm', '');
         const res = resources.find(r => r.id === cleanId);
         if (res) {
@@ -169,6 +185,7 @@ export const useLiteratureLogic = ({
         setIsReturnToWriting(false);
         setIsReturnToProject(false);
         setIsReturnToMatrix(false);
+        setIsReturnToBrain(false);
         const res = resources.find(r => r.id === initialResourceId);
         if (res) {
           setSelectedItemId(initialResourceId);
@@ -180,6 +197,7 @@ export const useLiteratureLogic = ({
       setIsReturnToWriting(false);
       setIsReturnToProject(false);
       setIsReturnToMatrix(false);
+      setIsReturnToBrain(false);
     }
   }, [initialResourceId, resources]);
 
@@ -657,7 +675,7 @@ export const useLiteratureLogic = ({
       renameConfig, setRenameConfig,
       selectedProject, selectedItem, isGeneratingThisItem,
       projectResources, filteredResources, allTags, allCategories,
-      isReturnToWriting, isReturnToProject, isReturnToMatrix,
+      isReturnToWriting, isReturnToProject, isReturnToMatrix, isReturnToBrain,
       currentSearchSources,
       showBibTeXModal, setShowBibTeXModal, isParsingBib,
       showSearchPreview, setShowSearchPreview,

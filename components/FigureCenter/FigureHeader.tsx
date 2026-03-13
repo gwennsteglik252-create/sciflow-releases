@@ -7,6 +7,7 @@ import { useClassificationTree } from '../../hooks/useClassificationTree';
 import { useSummaryInfographic } from './Summary/useSummaryInfographic';
 import { useFigureAssemblyLogic } from '../../hooks/useFigureAssemblyLogic';
 import { useSankeyDesigner } from '../../hooks/useSankeyDesigner';
+import { useTranslation } from '../../locales/useTranslation';
 
 interface FigureHeaderProps {
   activeTab: 'generative' | 'structural' | 'assembly' | 'summary' | 'timeline' | 'tree' | 'audit' | 'sankey';
@@ -26,6 +27,7 @@ export const FigureHeader: React.FC<FigureHeaderProps> = ({
   treeLogic, sankeyLogic, onTemplateClick
 }) => {
   const { showToast } = useProjectContext();
+  const { t } = useTranslation();
   const [showSaveMenu, setShowSaveMenu] = useState(false);
   const saveMenuRef = useRef<HTMLDivElement>(null);
   // 使用 ref 保存最新的 handler，避免 useEffect 闭包过时
@@ -69,7 +71,7 @@ export const FigureHeader: React.FC<FigureHeaderProps> = ({
         sankeyLogic?.handleQuickSave?.();
         break;
       default:
-        showToast({ message: '当前模式暂不支持保存', type: 'info' });
+        showToast({ message: t('figureCenter.header.noSaveSupport'), type: 'info' });
     }
   };
 
@@ -99,7 +101,7 @@ export const FigureHeader: React.FC<FigureHeaderProps> = ({
         sankeyLogic?.handleSaveAs?.();
         break;
       default:
-        showToast({ message: '当前模式暂不支持另存为', type: 'info' });
+        showToast({ message: t('figureCenter.header.noSaveAsSupport'), type: 'info' });
     }
   };
 
@@ -131,7 +133,7 @@ export const FigureHeader: React.FC<FigureHeaderProps> = ({
         sankeyLogic?.setShowLibrary(true);
         break;
       default:
-        showToast({ message: '当前模式暂无方案库', type: 'info' });
+        showToast({ message: t('figureCenter.header.noLibrary'), type: 'info' });
     }
   };
 
@@ -179,7 +181,7 @@ export const FigureHeader: React.FC<FigureHeaderProps> = ({
           <i className="fa-solid fa-wand-magic-sparkles text-lg"></i>
         </div>
         <div>
-          <h2 className="text-lg font-black text-white italic uppercase tracking-tight leading-none">科研绘图中心</h2>
+          <h2 className="text-lg font-black text-white italic uppercase tracking-tight leading-none">{t('figureCenter.header.title')}</h2>
           <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2rem] mt-1">SCIENTIFIC VISUAL ENGINE V3.0</p>
         </div>
       </div>
@@ -189,50 +191,50 @@ export const FigureHeader: React.FC<FigureHeaderProps> = ({
           onClick={() => setActiveTab('generative')}
           className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-2 ${activeTab === 'generative' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
         >
-          <i className="fa-solid fa-robot"></i> AI生成
+          <i className="fa-solid fa-robot"></i> {t('figureCenter.header.tabGenerate')}
         </button>
         <button
           onClick={() => setActiveTab('structural')}
           className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-2 ${activeTab === 'structural' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
         >
-          <i className="fa-solid fa-diagram-project"></i> 结构图
+          <i className="fa-solid fa-diagram-project"></i> {t('figureCenter.header.tabStructural')}
         </button>
         <button
           onClick={() => setActiveTab('timeline')}
           className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-2 ${activeTab === 'timeline' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
         >
-          <i className="fa-solid fa-timeline"></i> 演进
+          <i className="fa-solid fa-timeline"></i> {t('figureCenter.header.tabTimeline')}
         </button>
         <button
           onClick={() => setActiveTab('summary')}
           className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-2 ${activeTab === 'summary' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
         >
-          <i className="fa-solid fa-circle-nodes"></i> 综述
+          <i className="fa-solid fa-circle-nodes"></i> {t('figureCenter.header.tabSummary')}
         </button>
         <button
           onClick={() => setActiveTab('tree')}
           className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-2 ${activeTab === 'tree' ? 'bg-teal-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
         >
-          <i className="fa-solid fa-sitemap"></i> 分类树
+          <i className="fa-solid fa-sitemap"></i> {t('figureCenter.header.tabTree')}
         </button>
         <button
           onClick={() => setActiveTab('sankey')}
           className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-2 ${activeTab === 'sankey' ? 'bg-cyan-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
         >
-          <i className="fa-solid fa-diagram-sankey"></i> 桑基图
+          <i className="fa-solid fa-diagram-sankey"></i> {t('figureCenter.header.tabSankey')}
         </button>
         <button
           onClick={() => setActiveTab('assembly')}
           className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-2 ${activeTab === 'assembly' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
         >
-          <i className="fa-solid fa-table-cells-large"></i> 拼版
+          <i className="fa-solid fa-table-cells-large"></i> {t('figureCenter.header.tabAssembly')}
         </button>
         <div className="w-px h-6 bg-white/10 mx-1 self-center"></div>
         <button
           onClick={() => setActiveTab('audit')}
           className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-2 ${activeTab === 'audit' ? 'bg-rose-600 text-white shadow-lg' : 'text-rose-400 hover:text-rose-300'}`}
         >
-          <i className="fa-solid fa-shield-check"></i> 投稿审计
+          <i className="fa-solid fa-shield-check"></i> {t('figureCenter.header.tabAudit')}
         </button>
       </div>
 
@@ -241,14 +243,14 @@ export const FigureHeader: React.FC<FigureHeaderProps> = ({
           onClick={handleLibraryClick}
           className="px-5 py-2 bg-white/5 border border-white/10 text-slate-300 rounded-xl text-[10px] font-black uppercase hover:bg-white/10 transition-all flex items-center gap-2 active:scale-95 shadow-sm"
         >
-          <i className="fa-solid fa-layer-group"></i> 方案库
+          <i className="fa-solid fa-layer-group"></i> {t('figureCenter.header.library')}
         </button>
         {onTemplateClick && ['structural', 'timeline', 'summary', 'tree'].includes(activeTab) && (
           <button
             onClick={onTemplateClick}
             className="px-5 py-2 bg-white/5 border border-violet-400/30 text-violet-300 rounded-xl text-[10px] font-black uppercase hover:bg-violet-500/20 hover:text-violet-200 transition-all flex items-center gap-2 active:scale-95 shadow-sm"
           >
-            <i className="fa-solid fa-swatchbook"></i> 模板
+            <i className="fa-solid fa-swatchbook"></i> {t('figureCenter.header.template')}
           </button>
         )}
 
@@ -258,18 +260,18 @@ export const FigureHeader: React.FC<FigureHeaderProps> = ({
             {/* 主保存按钮：快速保存 */}
             <button
               onClick={handleQuickSave}
-              title={currentSavedId ? '快速保存（覆盖当前方案）Cmd+S' : '保存项目 Cmd+S'}
+              title={currentSavedId ? t('figureCenter.header.quickSaveTip') : t('figureCenter.header.saveTip')}
               className="pl-4 pr-3 py-2 bg-indigo-600 text-white rounded-l-xl text-[10px] font-black uppercase shadow-xl shadow-indigo-500/30 flex items-center gap-2 border border-indigo-400/50 hover:bg-indigo-700 transition-all active:scale-95"
             >
               <i className={`fa-solid ${currentSavedId ? 'fa-floppy-disk' : 'fa-floppy-disk'}`}></i>
-              {currentSavedId ? '快速保存' : '保存项目'}
+              {currentSavedId ? t('figureCenter.header.quickSave') : t('figureCenter.header.saveProject')}
             </button>
             {/* 分隔线 */}
             <div className="w-px bg-indigo-400/40 self-stretch"></div>
             {/* 下拉箭头 */}
             <button
               onClick={() => setShowSaveMenu(v => !v)}
-              title="更多保存选项"
+              title={t('figureCenter.header.moreOptions')}
               className="px-2 py-2 bg-indigo-600 text-white rounded-r-xl text-[10px] border border-indigo-400/50 hover:bg-indigo-700 transition-all active:scale-95 flex items-center"
             >
               <i className={`fa-solid fa-chevron-down text-[8px] transition-transform ${showSaveMenu ? 'rotate-180' : ''}`}></i>
@@ -283,7 +285,7 @@ export const FigureHeader: React.FC<FigureHeaderProps> = ({
                   className="w-full px-4 py-2.5 text-left text-[10px] font-black uppercase text-slate-200 hover:bg-indigo-600 transition-all flex items-center gap-2.5"
                 >
                   <i className="fa-solid fa-floppy-disk text-indigo-400 w-3.5"></i>
-                  {currentSavedId ? '覆盖保存' : '保存'}
+                  {currentSavedId ? t('figureCenter.header.overwriteSave') : t('figureCenter.header.save')}
                   <span className="ml-auto text-[8px] text-slate-500 normal-case font-normal tracking-normal">⌘S</span>
                 </button>
                 <div className="h-px bg-white/5 mx-3"></div>
@@ -292,7 +294,7 @@ export const FigureHeader: React.FC<FigureHeaderProps> = ({
                   className="w-full px-4 py-2.5 text-left text-[10px] font-black uppercase text-slate-200 hover:bg-indigo-600 transition-all flex items-center gap-2.5"
                 >
                   <i className="fa-solid fa-copy text-violet-400 w-3.5"></i>
-                  另存为
+                  {t('figureCenter.header.saveAs')}
                   <span className="ml-auto text-[8px] text-slate-500 normal-case font-normal tracking-normal">⌘⇧S</span>
                 </button>
               </div>

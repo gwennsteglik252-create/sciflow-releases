@@ -10,6 +10,7 @@ import { LayerPanel } from './LayerPanel';
 import { useFigureAssemblyLogic } from '../../../hooks/useFigureAssemblyLogic';
 import * as htmlToImage from 'html-to-image';
 import saveAs from 'file-saver';
+import { useTranslation } from '../../../locales/useTranslation';
 
 const FONT_FAMILIES = [
     { name: 'Arial', value: 'Arial, sans-serif' },
@@ -24,6 +25,7 @@ const FONT_FAMILIES = [
 export const FigureAssembly: React.FC<{ generativeLogic: ReturnType<typeof useGenerativeDesigner>, logic: ReturnType<typeof useFigureAssemblyLogic> }> = ({ generativeLogic, logic }) => {
     const { savedLibrary } = generativeLogic;
     const { showToast } = useProjectContext();
+    const { t } = useTranslation();
 
     const {
         panels, setPanels, layoutConfig, setLayoutConfig, cellAspectRatio, setCellAspectRatio,
@@ -54,14 +56,14 @@ export const FigureAssembly: React.FC<{ generativeLogic: ReturnType<typeof useGe
                 if (selectedText && activePanelId) {
                     const panel = panels.find(p => p.id === activePanelId);
                     const text = panel?.texts?.find(t => t.id === selectedText.textId);
-                    if (text) { setClipboard({ type: 'text', data: text }); showToast({ message: "文本已复制", type: 'success' }); }
+                    if (text) { setClipboard({ type: 'text', data: text }); showToast({ message: t('figureCenter.assembly.textCopied'), type: 'success' }); }
                 } else if (selectedShape && activePanelId) {
                     const panel = panels.find(p => p.id === activePanelId);
                     const shape = panel?.shapes?.find(s => s.id === selectedShape.shapeId);
-                    if (shape) { setClipboard({ type: 'shape', data: shape }); showToast({ message: "图形已复制", type: 'success' }); }
+                    if (shape) { setClipboard({ type: 'shape', data: shape }); showToast({ message: t('figureCenter.assembly.shapeCopied'), type: 'success' }); }
                 } else if (activePanelId) {
                     const panel = panels.find(p => p.id === activePanelId);
-                    if (panel) { setClipboard({ type: 'panel', data: panel }); showToast({ message: "图片面板已复制", type: 'success' }); }
+                    if (panel) { setClipboard({ type: 'panel', data: panel }); showToast({ message: t('figureCenter.assembly.panelCopied'), type: 'success' }); }
                 }
             }
 
@@ -75,7 +77,7 @@ export const FigureAssembly: React.FC<{ generativeLogic: ReturnType<typeof useGe
                     newPanel.shapes?.forEach((s: any) => s.id = Date.now().toString() + Math.random().toString().slice(2, 5));
                     recordState([...panels, newPanel]);
                     setActivePanelId(newPanel.id);
-                    showToast({ message: "已粘贴面板", type: 'success' });
+                    showToast({ message: t('figureCenter.assembly.panelPasted'), type: 'success' });
                 }
                 else if ((clipboard.type === 'text' || clipboard.type === 'shape') && activePanelId) {
                     const next = panels.map(p => {
@@ -93,7 +95,7 @@ export const FigureAssembly: React.FC<{ generativeLogic: ReturnType<typeof useGe
                         return p;
                     });
                     recordState(next);
-                    showToast({ message: "已粘贴元素", type: 'success' });
+                    showToast({ message: t('figureCenter.assembly.elementPasted'), type: 'success' });
                 }
             }
 
@@ -200,7 +202,7 @@ export const FigureAssembly: React.FC<{ generativeLogic: ReturnType<typeof useGe
                                     newPanels = newPanels.map(p => p.id === sourcePanelId ? { ...p, texts: p.texts?.filter(t => t.id !== text.id) } : p);
                                     newPanels = newPanels.map(p => p.id === targetPanel.id ? { ...p, texts: [...(p.texts || []), { ...text, x: sourcePanel.x + text.x - targetPanel.x, y: sourcePanel.y + text.y - targetPanel.y }] } : p);
                                     setActivePanelId(targetPanel.id); setSelectedText({ panelId: targetPanel.id, textId: text.id });
-                                    showToast({ message: "标注已自动绑定至新图像", type: 'success' });
+                                    showToast({ message: t('figureCenter.assembly.textCopied'), type: 'success' });
                                 }
                             } else if (shapeDragState) {
                                 const shape = sourcePanel.shapes?.find(s => s.id === shapeDragState.shapeId);
@@ -208,7 +210,7 @@ export const FigureAssembly: React.FC<{ generativeLogic: ReturnType<typeof useGe
                                     newPanels = newPanels.map(p => p.id === sourcePanelId ? { ...p, shapes: p.shapes?.filter(s => s.id !== shape.id) } : p);
                                     newPanels = newPanels.map(p => p.id === targetPanel.id ? { ...p, shapes: [...(p.shapes || []), { ...shape, x1: sourcePanel.x + shape.x1 - targetPanel.x, y1: sourcePanel.y + shape.y1 - targetPanel.y, x2: sourcePanel.x + shape.x2 - targetPanel.x, y2: sourcePanel.y + shape.y2 - targetPanel.y }] } : p);
                                     setActivePanelId(targetPanel.id); setSelectedShape({ panelId: targetPanel.id, shapeId: shape.id });
-                                    showToast({ message: "形状已自动绑定至新图像", type: 'success' });
+                                    showToast({ message: t('figureCenter.assembly.shapeCopied'), type: 'success' });
                                 }
                             }
                             recordState(newPanels);
@@ -229,7 +231,7 @@ export const FigureAssembly: React.FC<{ generativeLogic: ReturnType<typeof useGe
      */
     const handleExport = async () => {
         if (!canvasRef.current || panels.length === 0) return;
-        showToast({ message: "正在分析内容边界并生成位图...", type: 'info' });
+        showToast({ message: t('figureCenter.assembly.exportSuccess'), type: 'info' });
         setActivePanelId(null); setSelectedText(null); setSelectedShape(null); setEditingText(null);
         await new Promise(r => setTimeout(r, 100));
         try {
@@ -284,10 +286,10 @@ export const FigureAssembly: React.FC<{ generativeLogic: ReturnType<typeof useGe
 
             if (blob) {
                 saveAs(blob, `Figure_Composite_${Date.now()}.png`);
-                showToast({ message: "导出成功，已自动裁切并包含完整序号", type: 'success' });
+                showToast({ message: t('figureCenter.assembly.exportSuccess'), type: 'success' });
             }
         } catch (e) {
-            showToast({ message: '导出失败', type: 'error' });
+            showToast({ message: t('figureCenter.assembly.exportFailed'), type: 'error' });
         }
     };
 
@@ -301,8 +303,8 @@ export const FigureAssembly: React.FC<{ generativeLogic: ReturnType<typeof useGe
                 const next = [...panels];
                 base64s.forEach(url => next.push({ id: Date.now().toString() + Math.random(), imgUrl: url, x: 0, y: 0, w: 100, h: 100, label: String.fromCharCode(97 + (next.length % 26)), ...defaultLabelStyle, texts: [], shapes: [], spanCols: 1, spanRows: 1 }));
                 recordState(calculateLayout(next, layoutConfig.cols, cellAspectRatio, layoutConfig.rows));
-                showToast({ message: `成功导入 ${files.length} 张图片`, type: 'success' });
-            } catch (e) { showToast({ message: "图片读取失败", type: 'error' }); }
+                showToast({ message: `${files.length} images imported`, type: 'success' });
+            } catch (e) { showToast({ message: t('figureCenter.assembly.exportFailed'), type: 'error' }); }
             finally { setIsProcessingUpload(false); }
         }
         e.target.value = '';
@@ -316,7 +318,7 @@ export const FigureAssembly: React.FC<{ generativeLogic: ReturnType<typeof useGe
                 showGrid={showGrid} setShowGrid={setShowGrid} layoutConfig={layoutConfig} handleLayoutChange={handleLayoutChange} cellAspectRatio={cellAspectRatio}
                 imageFit={imageFit} setImageFit={setImageFit} handleManualSortAndLayout={() => setShowReorderModal(true)} handleQuickSpatialLayout={() => recordState(calculateLayout([...panels].sort((a, b) => a.y - b.y || a.x - b.x), layoutConfig.cols, cellAspectRatio, layoutConfig.rows))}
                 handleExport={handleExport} isProcessingUpload={isProcessingUpload} handleFileUpload={handleFileUpload}
-                combinedLibrary={combinedLibrary} handleAddPanel={handleAddPanel} handleClearAll={() => { if (window.confirm("确定清空画布？")) { setPanels([]); setLocalAssets([]); recordState([]); } }}
+                combinedLibrary={combinedLibrary} handleAddPanel={handleAddPanel} handleClearAll={() => { if (window.confirm('Clear canvas?')) { setPanels([]); setLocalAssets([]); recordState([]); } }}
                 onDeleteLocalAsset={handleDeleteLocalAsset}
             />
             <AssemblyCanvas
@@ -362,12 +364,12 @@ export const FigureAssembly: React.FC<{ generativeLogic: ReturnType<typeof useGe
                 <button
                     onClick={() => setShowLayerPanel(v => !v)}
                     className="flex items-center justify-center w-full py-2 text-white/40 hover:text-white/80 transition-colors border-b border-white/5 shrink-0"
-                    title={showLayerPanel ? '收起图层面板' : '展开图层面板'}
+                    title={showLayerPanel ? 'Collapse Layer Panel' : 'Expand Layer Panel'}
                 >
                     {showLayerPanel ? (
                         <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest w-full px-3">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="7" width="20" height="13" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" /></svg>
-                            图层
+                            Layers
                             <svg className="ml-auto" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
                         </span>
                     ) : (

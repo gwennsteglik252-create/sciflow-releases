@@ -5,6 +5,7 @@ import { AppView } from './types';
 import { APP_THEMES } from './constants';
 import { ProjectProvider } from './context/ProjectContext';
 import { useProjectContext } from './context/ProjectContextCore';
+import { useUIContext } from './context/UIContext';
 import AppRouter from './components/AppRouter';
 import ModalManager from './components/Modals/ModalManager';
 import AiAssistantStatus from './components/Layout/AiAssistantStatus';
@@ -13,6 +14,7 @@ import Sidebar from './components/Layout/Sidebar';
 import { useAppLogic } from './hooks/useAppLogic';
 import { VoiceLabCompanion } from './components/Layout/VoiceLabCompanion';
 import QuickNavigation from './components/Layout/QuickNavigation';
+import ErrorBoundary from './components/Common/ErrorBoundary';
 import AiCommandCli from './components/Layout/AiCommandCli';
 import AlmanacPanel from './components/Project/WeeklyPlan/AlmanacPanel';
 import { useScreenshot } from './hooks/useScreenshot';
@@ -22,7 +24,8 @@ import ApiSetupGuideModal from './components/Modals/ApiSetupGuideModal';
 import LicenseGate from './components/Auth/LicenseGate';
 
 const AppContent: React.FC = () => {
-  const { isOnline, userProfile, aiStatus, appSettings, setAppSettings, setSearchQuery, projects, toast, hideToast, showToast, mechanismSession, navigate, isAiCliOpen, setIsAiCliOpen, isVoiceMode, setIsVoiceMode, cloudSync } = useProjectContext();
+  const { isOnline, userProfile, appSettings, setAppSettings, projects, mechanismSession, navigate, cloudSync } = useProjectContext();
+  const { aiStatus, toast, hideToast, showToast, setSearchQuery, isAiCliOpen, setIsAiCliOpen, isVoiceMode, setIsVoiceMode } = useUIContext();
   const { route, confirmDelete, modals, setModalOpen, activeTheme, setActiveTheme, history, dwellProgress, togglePin } = useAppLogic();
   const [showGlobalAlmanac, setShowGlobalAlmanac] = React.useState(false);
   const [showInvitePanel, setShowInvitePanel] = React.useState(false);
@@ -204,15 +207,15 @@ const AppContent: React.FC = () => {
 
           {!isCollapsed && (
             <div className="flex-1 min-w-0 flex flex-col animate-in fade-in slide-in-from-left-2 duration-300">
-              <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-black tracking-tight italic leading-none">
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-black tracking-tight italic leading-none whitespace-nowrap">
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-600 to-rose-500 filter drop-shadow-sm select-none">SciFlow</span>
                 </h1>
                 <button
                   onClick={toggleTheme}
-                  className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all mr-4 ${isLightMode ? 'bg-amber-50 text-amber-500 hover:bg-amber-100' : 'bg-white/10 text-indigo-300 hover:bg-white/20'}`}
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all shrink-0 ${isLightMode ? 'bg-amber-50 text-amber-500 hover:bg-amber-100' : 'bg-white/10 text-indigo-300 hover:bg-white/20'}`}
                 >
-                  <i className={`fa-solid ${isLightMode ? 'fa-sun' : 'fa-moon'} text-[10px]`}></i>
+                  <i className={`fa-solid ${isLightMode ? 'fa-sun' : 'fa-moon'} text-xs`}></i>
                 </button>
               </div>
               <div className="flex items-center gap-1.5 mt-2 pl-0.5 group/brand cursor-default">
@@ -221,17 +224,16 @@ const AppContent: React.FC = () => {
                   <span className={`text-sm font-black tracking-tight ${!isLightMode ? 'text-slate-400' : 'text-slate-700'}`}>L</span>
                   <span className="text-lg font-black italic text-transparent bg-clip-text bg-gradient-to-tr from-indigo-600 to-purple-500 -ml-0.5 -mr-0.5 z-10 relative" style={{ fontFamily: 'Georgia, serif' }}>X</span>
                   <span className={`text-sm font-black tracking-tight ${!isLightMode ? 'text-slate-400' : 'text-slate-700'}`}>J</span>
-                  <div className="w-1 h-1 rounded-full bg-rose-500 mb-0.5 ml-0.5 animate-pulse shadow-sm"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-rose-500 mb-0.5 ml-0.5 animate-pulse shadow-sm"></div>
                 </div>
 
-                {/* 科研农场入口 - 旋转发光按钮 */}
+                {/* 科研农场入口 */}
                 <button
                   onClick={() => navigate('research_farm')}
-                  className={`group/farm relative w-7 h-7 rounded-full flex items-center justify-center ml-0.5 transition-all active:scale-90 hover:scale-110 ${isLightMode ? 'hover:bg-emerald-50' : 'hover:bg-emerald-500/10'}`}
+                  className={`group/farm relative w-6 h-6 rounded-full flex items-center justify-center ml-0.5 transition-all active:scale-90 hover:scale-110 ${isLightMode ? 'hover:bg-emerald-50' : 'hover:bg-emerald-500/10'}`}
                   title="科研农场"
                 >
-                  {/* 种子 SVG 图标 - 持续旋转 */}
-                  <svg viewBox="0 0 100 100" className="w-5 h-5 animate-[spin_10s_linear_infinite]">
+                  <svg viewBox="0 0 100 100" className="w-4 h-4 animate-[spin_10s_linear_infinite]">
                     <defs>
                       <linearGradient id="farm-grad" x1="0" y1="0" x2="1" y2="1">
                         <stop offset="0%" stopColor="#22c55e" />
@@ -239,28 +241,23 @@ const AppContent: React.FC = () => {
                       </linearGradient>
                     </defs>
                     <circle cx="50" cy="50" r="46" fill="none" stroke="url(#farm-grad)" strokeWidth="4" opacity="0.8" />
-                    {/* 叶子形状 */}
                     <path d="M50 20 Q70 35 50 55 Q30 35 50 20Z" fill="#22c55e" opacity="0.9" />
                     <path d="M50 55 Q65 50 75 65 Q55 65 50 55Z" fill="#16a34a" opacity="0.8" />
                     <path d="M50 55 Q35 50 25 65 Q45 65 50 55Z" fill="#059669" opacity="0.7" />
-                    {/* 茎 */}
                     <line x1="50" y1="55" x2="50" y2="80" stroke="#15803d" strokeWidth="3" strokeLinecap="round" />
                     <circle cx="50" cy="82" r="4" fill="#15803d" className="animate-pulse" />
                   </svg>
-                  {/* 发光光晕 */}
-                  <div className="absolute inset-[-3px] rounded-full bg-emerald-400/20 blur-[4px] animate-pulse pointer-events-none" />
-                  <div className="absolute inset-0 rounded-full shadow-[0_0_8px_2px_rgba(34,197,94,0.3)] pointer-events-none" />
+                  <div className="absolute inset-[-2px] rounded-full bg-emerald-400/20 blur-[3px] animate-pulse pointer-events-none" />
                 </button>
 
-                {/* 科研黄历入口 - 太极八卦按钮 */}
-                <div className="h-3 w-px bg-slate-200 ml-1"></div>
+                {/* 科研黄历入口 */}
+                <div className="h-4 w-px bg-slate-200 mx-1"></div>
                 <button
                   onClick={() => setShowGlobalAlmanac(prev => !prev)}
-                  className={`group/almanac relative w-7 h-7 rounded-full flex items-center justify-center ml-0.5 transition-all active:scale-90 hover:scale-110 ${isLightMode ? 'hover:bg-amber-50' : 'hover:bg-amber-500/10'}`}
+                  className={`group/almanac relative w-6 h-6 rounded-full flex items-center justify-center transition-all active:scale-90 hover:scale-110 ${isLightMode ? 'hover:bg-amber-50' : 'hover:bg-amber-500/10'}`}
                   title="今日科研黄历"
                 >
-                  {/* 太极 SVG 图标 - 持续旋转 */}
-                  <svg viewBox="0 0 100 100" className="w-5 h-5 animate-[spin_8s_linear_infinite]">
+                  <svg viewBox="0 0 100 100" className="w-4 h-4 animate-[spin_8s_linear_infinite]">
                     <defs>
                       <linearGradient id="almanac-grad" x1="0" y1="0" x2="1" y2="1">
                         <stop offset="0%" stopColor="#d97706" />
@@ -273,9 +270,7 @@ const AppContent: React.FC = () => {
                     <circle cx="50" cy="27" r="6" fill="#1e293b" />
                     <circle cx="50" cy="73" r="6" fill="#d97706" />
                   </svg>
-                  {/* 发光光晕 */}
-                  <div className="absolute inset-[-3px] rounded-full bg-amber-400/20 blur-[4px] animate-pulse pointer-events-none" />
-                  <div className="absolute inset-0 rounded-full shadow-[0_0_8px_2px_rgba(217,119,6,0.3)] pointer-events-none" />
+                  <div className="absolute inset-[-2px] rounded-full bg-amber-400/20 blur-[3px] animate-pulse pointer-events-none" />
                 </button>
               </div>
             </div>
@@ -540,13 +535,15 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <AuthGate>
-      <LicenseGate>
-        <ProjectProvider>
-          <AppContent />
-        </ProjectProvider>
-      </LicenseGate>
-    </AuthGate>
+    <ErrorBoundary module="SciFlow Pro">
+      <AuthGate>
+        <LicenseGate>
+          <ProjectProvider>
+            <AppContent />
+          </ProjectProvider>
+        </LicenseGate>
+      </AuthGate>
+    </ErrorBoundary>
   );
 };
 

@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useTranslation } from '../../locales/useTranslation';
 
 interface ProjectMediaItem {
   name: string;
@@ -13,10 +14,11 @@ interface ImageViewerProps {
 }
 
 export const ImageViewer: React.FC<ImageViewerProps> = ({ selectedMedia }) => {
+  const { t } = useTranslation();
   return (
     <div className="flex-1 bg-slate-100/50 flex flex-col items-center justify-center p-8 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-[0.05]" style={{backgroundImage: 'radial-gradient(circle at 1px 1px, #64748b 1px, transparent 0)', backgroundSize: '24px 24px'}}></div>
-      
+      <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #64748b 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
+
       {selectedMedia ? (
         <div className="relative max-w-full max-h-full shadow-xl rounded-xl overflow-hidden border-4 border-white bg-white group">
           <img src={selectedMedia.url} className="max-w-full max-h-[70vh] object-contain block" />
@@ -30,7 +32,7 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ selectedMedia }) => {
       ) : (
         <div className="text-slate-300 flex flex-col items-center">
           <i className="fa-solid fa-image text-5xl mb-4"></i>
-          <p className="text-xs font-black uppercase tracking-[0.3rem]">请选择一张图片</p>
+          <p className="text-xs font-black uppercase tracking-[0.3rem]">{t('figureStudio.noSelection')}</p>
         </div>
       )}
     </div>

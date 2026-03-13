@@ -271,27 +271,34 @@ const LatticeVisualizer: React.FC<LatticeVisualizerProps> = (props) => {
     else { setReactionType(type); setReactionStep(0); }
   };
 
-  const { atoms, bonds, stats } = useMemo(() => {
-    const metalSites: THREE.Vector3[] = [];
-    const auxiliarySites: THREE.Vector3[] = [];
+  // ═══ 阶段1：结构生成（只在材料参数变化时重算，不依赖 unfoldProgress）═══
+  const structureData = useMemo(() => {
+    const R = 2.8;
+    const metalSitesFlat: THREE.Vector3[] = [];
+    const auxiliarySitesFlat: THREE.Vector3[] = [];
+    // 标记哪些辅助位点是 MOF/SAC 生成的 (需要 wrap)
+    let mofAuxStartIdx = -1;
+    let mofMetalStartIdx = -1;
     const spacing = 1.2;
     const size = 3;
     let idCounter = 0;
+    const isMofSac = props.unitCellType.includes('MOF') || props.unitCellType.includes('SAC');
+    const isSAC = props.unitCellType.includes('SAC');
+
+    // 记录需要 wrap 的 flat 坐标
+    const flatCoordsForWrap: { target: 'metal' | 'aux'; flatPos: THREE.Vector3 }[] = [];
 
     if (props.unitCellType.includes('Layered')) {
       for (let x = 0; x < 4; x++) {
         for (let z = 0; z < 4; z++) {
-          metalSites.push(new THREE.Vector3(x * spacing, 0, z * spacing));
-          auxiliarySites.push(new THREE.Vector3(x * spacing + 0.4, 0.6, z * spacing + 0.4));
-          auxiliarySites.push(new THREE.Vector3(x * spacing - 0.4, -0.6, z * spacing - 0.4));
+          metalSitesFlat.push(new THREE.Vector3(x * spacing, 0, z * spacing));
+          auxiliarySitesFlat.push(new THREE.Vector3(x * spacing + 0.4, 0.6, z * spacing + 0.4));
+          auxiliarySitesFlat.push(new THREE.Vector3(x * spacing - 0.4, -0.6, z * spacing - 0.4));
         }
       }
-    } else if (props.unitCellType.includes('MOF') || props.unitCellType.includes('SAC')) {
-      // 模拟 MOF 衍生的富拓扑缺陷多孔碳骨架 (N-doped Carbon Nanotube / Matrix)
-      const a = 0.65; // 碳碳键距离尺度
-      const R = 2.8; // 纳米管半径 / 框架曲率
+    } else if (isMofSac) {
+      const a = 0.65;
       const cGridFlat: THREE.Vector3[] = [];
-      const isSAC = props.unitCellType.includes('SAC');
 
       for (let i = -7; i <= 7; i++) {
         for (let j = -8; j <= 8; j++) {
@@ -302,19 +309,6 @@ const LatticeVisualizer: React.FC<LatticeVisualizerProps> = (props) => {
         }
       }
 
-      const wrap = (v: THREE.Vector3) => {
-        // 平面坐标
-        const flat = new THREE.Vector3(v.x, 0, v.z);
-        // 管状坐标
-        const theta = v.x / R;
-        const wave = 0.15 * Math.sin(v.z * 1.5) * Math.cos(v.x * 1.2);
-        const wrapped = new THREE.Vector3(v.z, (R + wave) * Math.cos(theta), (R + wave) * Math.sin(theta));
-        // 在管状和平面之间按 unfoldProgress 插值
-        if (unfoldProgress <= 0) return wrapped;
-        if (unfoldProgress >= 1) return flat;
-        return new THREE.Vector3().lerpVectors(wrapped, flat, unfoldProgress);
-      };
-
       const potentialCentersFlat = [
         new THREE.Vector3(0, 0, 0),
         new THREE.Vector3(2.5 * Math.sqrt(3) * a, 0, 4.5 * a),
@@ -323,6 +317,9 @@ const LatticeVisualizer: React.FC<LatticeVisualizerProps> = (props) => {
         new THREE.Vector3(3 * Math.sqrt(3) * a, 0, -3 * a)
       ];
 
+      mofAuxStartIdx = auxiliarySitesFlat.length;
+      mofMetalStartIdx = metalSitesFlat.length;
+
       let currentC = [...cGridFlat];
       potentialCentersFlat.forEach(target => {
         currentC.sort((A, B) => A.distanceTo(target) - B.distanceTo(target));
@@ -330,27 +327,93 @@ const LatticeVisualizer: React.FC<LatticeVisualizerProps> = (props) => {
         const p2 = currentC.find(p => p.distanceTo(p1) > 0.1 && p.distanceTo(p1) < 1.2 * a) || currentC[1];
         const mCenterFlat = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
 
-        // 移除原有的 2 个碳原子（构筑双空位缺陷），用 4 个 N 原子构筑 M-N4 活性中心
         currentC = currentC.filter(p => p.distanceTo(p1) > 0.1 && p.distanceTo(p2) > 0.1);
         currentC.sort((A, B) => A.distanceTo(mCenterFlat) - B.distanceTo(mCenterFlat));
 
         for (let k = 0; k < 4; k++) {
-          auxiliarySites.push(wrap(currentC[k])); // 临时存入辅助位点，后面判定为 N
+          flatCoordsForWrap.push({ target: 'aux', flatPos: currentC[k].clone() });
         }
         currentC = currentC.slice(4);
-        metalSites.push(wrap(mCenterFlat)); // 中心金属位点
+        flatCoordsForWrap.push({ target: 'metal', flatPos: mCenterFlat.clone() });
       });
 
-      // 剩余的全部作为 C 原子网络
       currentC.forEach(p => {
-        auxiliarySites.push(wrap(p));
+        flatCoordsForWrap.push({ target: 'aux', flatPos: p.clone() });
+      });
+    } else {
+      for (let x = 0; x < size; x++) {
+        for (let y = 0; y < size; y++) {
+          for (let z = 0; z < size; z++) {
+            const base = new THREE.Vector3(x * spacing, y * spacing, z * spacing);
+            metalSitesFlat.push(base);
+            if (x < size - 1) auxiliarySitesFlat.push(new THREE.Vector3((x + 0.5) * spacing, y * spacing, z * spacing));
+            if (y < size - 1) auxiliarySitesFlat.push(new THREE.Vector3(x * spacing, (y + 0.5) * spacing, z * spacing));
+            if (z < size - 1) auxiliarySitesFlat.push(new THREE.Vector3(x * spacing, y * spacing, (z + 0.5) * spacing));
+            if (props.unitCellType.includes('BCC')) {
+              if (x < size - 1 && y < size - 1 && z < size - 1) {
+                metalSitesFlat.push(new THREE.Vector3((x + 0.5) * spacing, (y + 0.5) * spacing, (z + 0.5) * spacing));
+              }
+            } else if (props.unitCellType.includes('FCC')) {
+              if (x < size - 1 && y < size - 1) metalSitesFlat.push(new THREE.Vector3((x + 0.5) * spacing, (y + 0.5) * spacing, z * spacing));
+              if (x < size - 1 && z < size - 1) metalSitesFlat.push(new THREE.Vector3((x + 0.5) * spacing, y * spacing, (z + 0.5) * spacing));
+              if (y < size - 1 && z < size - 1) metalSitesFlat.push(new THREE.Vector3(x * spacing, (y + 0.5) * spacing, (z + 0.5) * spacing));
+            }
+          }
+        }
+      }
+    }
+
+    // 预计算掺杂映射
+    const totalMetalCount = metalSitesFlat.length + (isMofSac ? flatCoordsForWrap.filter(f => f.target === 'metal').length : 0);
+    const isCoDopingLigand = ['S', 'P', 'N', 'O'].includes(props.coDopingElement || '');
+    const dopingCount1 = Math.round(totalMetalCount * (props.dopingConcentration / 100));
+    const dopingCount2 = props.coDopingElement && props.coDopingElement !== 'None' && !isCoDopingLigand
+      ? Math.round(totalMetalCount * ((props.coDopingConcentration || 0) / 100))
+      : 0;
+    const indices = Array.from({ length: totalMetalCount }, (_, i) => i);
+    // 使用确定性种子以避免每次 random 不同
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+    const dopedSet1 = new Set(indices.slice(0, dopingCount1));
+    const dopedSet2 = new Set(indices.slice(dopingCount1, dopingCount1 + dopingCount2));
+
+    return {
+      metalSitesFlat, auxiliarySitesFlat, flatCoordsForWrap,
+      mofAuxStartIdx, mofMetalStartIdx, spacing, isMofSac, isSAC, R,
+      dopedSet1, dopedSet2, isCoDopingLigand, totalMetalCount,
+    };
+  }, [props.dopingConcentration, props.dopingElement, props.coDopingElement, props.coDopingConcentration, props.material, props.unitCellType]);
+
+  // ═══ 阶段2：坐标变换 + 键连计算（依赖 unfoldProgress，但使用缓存的结构数据）═══
+  const { atoms, bonds, stats } = useMemo(() => {
+    const { metalSitesFlat, auxiliarySitesFlat, flatCoordsForWrap, mofAuxStartIdx, mofMetalStartIdx, spacing, isMofSac, isSAC, R, dopedSet1, dopedSet2, isCoDopingLigand } = structureData;
+    let idCounter = 0;
+
+    const wrap = (v: THREE.Vector3) => {
+      const flat = new THREE.Vector3(v.x, 0, v.z);
+      const theta = v.x / R;
+      const wave = 0.15 * Math.sin(v.z * 1.5) * Math.cos(v.x * 1.2);
+      const wrapped = new THREE.Vector3(v.z, (R + wave) * Math.cos(theta), (R + wave) * Math.sin(theta));
+      if (unfoldProgress <= 0) return wrapped;
+      if (unfoldProgress >= 1) return flat;
+      return new THREE.Vector3().lerpVectors(wrapped, flat, unfoldProgress);
+    };
+
+    // 构建最终的金属和辅助位点
+    const metalSites: THREE.Vector3[] = [...metalSitesFlat.map(p => p.clone())];
+    const auxiliarySites: THREE.Vector3[] = [...auxiliarySitesFlat.map(p => p.clone())];
+
+    if (isMofSac) {
+      flatCoordsForWrap.forEach(fc => {
+        if (fc.target === 'metal') metalSites.push(wrap(fc.flatPos));
+        else auxiliarySites.push(wrap(fc.flatPos));
       });
 
-      // 如果不是纯 SAC 而是 MOF 衍生碳，通常还会包含较大的合金团簇
       if (!isSAC) {
-        // 团簇中心：管状模式贴近管表面，展开模式贴近平面
-        const wrappedCenterY = R - 0.8; // ~2.0，管状时在管表面附近
-        const flatCenterY = 0.8; // 展开时稍高于平面
+        const wrappedCenterY = R - 0.8;
+        const flatCenterY = 0.8;
         const clusterY = wrappedCenterY + (flatCenterY - wrappedCenterY) * unfoldProgress;
         const clusterCenter = new THREE.Vector3(1.0, clusterY, 0.5);
         for (let k = 0; k < 12; k++) {
@@ -364,96 +427,47 @@ const LatticeVisualizer: React.FC<LatticeVisualizerProps> = (props) => {
           ));
         }
       }
-    } else {
-      for (let x = 0; x < size; x++) {
-        for (let y = 0; y < size; y++) {
-          for (let z = 0; z < size; z++) {
-            const base = new THREE.Vector3(x * spacing, y * spacing, z * spacing);
-            metalSites.push(base);
-            if (x < size - 1) auxiliarySites.push(new THREE.Vector3((x + 0.5) * spacing, y * spacing, z * spacing));
-            if (y < size - 1) auxiliarySites.push(new THREE.Vector3(x * spacing, (y + 0.5) * spacing, z * spacing));
-            if (z < size - 1) auxiliarySites.push(new THREE.Vector3(x * spacing, y * spacing, (z + 0.5) * spacing));
-            if (props.unitCellType.includes('BCC')) {
-              if (x < size - 1 && y < size - 1 && z < size - 1) {
-                metalSites.push(new THREE.Vector3((x + 0.5) * spacing, (y + 0.5) * spacing, (z + 0.5) * spacing));
-              }
-            } else if (props.unitCellType.includes('FCC')) {
-              if (x < size - 1 && y < size - 1) metalSites.push(new THREE.Vector3((x + 0.5) * spacing, (y + 0.5) * spacing, z * spacing));
-              if (x < size - 1 && z < size - 1) metalSites.push(new THREE.Vector3((x + 0.5) * spacing, y * spacing, (z + 0.5) * spacing));
-              if (y < size - 1 && z < size - 1) metalSites.push(new THREE.Vector3(x * spacing, (y + 0.5) * spacing, (z + 0.5) * spacing));
-            }
-          }
-        }
-      }
     }
 
     const totalMetalCount = metalSites.length;
-    const isCoDopingLigand = ['S', 'P', 'N', 'O'].includes(props.coDopingElement || '');
-
-    const dopingCount1 = Math.round(totalMetalCount * (props.dopingConcentration / 100));
-    const dopingCount2 = props.coDopingElement && props.coDopingElement !== 'None' && !isCoDopingLigand
-      ? Math.round(totalMetalCount * ((props.coDopingConcentration || 0) / 100))
-      : 0;
-
-    const indices = Array.from({ length: totalMetalCount }, (_, i) => i);
-    for (let i = indices.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [indices[i], indices[j]] = [indices[j], indices[i]];
-    }
-    const dopedIndicesSet1 = new Set(indices.slice(0, dopingCount1));
-    const dopedIndicesSet2 = new Set(indices.slice(dopingCount1, dopingCount1 + dopingCount2));
 
     const metalAtoms: Atom[] = metalSites.map((pos, idx) => {
-      const isDoped1 = dopedIndicesSet1.has(idx);
-      const isDoped2 = dopedIndicesSet2.has(idx);
+      const isDoped1 = dopedSet1.has(idx);
+      const isDoped2 = dopedSet2.has(idx);
       const isDoped = isDoped1 || isDoped2;
       let type = props.material;
 
       const config = (TheoreticalDescriptors as any)[props.material];
-      if (config && config.primaryMetal) {
-        type = config.primaryMetal;
-      }
+      if (config && config.primaryMetal) type = config.primaryMetal;
 
       if (!isDoped && props.material === 'NiFe-LDH') {
         type = (Math.floor(pos.x / spacing) + Math.floor(pos.z / spacing)) % 2 === 0 ? 'Ni' : 'Fe';
       }
-
-      // High-Entropy Alloy (HEA) random generation
       if (!isDoped && props.material.includes('HEA')) {
         const heaElements = ['Fe', 'Co', 'Ni', 'Mn', 'Cr'];
         type = heaElements[Math.floor(Math.random() * heaElements.length)];
       }
-
       if (isDoped1) type = props.dopingElement;
       if (isDoped2) type = props.coDopingElement!;
 
-      // Flag exact SAC center metals
-      const isSACMetal = (props.unitCellType.includes('MOF') || props.unitCellType.includes('SAC')) && idx < 5;
-
-      // Fallback color for visualization if type not in ATOM_CONFIG
+      const isSACMetal = isMofSac && idx < 5;
       return { id: idCounter++, pos: pos.clone(), type, isDopant: isDoped, isSACMetal };
     });
 
     const auxiliaryAtoms: Atom[] = auxiliarySites.map((pos, idx) => {
-      // 在 MOF/SAC 模式下，前 N 个(取决于位点数)是氮原子，后面都是碳原子
       let type = 'O';
-      if (props.unitCellType.includes('MOF') || props.unitCellType.includes('SAC')) {
-        const m4SitesCount = 5 * 4; // 5个潜在中心，每个周围4个N
+      if (isMofSac) {
+        const m4SitesCount = 5 * 4;
         type = idx < m4SitesCount ? 'N' : 'C';
       }
       return { id: idCounter++, pos: pos.clone(), type };
     });
 
-    // 为 SAC 系统追加非金属轴向配体 (Axial Ligands)
-    if (isCoDopingLigand && (props.unitCellType.includes('MOF') || props.unitCellType.includes('SAC'))) {
+    if (isCoDopingLigand && isMofSac) {
       const ligandConcentration = (props.coDopingConcentration || 0) / 100;
-      // 遍历 5 个潜在 SAC 位点
       for (let i = 0; i < 5; i++) {
-        // 按照浓度给出配体出现的概率
         if (Math.random() < ligandConcentration * 5) {
           const sacPos = metalSites[i];
-          // 由于圆柱体沿 X 轴延伸 (wrap函数返回 x=v.z, y=r*cos, z=r*sin)
-          // 因此表面的径向/法向矢量应该是 (0, y, z)
           const normal = new THREE.Vector3(0, sacPos.y, sacPos.z).normalize();
           const axialPos = sacPos.clone().add(normal.multiplyScalar(1.15));
           auxiliaryAtoms.push({ id: idCounter++, pos: axialPos, type: props.coDopingElement! });
@@ -480,65 +494,91 @@ const LatticeVisualizer: React.FC<LatticeVisualizerProps> = (props) => {
 
     const finalAtoms = [...metalAtoms, ...auxiliaryAtoms];
 
+    // ═══ 空间哈希加速键连计算 ═══
+    const maxBondDist = isMofSac ? 1.45 : 1.25;
+    const cellSize = maxBondDist + 0.01;
+    const spatialHash = new Map<string, number[]>();
+
+    finalAtoms.forEach((atom, i) => {
+      const cx = Math.floor(atom.pos.x / cellSize);
+      const cy = Math.floor(atom.pos.y / cellSize);
+      const cz = Math.floor(atom.pos.z / cellSize);
+      const key = `${cx},${cy},${cz}`;
+      if (!spatialHash.has(key)) spatialHash.set(key, []);
+      spatialHash.get(key)!.push(i);
+    });
+
     const bondList: { start: THREE.Vector3; end: THREE.Vector3 }[] = [];
     const bondCountMap: Record<number, number> = {};
     const coordinationLimits: Record<string, number> = {
-      'O': 3,
-      'C': 3,
-      'N': 3,
-      'default': (props.unitCellType.includes('MOF') || props.unitCellType.includes('SAC')) ? 8 : (props.unitCellType.includes('Layered') ? 6 : 12)
+      'O': 3, 'C': 3, 'N': 3,
+      'default': isMofSac ? 8 : (props.unitCellType.includes('Layered') ? 6 : 12)
     };
+    const processedPairs = new Set<string>();
 
-    for (let i = 0; i < finalAtoms.length; i++) {
-      const a1 = finalAtoms[i];
-      for (let j = i + 1; j < finalAtoms.length; j++) {
-        const a2 = finalAtoms[j];
-        if ((bondCountMap[a1.id] || 0) >= (coordinationLimits[a1.type] || coordinationLimits.default)) continue;
-        if ((bondCountMap[a2.id] || 0) >= (coordinationLimits[a2.type] || coordinationLimits.default)) continue;
-        const dist = a1.pos.distanceTo(a2.pos);
-        const isMetal1 = a1.type !== 'O';
-        const isMetal2 = a2.type !== 'O';
-        let shouldBond = false;
-        if (props.unitCellType.includes('MOF') || props.unitCellType.includes('SAC')) {
-          // 碳基骨架体系定制键连规则：
-          const isLF1 = ['C', 'N', 'S', 'P', 'O', 'Cl'].includes(a1.type);
-          const isLF2 = ['C', 'N', 'S', 'P', 'O', 'Cl'].includes(a2.type);
+    finalAtoms.forEach((a1, i) => {
+      const cx = Math.floor(a1.pos.x / cellSize);
+      const cy = Math.floor(a1.pos.y / cellSize);
+      const cz = Math.floor(a1.pos.z / cellSize);
 
-          if (!isLF1 && !isLF2 && dist < 0.75) {
-            shouldBond = true; // cluster 中 M-M 合金键，由于球面分布 r=0.6，近邻距约 0.63
-          } else if ((!isLF1 && isLF2) || (isLF1 && !isLF2)) {
-            const mAtom = isLF2 ? a1 : a2;
-            const cnAtom = isLF2 ? a2 : a1;
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dz = -1; dz <= 1; dz++) {
+            const neighborKey = `${cx + dx},${cy + dy},${cz + dz}`;
+            const neighbors = spatialHash.get(neighborKey);
+            if (!neighbors) continue;
 
-            if (mAtom.isSACMetal) {
-              // SAC金属与 N 平面配位，也与 S/P 等异原子配体进行轴向成键
-              if (['N', 'S', 'P', 'O', 'Cl'].includes(cnAtom.type) && dist < 1.45) shouldBond = true;
-            } else {
-              // 团簇与载体锚定键，距离适当缩短以避免过度粘连
-              if (cnAtom.type === 'C' && dist < 1.05) shouldBond = true;
+            for (const j of neighbors) {
+              if (j <= i) continue;
+              const pairKey = `${i}-${j}`;
+              if (processedPairs.has(pairKey)) continue;
+              processedPairs.add(pairKey);
+
+              const a2 = finalAtoms[j];
+              if ((bondCountMap[a1.id] || 0) >= (coordinationLimits[a1.type] || coordinationLimits.default)) continue;
+              if ((bondCountMap[a2.id] || 0) >= (coordinationLimits[a2.type] || coordinationLimits.default)) continue;
+              const dist = a1.pos.distanceTo(a2.pos);
+              const isMetal1 = a1.type !== 'O';
+              const isMetal2 = a2.type !== 'O';
+              let shouldBond = false;
+              if (isMofSac) {
+                const isLF1 = ['C', 'N', 'S', 'P', 'O', 'Cl'].includes(a1.type);
+                const isLF2 = ['C', 'N', 'S', 'P', 'O', 'Cl'].includes(a2.type);
+                if (!isLF1 && !isLF2 && dist < 0.75) {
+                  shouldBond = true;
+                } else if ((!isLF1 && isLF2) || (isLF1 && !isLF2)) {
+                  const mAtom = isLF2 ? a1 : a2;
+                  const cnAtom = isLF2 ? a2 : a1;
+                  if (mAtom.isSACMetal) {
+                    if (['N', 'S', 'P', 'O', 'Cl'].includes(cnAtom.type) && dist < 1.45) shouldBond = true;
+                  } else {
+                    if (cnAtom.type === 'C' && dist < 1.05) shouldBond = true;
+                  }
+                } else if (isLF1 && isLF2 && dist < 0.95) {
+                  shouldBond = true;
+                }
+              } else if ((isMetal1 && !isMetal2) || (!isMetal1 && isMetal2)) {
+                if (dist > 0.4 && dist < 1.0) shouldBond = true;
+              } else if (isMetal1 && isMetal2) {
+                const sameLayer = Math.abs(a1.pos.y - a2.pos.y) < 0.1;
+                if (dist > 0.8 && dist < 1.25) {
+                  if (props.unitCellType.includes('Layered')) {
+                    if (sameLayer) shouldBond = true;
+                  } else {
+                    shouldBond = true;
+                  }
+                }
+              }
+              if (shouldBond) {
+                bondList.push({ start: a1.pos, end: a2.pos });
+                bondCountMap[a1.id] = (bondCountMap[a1.id] || 0) + 1;
+                bondCountMap[a2.id] = (bondCountMap[a2.id] || 0) + 1;
+              }
             }
-          } else if (isLF1 && isLF2 && dist < 0.95) {
-            shouldBond = true; // C-C 或 C-N 等骨架共价键
           }
-        } else if ((isMetal1 && !isMetal2) || (!isMetal1 && isMetal2)) {
-          if (dist > 0.4 && dist < 1.0) shouldBond = true;
-        } else if (isMetal1 && isMetal2) {
-          const sameLayer = Math.abs(a1.pos.y - a2.pos.y) < 0.1;
-          if (dist > 0.8 && dist < 1.25) {
-            if (props.unitCellType.includes('Layered')) {
-              if (sameLayer) shouldBond = true;
-            } else {
-              shouldBond = true;
-            }
-          }
-        }
-        if (shouldBond) {
-          bondList.push({ start: a1.pos, end: a2.pos });
-          bondCountMap[a1.id] = (bondCountMap[a1.id] || 0) + 1;
-          bondCountMap[a2.id] = (bondCountMap[a2.id] || 0) + 1;
         }
       }
-    }
+    });
 
     const typeCounts: Record<string, number> = {};
     finalAtoms.forEach(a => { typeCounts[a.type] = (typeCounts[a.type] || 0) + 1; });
@@ -547,7 +587,7 @@ const LatticeVisualizer: React.FC<LatticeVisualizerProps> = (props) => {
     })).sort((a, b) => b.count - a.count);
 
     return { atoms: finalAtoms, bonds: bondList, stats: statsList };
-  }, [props.dopingConcentration, props.dopingElement, props.coDopingElement, props.coDopingConcentration, props.material, props.unitCellType, unfoldProgress]);
+  }, [structureData, unfoldProgress, props.material, props.unitCellType, props.dopingElement, props.coDopingElement, props.coDopingConcentration]);
 
   // Compute SAC site position and surface normal for reaction simulation
   const sacSitePos = useMemo(() => atoms.find(a => a.isSACMetal)?.pos || null, [atoms]);
