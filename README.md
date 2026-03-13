@@ -1,7 +1,7 @@
 <h1 align="center">🧬 SciFlow Pro — 科研全流程智能工作站</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/版本-v1.0.1-blue?style=flat-square" alt="Version" />
+  <img src="https://img.shields.io/badge/版本-v1.1.0-blue?style=flat-square" alt="Version" />
   <img src="https://img.shields.io/badge/平台-macOS%20|%20Windows-brightgreen?style=flat-square" alt="Platform" />
   <img src="https://img.shields.io/badge/AI%20引擎-GPT--5%20|%20Gemini%20|%20Claude%20|%20DeepSeek-purple?style=flat-square" alt="AI" />
   <img src="https://img.shields.io/badge/架构-本地优先-orange?style=flat-square" alt="Architecture" />
@@ -28,8 +28,8 @@
 
 | 平台 | 下载链接 | 系统要求 |
 |:----:|---------|---------|
-| 🍎 **macOS** | [SciFlow-Pro-1.0.1-arm64.dmg](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/v1.0.1/SciFlow-Pro-1.0.1-arm64.dmg) | macOS 12+ (Apple Silicon) |
-| 🪟 **Windows** | [SciFlow-Pro-Setup-1.0.1.exe](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/v1.0.1/SciFlow-Pro-Setup-1.0.1.exe) | Windows 10/11 (64-bit) |
+| 🍎 **macOS** | [SciFlow-Pro-1.1.0-arm64.dmg](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/v1.1.0/SciFlow-Pro-1.1.0-arm64.dmg) | macOS 12+ (Apple Silicon) |
+| 🪟 **Windows** | [SciFlow-Pro-Setup-1.1.0.exe](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/v1.1.0/SciFlow-Pro-Setup-1.1.0.exe) | Windows 10/11 (64-bit) |
 
 <details>
 <summary>🪟 <strong>Windows 安装步骤</strong>（点击展开）</summary>
@@ -677,6 +677,20 @@ sudo xattr -cr "/Applications/SciFlow Pro.app"
 ---
 
 ## 📋 更新日志
+
+### v1.1.0 (2026-03-13)
+🚀 **全面升级**
+
+- 🌍 **全面国际化**：所有模块支持中英文切换，新增 300+ 翻译键
+- ✨ **星空图谱 (StarfieldGraph)**：全新 3D 可视化文献关系图谱
+- 🛡️ **错误边界 (ErrorBoundary)**：各模块独立错误捕获，防止全局崩溃
+- 🏗️ **UIContext 重构**：Toast 通知等 UI 状态从 ProjectContext 分离，提升性能
+- 🔧 **Gemini AI 服务模块化**：拆分为 audit/experiment/vision/xrd 等独立模块
+- 🔧 **Electron 主进程重构**：IPC/许可证/更新器独立模块化
+- 🎨 仪表盘里程碑时间线布局优化
+- 🎨 战略立项推演界面紧凑化
+- ⚡ 晶格拓扑可视化性能优化
+- 🐛 修复 Inception 模块渲染崩溃、白屏、Supabase API 错误等问题
 
 ### v1.0.1 (2026-03-11)
 🔧 **优化更新**
