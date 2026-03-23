@@ -1,0 +1,367 @@
+/* ═══ WordOnlineEditor.css ═══ */
+/* Word Online 嵌入模式 — 控制栏 + webview 容器 */
+
+.word-online-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: inherit;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+/* ─── 控制栏 ─── */
+.word-online-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+  min-height: 40px;
+  gap: 8px;
+}
+
+.word-online-toolbar-left,
+.word-online-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.word-online-toolbar-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+/* ─── 地址栏 ─── */
+.word-online-url-bar {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 500px;
+  padding: 4px 10px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  font-size: 11px;
+  transition: all 0.15s ease;
+}
+
+.word-online-url-bar:focus-within {
+  border-color: #2b579a;
+  background: white;
+  box-shadow: 0 0 0 2px rgba(43, 87, 154, 0.15);
+}
+
+.word-online-url-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 11px;
+  color: #374151;
+  min-width: 0;
+}
+
+/* ─── 错误提示 ─── */
+.word-online-error-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  text-align: center;
+}
+
+.word-online-btn {
+  width: 32px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+  font-size: 13px;
+  transition: all 0.12s ease;
+  flex-shrink: 0;
+}
+
+.word-online-btn:hover {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+.word-online-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.word-online-btn.active {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+.word-online-btn-primary {
+  width: auto !important;
+  padding: 0 12px;
+  gap: 6px;
+  background: #2b579a;
+  color: white !important;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 8px;
+}
+
+.word-online-btn-primary:hover {
+  background: #1d4387 !important;
+  color: white !important;
+}
+
+.word-online-btn-primary span {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* 本地 Word 按钮（绿色调） */
+.word-online-btn-local {
+  width: auto !important;
+  padding: 0 12px !important;
+  gap: 6px !important;
+  background: #16a34a !important;
+  color: white !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+}
+
+.word-online-btn-local:hover {
+  background: #15803d !important;
+}
+
+.word-online-btn-local span {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.word-online-divider {
+  width: 1px;
+  height: 20px;
+  background: #d1d5db;
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* ─── 标题区域 ─── */
+.word-online-title {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  max-width: 300px;
+  overflow: hidden;
+}
+
+.word-online-title-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.word-online-loading-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2b579a;
+  margin-left: 8px;
+  flex-shrink: 0;
+  animation: pulse-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-loading {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.8); }
+}
+
+/* ─── Webview 容器 ─── */
+.word-online-webview-wrapper {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.word-online-webview {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* ─── 加载遮罩 ─── */
+.word-online-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.word-online-loading-content {
+  text-align: center;
+  color: #374151;
+}
+
+.word-online-loading-icon {
+  font-size: 48px;
+  color: #2b579a;
+  margin-bottom: 16px;
+  animation: bounce-icon 2s ease-in-out infinite;
+}
+
+@keyframes bounce-icon {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.word-online-loading-content p {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.word-online-loading-bar {
+  width: 200px;
+  height: 3px;
+  background: #e5e7eb;
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.word-online-loading-bar-inner {
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, #2b579a, #5b9bd5);
+  border-radius: 2px;
+  animation: loading-slide 1.5s ease-in-out infinite;
+}
+
+@keyframes loading-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+.word-online-skip-btn {
+  margin-top: 16px;
+  padding: 6px 24px;
+  border: 1px solid #d1d5db;
+  background: transparent;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.word-online-skip-btn:hover {
+  background: #2b579a;
+  color: white;
+  border-color: #2b579a;
+}
+
+/* ─── 服务选择器 ─── */
+.word-online-service-picker-wrapper {
+  position: relative;
+}
+
+.word-online-service-btn {
+  width: auto !important;
+  padding: 0 10px !important;
+  gap: 2px;
+  font-size: 11px !important;
+}
+
+.word-online-service-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 260px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  z-index: 100;
+  animation: dropdown-reveal 0.15s ease-out;
+}
+
+@keyframes dropdown-reveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.word-online-service-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+  font-size: 12px;
+}
+
+.word-online-service-item:hover {
+  background: #f3f4f6;
+}
+
+.word-online-service-item.active {
+  background: #eff6ff;
+}
+
+.word-online-service-item + .word-online-service-item {
+  border-top: 1px solid #f3f4f6;
+}
+
+.word-online-service-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.word-online-service-name {
+  font-weight: 700;
+  color: #1f2937;
+  font-size: 12px;
+}
+
+.word-online-service-desc {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-top: 1px;
+}
+
+/* ─── 背景遮罩（关闭下拉用） ─── */
+.word-online-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}

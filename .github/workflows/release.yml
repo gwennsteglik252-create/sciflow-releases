@@ -1,4 +1,4 @@
-name: Build Windows
+name: Build Windows & Android
 
 on:
   push:
@@ -47,5 +47,68 @@ jobs:
             dist_electron/*.exe
             dist_electron/*.blockmap
             dist_electron/latest.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-android:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout source from build branch
+        uses: actions/checkout@v4
+        with:
+          ref: build
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Java (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Web assets for mobile
+        run: MOBILE_BUILD=true npx vite build
+
+      - name: Sync Capacitor Android
+        run: npx cap sync android
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Update Android version
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          VERSION_CODE=$(echo "$VERSION" | sed 's/[^0-9]//g' | sed 's/^0*//')
+          [ -z "$VERSION_CODE" ] && VERSION_CODE=1
+          sed -i "s/versionCode [0-9]*/versionCode ${VERSION_CODE}/" android/app/build.gradle
+          sed -i "s/versionName \".*\"/versionName \"${VERSION}\"/" android/app/build.gradle
+
+      - name: Build Release APK
+        working-directory: android
+        run: ./gradlew assembleRelease
+
+      - name: Rename APK
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk \
+             SciFlow-Pro-${VERSION}-android.apk
+
+      - name: Upload APK to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: SciFlow-Pro-*-android.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

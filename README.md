@@ -1,7 +1,7 @@
 <h1 align="center">🧬 SciFlow Pro — 科研全流程智能工作站</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/版本-vv0.8.0-blue?style=flat-square" alt="Version" />
+  <img src="https://img.shields.io/badge/版本-v0.9.0-blue?style=flat-square" alt="Version" />
   <img src="https://img.shields.io/badge/平台-macOS%20|%20Windows-brightgreen?style=flat-square" alt="Platform" />
   <img src="https://img.shields.io/badge/AI%20引擎-GPT--5%20|%20Gemini%20|%20Claude%20|%20DeepSeek-purple?style=flat-square" alt="AI" />
   <img src="https://img.shields.io/badge/架构-本地优先-orange?style=flat-square" alt="Architecture" />
@@ -28,8 +28,8 @@
 
 | 平台 | 下载链接 | 系统要求 |
 |:----:|---------|---------|
-| 🍎 **macOS** | [SciFlow-Pro-v0.8.0-arm64.dmg](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/vv0.8.0/SciFlow-Pro-v0.8.0-arm64.dmg) | macOS 12+ (Apple Silicon) |
-| 🪟 **Windows** | [SciFlow-Pro-Setup-v0.8.0.exe](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/vv0.8.0/SciFlow-Pro-Setup-v0.8.0.exe) | Windows 10/11 (64-bit) |
+| 🍎 **macOS** | [SciFlow-Pro-v0.9.0-arm64.dmg](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/v0.9.0/SciFlow-Pro-0.9.0-arm64.dmg) | macOS 12+ (Apple Silicon) |
+| 🪟 **Windows** | [SciFlow-Pro-Setup-v0.9.0.exe](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/v0.9.0/SciFlow-Pro-Setup-0.9.0.exe) | Windows 10/11 (64-bit) |
 
 <details>
 <summary>🪟 <strong>Windows 安装步骤</strong>（点击展开）</summary>
@@ -677,6 +677,32 @@ sudo xattr -cr "/Applications/SciFlow Pro.app"
 ---
 
 ## 📋 更新日志
+
+### v0.9.0 (2026-03-23)
+🚀 **研究全流程智能化升级**
+
+**🆕 重大新功能**
+- 🔔 **智能通知与自动化引擎**：实验截止日期提醒、库存低量预警、文献追踪订阅通知、自动化周报生成、跨模块规则引擎
+- 📓 **研究笔记本**：全新笔记本模块，支持自由笔记与结构化实验日志双模式、PDF 文献批注同步、AI 写作助手（续写/润色/摘要）、智能标签自动推荐
+- 📱 **移动端伴侣**：新增移动端快速视图入口、底部导航通知徽章、窄屏设备深度适配
+- 📄 **综述图组自动装配**：从文献 PDF 智能提取图表、AI 内容匹配、多面板复合图自动组装并集成到综述工坊
+- 🗂️ **工艺路线分类系统**：预定义分类（催化剂合成、LDH 基复合材料等）+ 自定义分类，支持分组折叠展示与标签过滤
+
+**✨ 功能增强**
+- 🧠 **脑图编辑器全面升级**：全局样式继承体系、文本对齐/字体/加粗斜体、边框宽度/颜色/样式、透明度控制、图标选择器、连接标签样式、子文本排版、层级标题排版、全局字体配置
+- 🧪 **DOE 方案库集成**：方案库支持分类归档管理，替换原有内联下拉为完整方案库弹窗
+- 📊 **实验计划深度增强**：AI 生成包含精确试剂用量、溶剂体积等可直接执行的详细实验操作步骤
+- ⚡ **AI 生成加速**：优化 `aiSpeedMode` 调用链路，提升实验方案生成速度
+- 📋 **计划收集器优化**：将"添加到计划"入口移至周计划看板，改善操作动线
+- 🔀 **导航模块拖拽排序**：系统设置中支持拖拽重排导航模块顺序，可一键恢复默认
+- 🎨 **综述工坊 UI 优化**：增大字体和按钮尺寸，提升可读性和交互体验
+- 💬 **AI 助手功能对比**：明确实验流程 AI 助手与节点实验顾问的功能边界
+
+**🐛 修复与优化**
+- 🔧 修复 KPI 目标达成率指标计算异常（百分比显示过大）
+- 🔧 修复 Open Access PDF 下载失败问题（ACS/PMC 服务器限制、Content-Type 异常、Electron BrowserWindow 降级方案）
+- 🔧 修复 WebSocket 连接错误导致 AI 建模中断
+- 🔧 修复自动登录系统的验证码识别、响应解析和重试逻辑
 
 ### v1.1.0 (2026-03-13)
 🚀 **全面升级**
