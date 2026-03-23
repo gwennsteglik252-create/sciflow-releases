@@ -1,7 +1,7 @@
 <h1 align="center">🧬 SciFlow Pro — 科研全流程智能工作站</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/版本-vv0.8.0-blue?style=flat-square" alt="Version" />
+  <img src="https://img.shields.io/badge/版本-v0.9.0-blue?style=flat-square" alt="Version" />
   <img src="https://img.shields.io/badge/平台-macOS%20|%20Windows-brightgreen?style=flat-square" alt="Platform" />
   <img src="https://img.shields.io/badge/AI%20引擎-GPT--5%20|%20Gemini%20|%20Claude%20|%20DeepSeek-purple?style=flat-square" alt="AI" />
   <img src="https://img.shields.io/badge/架构-本地优先-orange?style=flat-square" alt="Architecture" />
@@ -28,8 +28,8 @@
 
 | 平台 | 下载链接 | 系统要求 |
 |:----:|---------|---------|
-| 🍎 **macOS** | [SciFlow-Pro-v0.8.0-arm64.dmg](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/vv0.8.0/SciFlow-Pro-v0.8.0-arm64.dmg) | macOS 12+ (Apple Silicon) |
-| 🪟 **Windows** | [SciFlow-Pro-Setup-v0.8.0.exe](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/vv0.8.0/SciFlow-Pro-Setup-v0.8.0.exe) | Windows 10/11 (64-bit) |
+| 🍎 **macOS** | [SciFlow-Pro-v0.9.0-arm64.dmg](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/v0.9.0/SciFlow-Pro-0.9.0-arm64.dmg) | macOS 12+ (Apple Silicon) |
+| 🪟 **Windows** | [SciFlow-Pro-Setup-v0.9.0.exe](https://github.com/gwennsteglik252-create/sciflow-releases/releases/download/v0.9.0/SciFlow-Pro-Setup-0.9.0.exe) | Windows 10/11 (64-bit) |
 
 <details>
 <summary>🪟 <strong>Windows 安装步骤</strong>（点击展开）</summary>
@@ -677,6 +677,19 @@ sudo xattr -cr "/Applications/SciFlow Pro.app"
 ---
 
 ## 📋 更新日志
+
+### v0.9.0 (2026-03-23)
+🚀 **研究全流程智能化升级**
+
+- 🔔 **智能通知引擎**：实验截止提醒、库存预警、文献追踪订阅、自动化工作流规则
+- 📓 **研究笔记本**：实验日志模式、AI 写作助手、智能标签推荐
+- 📱 **移动端伴侣**：移动端快速视图与通知徽章集成
+- 🗂️ **路线分类系统**：工艺路线支持自定义分类管理
+- 🧪 **DOE 方案库集成**：方案归档分类管理
+- 🧠 **脑图增强**：全局样式继承、文本格式化、边框/透明度/图标编辑
+- 📊 **实验计划增强**：AI 生成更详细的实验参数与操作步骤
+- 📄 **综述图组自动装配**：从文献 PDF 提取图表并智能匹配组装
+- 🔧 修复 KPI 指标计算异常、PDF 下载失败等问题
 
 ### v1.1.0 (2026-03-13)
 🚀 **全面升级**

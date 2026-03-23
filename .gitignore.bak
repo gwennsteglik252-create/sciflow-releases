@@ -1,0 +1,30 @@
+# ═══════════════════════════════════════════════════
+# SciFlow Pro - Release Repository
+# 只追踪 README、文档和 CI 配置，源代码不上传
+# ═══════════════════════════════════════════════════
+
+# 忽略所有文件
+*
+
+# ═══ 保留的文件（白名单模式） ═══
+
+# README 和许可证
+!README.md
+!LICENSE
+!.gitignore
+
+# 文档截图
+!docs/
+!docs/**
+
+# GitHub Actions CI
+!.github/
+!.github/**
+
+# ═══ 始终忽略的文件 ═══
+node_modules/
+dist/
+dist_electron/
+*.log
+.DS_Store
+.vite/
